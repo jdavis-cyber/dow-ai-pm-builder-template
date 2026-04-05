@@ -6,18 +6,13 @@
 [![Compliance: FedRAMP](https://img.shields.io/badge/Compliance-FedRAMP-red)](https://www.fedramp.gov/)
 [![Compliance: ISO 42001](https://img.shields.io/badge/AI%20Governance-ISO%2042001-orange)](https://www.iso.org/standard/81230.html)
 [![Team: 15 Agents](https://img.shields.io/badge/Team-15%20Agents-green)](.agent/AGENT-ROSTER.md)
-[![Specializations: 136](https://img.shields.io/badge/VoltAgent%20Library-136%20Specializations-purple)](subagents/global/voltagent/)
-
----
-
-> **This is not the general-purpose template.**
-> This repository is the Department of War (DoW) regulated edition — purpose-built for projects operating under CMMC 2.0, FedRAMP, HIPAA, SOC 2 Type II, ISO/IEC 42001, and DoW CSRMC. If your project does not require federal compliance frameworks, see the standard [AI PM Builder Template](https://github.com/jdavis-cyber/ai-pm-builder-template).
+[![Specializations: 136](https://img.shields.io/badge/Specializations-136-purple)](subagents/global/)
 
 ---
 
 ## What This Is
 
-A 15-agent autonomous software factory designed specifically for regulated, mission-critical development. Every agent in this system operates under a compliance envelope. Nothing ships without a Phase Gate. Nothing starts without a Definition of Ready. And nothing passes compliance review without the Security & Compliance Officer signing off — or generating a documented Override Register entry explaining exactly why she didn't.
+A 15-agent autonomous software factory purpose-built for regulated, mission-critical development. Every agent in this system operates under a compliance envelope. Nothing ships without a Phase Gate. Nothing starts without a Definition of Ready. And nothing passes compliance review without the Security & Compliance Officer signing off — or generating a documented Override Register entry explaining exactly why she didn't.
 
 This is not a template you configure. It is a governed system you activate.
 
@@ -75,9 +70,9 @@ The Security Officer defaults to **BLOCKED** when compliance cannot be confirmed
 
 ---
 
-## Execution Depth: VoltAgent Augmentation
+## Execution Depth: Agent Specialization Library
 
-Every agent in this factory is backed by a library of 136 specialized execution packages sourced from [VoltAgent/awesome-codex-subagents](https://github.com/VoltAgent/awesome-codex-subagents), wrapped in DoW-compliant TOML format.
+Every agent in this factory is backed by a library of 136 specialized execution packages, wrapped in DoW-compliant TOML format and organized across 10 capability domains.
 
 ```
 subagents/
