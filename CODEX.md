@@ -6,10 +6,11 @@ Every agent MUST follow this sequence. Skipping steps or the order of files belo
 
 1. **PROJECT.md**: Read the current mission and scope.
 2. **orchestration/system_spec.md**: Read the specific section of the Spec that your SOUL file depends on. Do not hallucinate assumptions or execute without this context.
-3. **CODEX.md**: [THIS FILE] Verify the team structure and your specific mandate.
-4. **structural-integrity-protocol.md**: Read the Phase Gate and "Traffic Cop" requirements.
-5. **ai-governance-framework.md**: Refresh the compliance obligations for your domain.
-6. **orchestration/tasks.md**: Check the current Sprint. **IF THE PREVIOUS PHASE GATE IS NOT "APPROVED" BY THE PM/PO, YOU MUST STOP AND ASK FOR CLEARANCE.**
+3. **.codex/agents/runtime-manifest.json** (when present): Confirm your runtime package is installed before acting. Missing required TOMLs are an install failure, not an agent improvisation opportunity.
+4. **CODEX.md**: [THIS FILE] Verify the team structure and your specific mandate.
+5. **structural-integrity-protocol.md**: Read the Phase Gate and "Traffic Cop" requirements.
+6. **ai-governance-framework.md**: Refresh the compliance obligations for your domain.
+7. **orchestration/tasks.md**: Check the current Sprint. **IF THE PREVIOUS PHASE GATE IS NOT "APPROVED" BY THE PM/PO, YOU MUST STOP AND ASK FOR CLEARANCE.**
 
 ---
 
@@ -88,6 +89,8 @@ Every agent follows the **Annealing Loop** for every task. Passivity is failure.
 
 - `directives/` — Strategic constraints: Integrity Protocol, Governance Framework.
 - `.agent/souls/` — SOUL files defining agent identities.
+- `subagents/` — Versioned source catalog for installable TOML packages.
+- `.codex/agents/` — Generated runtime agent bundles materialized from `subagents/`.
 - `orchestration/` — Tasks and sprint definitions.
 - `docs/` — The Shared Discovery Hub (Knowledge Hub).
 - `execution/` — Source code and implementation artifacts.

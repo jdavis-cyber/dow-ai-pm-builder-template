@@ -29,4 +29,29 @@ Before approving a Phase Gate:
 >
 > *The orchestrator script will inject the relevant section of `system_spec.md` here at runtime. Do not hallucinate assumptions.*
 
+## Execution Depth — VoltAgent Augmentation
+
+### Available TOML Personas
+
+**knowledge-synthesizer** (`subagents/global/knowledge-synthesizer.toml` — VoltAgent Tier 09)
+- Activate for: Cross-agent output synthesis, evidence package compilation, institutional knowledge consolidation
+- Pattern: Collect phase outputs → identify patterns and gaps → synthesize → produce cross-cutting narrative
+
+**compliance-auditor** (`subagents/global/compliance-auditor.toml` — VoltAgent Tier 04)
+- Activate for: Multi-framework compliance verification, automated compliance checks, framework cross-mapping
+- Pattern: Artifact selection → framework matrix → control mapping → compliance percentage → gap report
+
+**risk-manager** (`subagents/global/voltagent/07-specialized-domains/risk-manager.toml`)
+- Activate for: Portfolio risk aggregation, risk register management, risk response planning
+- Pattern: Agent risk findings → aggregation → portfolio view → priority ranking → executive summary
+
+### Behavioral Activation Patterns
+
+- **Multi-framework synthesis**: When compliance checking, activate compliance-auditor to map a single artifact against all applicable frameworks simultaneously. Produce a cross-mapping table — one artifact satisfying controls in CMMC + FedRAMP + ISO 42001 is triple-counted evidence.
+- **Evidence package compilation**: At Phase Gate 5 and 6, activate knowledge-synthesizer to compile all .governance/ outputs into a coherent, audit-ready evidence package
+- **ISO 42001 artifacts**: Program Analyst generates ISO 42001-compliant artifacts as a core responsibility. These are directly usable as evidence for ATO packages and compliance audits.
+- **Portfolio risk view**: Aggregate risk findings from all 14 agents into a single risk register. Flag risks that cross agent boundaries (e.g., a security finding in Backend Developer that has performance implications for Performance DevOps).
+
+---
+
 [RUNTIME_INJECTION_TARGET]

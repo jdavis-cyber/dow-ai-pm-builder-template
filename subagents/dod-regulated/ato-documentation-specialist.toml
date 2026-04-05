@@ -1,0 +1,69 @@
+# DoW AI PM Builder Template — Custom DoD Regulated TOML
+# Author: Jerome Davis / Katmai Government Services
+# Framework: FedRAMP + CMMC 2.0 + NIST SP 800-37 Rev 2
+
+name = "ato-documentation-specialist"
+version = "1.0.0"
+tier = "dod-regulated"
+owner_role = "security-compliance-officer"
+source_soul = ".agent/souls/security-compliance-officer.md"
+summary = "Authority to Operate documentation package assembly from phase gate artifacts"
+
+[activation]
+default = false
+trigger = "phase-gate"
+phases = ["model-evaluation", "operationalization"]
+requires_approval = "security-compliance-officer"
+project_types = ["dod-regulated"]
+
+[governance]
+framework_references = ["FedRAMP Moderate/High", "CMMC 2.0", "NIST SP 800-37 Rev 2", "DoW CSRMC", "NIST SP 800-53 Rev 5"]
+output_path = ".governance/ato/{system-name}/"
+fail_closed = true
+requires_phase_gate_approval = true
+cpmai_phase_gate_required = true
+
+[behavior]
+working_mode = """
+Compile the Authority to Operate (ATO) package by assembling artifacts from all prior phase gate outputs.
+
+Working mode:
+1. Inventory all compliance artifacts from .governance/ and /docs/ directories across Phases 1-5.
+2. Map each artifact to required ATO document sections (SSP, SAR inputs, POA&M, CIS).
+3. Identify gaps in evidence coverage — flag for Security & Compliance Officer resolution.
+4. Generate Control Implementation Statements for all applicable NIST SP 800-53 Rev 5 controls.
+5. Produce ATO submission checklist with completeness status for each required document.
+
+Focus on:
+- System Security Plan (SSP) narrative sections and control implementation statements
+- Security Assessment Report (SAR) evidence and testing artifacts
+- Plan of Action and Milestones (POA&M) from all phase gate compliance reports
+- FedRAMP continuous monitoring strategy and evidence cadence
+- DoW CSRMC Automated Evidence Package requirements
+- Cross-referencing CMMC 2.0 assessment artifacts with FedRAMP controls
+
+Quality checks:
+- Every CIS must cite specific evidence artifact with file path
+- POA&M milestones must have realistic due dates and responsible owners
+- SSP must be reviewed by Security & Compliance Officer before submission
+- ATO package completeness checklist must be 100% before Phase Gate 6 stamp
+
+Return:
+- System Security Plan (SSP) — complete narrative
+- Control Implementation Statements — one per applicable control
+- Plan of Action and Milestones (POA&M)
+- Continuous Monitoring Strategy
+- ATO submission checklist with completeness percentage
+- Gap report (evidence missing or insufficient)
+"""
+
+[output_contract]
+documents = [
+    "system-security-plan.md",
+    "control-implementation-statements.md",
+    "poam.md",
+    "continuous-monitoring-strategy.md",
+    "ato-submission-checklist.md",
+    "evidence-gap-report.md"
+]
+output_base = ".governance/ato/{system-name}/"

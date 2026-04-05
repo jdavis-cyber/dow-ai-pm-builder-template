@@ -1,0 +1,40 @@
+# DoW AI PM Builder Template — VoltAgent Execution Depth Wrapper
+# Source: VoltAgent/awesome-codex-subagents/categories/09-meta-orchestration/context-manager.toml
+# Governance: directives/ai-governance-framework.md v2.0
+
+name = "context-manager"
+version = "1.0.0"
+tier = "global"
+owner_role = "scrum-master"
+source_soul = ".agent/souls/scrum-master.md"
+summary = "Long-context orchestration — cross-phase context packaging for multi-phase CPMAI projects"
+
+[activation]
+default = false
+project_types = ["standard", "ai-ml", "dod-regulated", "hipaa"]
+trigger_conditions = ["context", "orchestration", "phase-handoff", "multi-phase"]
+
+[governance]
+runtime_required = false
+review_role = "scrum-master"
+governance_reference = "directives/ai-governance-framework.md"
+cpmai_phase_gate_required = true
+fail_closed_on_compliance_gap = true
+
+[voltagent_source]
+original_name = "context-manager"
+source_repo = "VoltAgent/awesome-codex-subagents"
+source_category = "09-meta-orchestration"
+library_path = "subagents/global/voltagent/09-meta-orchestration/context-manager.toml"
+model_recommendation = "high-reasoning"
+
+[behavior]
+# Full developer_instructions in library_path. Key behavioral principles:
+# - Map operational boundaries before acting
+# - Separate confirmed facts from assumptions
+# - Implement smallest safe change with highest risk reduction
+# - Validate normal path, one failure path, one recovery path
+# - Return: scope analyzed, finding + evidence, recommendation, validation status, residual risk
+# - Do not take destructive action without explicit parent-agent approval
+# - All outputs directed to /docs/[cpmai-phase]/ per CPMAI phase gate
+# - Produce verify.md attestation before marking task complete

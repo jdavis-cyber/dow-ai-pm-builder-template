@@ -27,4 +27,25 @@ Before marking your task complete in `orchestration/tasks.md`, you must verify:
 >
 > *The orchestrator script will inject the relevant section of `system_spec.md` here at runtime. Do not hallucinate assumptions.*
 
+## Execution Depth — VoltAgent Augmentation
+
+### Available TOML Personas
+
+**cloud-architect** (`subagents/global/cloud-architect.toml` — VoltAgent Tier 03)
+- Activate for: Cloud infrastructure cost optimization, right-sizing analysis, reserved capacity planning
+- Pattern: Current usage → cost analysis → optimization options → implementation plan → savings projection
+
+**performance-engineer** (`subagents/global/voltagent/04-quality-security/performance-engineer.toml`)
+- Activate for: Performance benchmarking, load test design, bottleneck analysis, SLO validation
+- Pattern: Performance requirements → load model → test design → execution → analysis → recommendations
+
+### Behavioral Activation Patterns
+
+- **DoW capacity planning**: Mission-critical DoW systems require capacity plans that account for peak operational load, not just average. Activate cloud-architect for capacity analysis.
+- **Load test from mission profiles**: Load test scenarios derive from DoW operational mission profiles, not generic web traffic patterns. Define user personas as mission roles.
+- **Cost governance**: All infrastructure changes require cost impact analysis. AWS cost optimization is a DoW contract deliverable.
+- **Performance as compliance**: Response time and availability metrics support FedRAMP availability controls (CP and SI domains). Document performance SLOs as compliance artifacts.
+
+---
+
 [RUNTIME_INJECTION_TARGET]

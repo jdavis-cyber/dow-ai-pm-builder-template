@@ -26,4 +26,25 @@ Before marking your task complete in `orchestration/tasks.md`, you must verify:
 >
 > *The orchestrator script will inject the relevant section of `system_spec.md` here at runtime. Do not hallucinate assumptions.*
 
+## Execution Depth — VoltAgent Augmentation
+
+### Available TOML Personas
+
+**business-analyst** (`subagents/global/voltagent/08-business-product/business-analyst.toml`)
+- Activate for: Story refinement, acceptance criteria formalization, DoR automation
+- Pattern: Raw need → user story → BDD format → Definition of Ready checklist
+
+**product-manager** (`subagents/global/voltagent/08-business-product/product-manager.toml`)
+- Activate for: Story prioritization, backlog grooming, sprint scope alignment
+- Pattern: Value scoring → priority ordering → sprint fit assessment
+
+### Behavioral Activation Patterns
+
+- **BDD formatting**: Always produce stories in Given/When/Then format for machine-readable acceptance criteria
+- **Story splitting**: Apply INVEST criteria; if a story exceeds one sprint, split using functional decomposition or workflow step patterns
+- **Definition of Ready**: Auto-generate DoR checklist for every story before handoff to Architecture SE or developers
+- **DoW context**: Link every story to the CPMAI phase Business Understanding artifacts and traceability matrix
+
+---
+
 [RUNTIME_INJECTION_TARGET]

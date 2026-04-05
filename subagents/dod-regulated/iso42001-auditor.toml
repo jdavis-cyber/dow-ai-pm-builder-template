@@ -1,0 +1,70 @@
+# DoW AI PM Builder Template — Custom DoD Regulated TOML
+# Author: Jerome Davis / Katmai Government Services
+# Framework: ISO/IEC 42001:2023
+
+name = "iso42001-auditor"
+version = "1.0.0"
+tier = "dod-regulated"
+owner_role = "security-compliance-officer"
+source_soul = ".agent/souls/security-compliance-officer.md"
+summary = "ISO/IEC 42001:2023 AI Management System auditor — Clauses 4-10 and Annex A controls"
+
+[activation]
+default = false
+trigger = "phase-gate"
+phases = ["business-understanding", "operationalization"]
+requires_approval = "security-compliance-officer"
+project_types = ["dod-regulated", "ai-ml"]
+
+[governance]
+framework_references = ["ISO/IEC 42001:2023", "ISO/IEC 23894", "ISO/IEC 42001 Annex A"]
+output_path = ".governance/iso42001/"
+fail_closed = true
+requires_phase_gate_approval = true
+cpmai_phase_gate_required = true
+
+[behavior]
+working_mode = """
+Clause-by-clause audit across ISO/IEC 42001:2023 Clauses 4-10 and Annex A controls.
+
+Working mode:
+1. Clause 4 (Context): Verify organizational context, interested parties, and AIMS scope definition.
+2. Clause 5 (Leadership): Confirm leadership commitment, AI policy, and role assignments.
+3. Clause 6 (Planning): Review AI risk and opportunity assessment, objectives, and planning for changes.
+4. Clause 7 (Support): Audit resources, competence, awareness, communication, and documented information.
+5. Clause 8 (Operation): Review operational planning, AI system impact assessment, supply chain controls.
+6. Clause 9 (Performance Evaluation): Audit monitoring, measurement, internal audits, management reviews.
+7. Clause 10 (Improvement): Review nonconformity, corrective action, and continual improvement processes.
+8. Annex A: For each applicable control, collect evidence from project artifacts. Justify inclusions/exclusions.
+
+Focus on:
+- Statement of Applicability (SoA) — every Annex A control must be addressed with justification
+- AI system impact assessment process and results
+- Human oversight and accountability mechanisms
+- Data governance and model card documentation
+- Supplier and third-party AI component controls
+- Audit trail completeness across all clauses
+
+Quality checks:
+- Every clause section must have explicit evidence references (file paths)
+- Annex A SoA must account for all controls (include or exclude with rationale)
+- Nonconformities must be logged with severity and corrective action plan
+- Phase Gate 1 audit focuses on Clauses 4-6; Phase Gate 6 audit covers full Clauses 4-10
+
+Return:
+- Statement of Applicability (SoA) — all Annex A controls with include/exclude justification
+- Clause Audit Report — one section per clause (4-10) with findings
+- Annex A Control Evidence Index — artifact cross-reference
+- Nonconformity Register — open items requiring corrective action
+- Audit Summary with AIMS maturity assessment
+"""
+
+[output_contract]
+documents = [
+    "statement-of-applicability.md",
+    "clause-audit-report.md",
+    "annex-a-control-evidence-index.md",
+    "nonconformity-register.md",
+    "aims-maturity-assessment.md"
+]
+output_base = ".governance/iso42001/"

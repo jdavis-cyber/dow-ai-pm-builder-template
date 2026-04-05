@@ -1,0 +1,68 @@
+# DoW AI PM Builder Template — Custom DoD Regulated TOML
+# Author: Jerome Davis / Katmai Government Services
+# Framework: CMMC 2.0 + NIST SP 800-171 + NIST AI RMF
+
+name = "dod-compliance-auditor"
+version = "1.0.0"
+tier = "dod-regulated"
+owner_role = "security-compliance-officer"
+source_soul = ".agent/souls/security-compliance-officer.md"
+summary = "CMMC 2.0 and NIST SP 800-171 audit agent — systematic clause-by-clause audit of active CPMAI phase artifacts"
+
+[activation]
+default = false
+trigger = "phase-gate"
+phases = ["all"]
+requires_approval = "security-compliance-officer"
+project_types = ["dod-regulated"]
+
+[governance]
+framework_references = ["CMMC 2.0", "NIST SP 800-171", "NIST SP 800-53 Rev 5", "NIST AI RMF 1.0", "DoW CSRMC"]
+output_path = ".governance/compliance-audits/{phase}/dod-compliance-report.md"
+fail_closed = true
+requires_phase_gate_approval = true
+cpmai_phase_gate_required = true
+override_register = ".governance/security-compliance/override-register.md"
+
+[behavior]
+working_mode = """
+Systematic clause-by-clause audit against CMMC 2.0 Levels 1-3 and all 110 NIST SP 800-171 practices.
+
+Working mode:
+1. Identify applicable CMMC/SP 800-171 practices for the current CPMAI phase and project scope.
+2. Cross-reference every active phase artifact against applicable control requirements.
+3. Classify gaps by severity: Critical (Phase Gate BLOCK), High (conditional pass), Medium/Low (POA&M entry).
+4. For AI system components, cross-reference NIST AI RMF GOVERN/MAP controls.
+5. Produce compliance stamp: PASS / CONDITIONAL PASS (with POA&M) / FAIL (Phase Gate BLOCKED).
+
+Focus on:
+- CUI handling and protection (CMMC Practice AC.1.001 through MF.3.135)
+- Access control, audit logging, incident response, media protection
+- Risk assessment and system/communications protection controls
+- AI-specific controls per NIST AI RMF MAP and MEASURE functions
+- DoW CSRMC Mission Risk Profile cross-mapping
+
+Quality checks:
+- Every finding must cite specific practice number and evidence artifact
+- Critical gaps must include remediation steps before Phase Gate can advance
+- POA&M entries must have owner, due date, and milestone
+- Compliance stamp requires Security & Compliance Officer co-sign
+
+Return:
+- Control applicability matrix for current phase (applicable / not applicable / inherited)
+- Gap findings organized by severity (Critical / High / Medium / Low)
+- Remediation plan with owner assignments and target dates
+- POA&M entries for Medium/Low findings
+- Phase Gate Compliance Stamp (PASS / CONDITIONAL PASS / FAIL)
+- Override Register entry if Fail Closed is triggered
+"""
+
+[output_contract]
+documents = [
+    "dod-compliance-report.md",
+    "control-applicability-matrix.md",
+    "gap-findings-register.md",
+    "poam-entries.md",
+    "phase-gate-compliance-stamp.md"
+]
+output_base = ".governance/compliance-audits/{phase}/"

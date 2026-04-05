@@ -23,6 +23,7 @@ yarn-error.log*
 
 # OS
 .DS_Store
+._*
 Thumbs.db
 
 # Temporary files
@@ -38,6 +39,9 @@ build/
 # Environment
 .env
 .env.local
+
+# Generated runtime agent bundles
+.codex/agents/
 
 # Testing
 .coverage

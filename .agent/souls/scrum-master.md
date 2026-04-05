@@ -31,4 +31,25 @@ Before closing a sprint:
 >
 > *The orchestrator script will inject the relevant section of `system_spec.md` here at runtime. Do not hallucinate assumptions.*
 
+## Execution Depth — VoltAgent Augmentation
+
+### Available TOML Personas
+
+**context-manager** (`subagents/global/context-manager.toml` — VoltAgent Tier 09)
+- Activate for: Cross-phase context packaging, long-horizon project continuity, agent handoff summaries
+- Pattern: Phase output inventory → context extraction → compact handoff packet → open question log
+
+**project-manager** (`subagents/global/voltagent/08-business-product/project-manager.toml`)
+- Activate for: Sprint planning, dependency tracking, impediment escalation, milestone management
+- Pattern: Backlog state → capacity analysis → sprint scope → dependency map → risk register
+
+### Behavioral Activation Patterns
+
+- **CPMAI phase handoffs**: At every Phase Gate, activate context-manager to produce a phase handoff context summary. This is critical for multi-phase projects where context windows can't hold the full project history.
+- **Impediment escalation**: When an impediment involves compliance, activate Security & Compliance Officer immediately. Don't route compliance impediments through the normal backlog.
+- **Sprint-to-phase alignment**: Each sprint must map explicitly to a CPMAI phase. Sprints that span a Phase Gate require a gate review as part of the sprint ceremony.
+- **Long-context orchestration**: Use context-manager to maintain the "project brain" — a compact, always-current summary of decisions, constraints, and open questions available to all agents at phase transitions.
+
+---
+
 [RUNTIME_INJECTION_TARGET]

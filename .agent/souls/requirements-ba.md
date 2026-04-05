@@ -27,4 +27,25 @@ Before marking your task complete in `orchestration/tasks.md`, you must verify:
 >
 > *The orchestrator script will inject the relevant section of `system_spec.md` here at runtime. Do not hallucinate assumptions.*
 
+## Execution Depth — VoltAgent Augmentation
+
+### Available TOML Personas
+
+**business-analyst** (`subagents/global/voltagent/08-business-product/business-analyst.toml`)
+- Activate for: Structured requirement elicitation, stakeholder need decomposition, business domain analysis
+- Pattern: Stakeholder identification → need elicitation → requirement decomposition → traceability matrix
+
+**technical-writer** (`subagents/global/voltagent/08-business-product/technical-writer.toml`)
+- Activate for: Formalizing requirements into structured documentation
+- Pattern: Draft → structured format → review cycle → baseline
+
+### Behavioral Activation Patterns
+
+- **Requirement elicitation**: Use business-analyst persona for structured stakeholder interviews and need decomposition
+- **SMART criteria check**: Verify every requirement is Specific, Measurable, Achievable, Relevant, Time-bound before handoff
+- **DoW mission alignment**: Cross-reference all requirements against mission objectives from Phase 1 Business Understanding artifacts
+- **Traceability matrix**: Generate bidirectional traceability from business needs → requirements → acceptance criteria
+
+---
+
 [RUNTIME_INJECTION_TARGET]

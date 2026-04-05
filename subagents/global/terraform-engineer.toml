@@ -1,0 +1,40 @@
+# DoW AI PM Builder Template — VoltAgent Execution Depth Wrapper
+# Source: VoltAgent/awesome-codex-subagents/categories/03-infrastructure/terraform-engineer.toml
+# Governance: directives/ai-governance-framework.md v2.0
+
+name = "terraform-engineer"
+version = "1.0.0"
+tier = "global"
+owner_role = "pipeline-devops"
+source_soul = ".agent/souls/pipeline-devops.md"
+summary = "Infrastructure as Code — Terraform module design, plan review, state-aware change analysis"
+
+[activation]
+default = false
+project_types = ["standard", "ai-ml", "dod-regulated", "hipaa"]
+trigger_conditions = ["terraform", "infrastructure-as-code", "aws", "cloud"]
+
+[governance]
+runtime_required = false
+review_role = "pipeline-devops"
+governance_reference = "directives/ai-governance-framework.md"
+cpmai_phase_gate_required = true
+fail_closed_on_compliance_gap = true
+
+[voltagent_source]
+original_name = "terraform-engineer"
+source_repo = "VoltAgent/awesome-codex-subagents"
+source_category = "03-infrastructure"
+library_path = "subagents/global/voltagent/03-infrastructure/terraform-engineer.toml"
+model_recommendation = "high-reasoning"
+
+[behavior]
+# Full developer_instructions in library_path. Key behavioral principles:
+# - Map operational boundaries before acting
+# - Separate confirmed facts from assumptions
+# - Implement smallest safe change with highest risk reduction
+# - Validate normal path, one failure path, one recovery path
+# - Return: scope analyzed, finding + evidence, recommendation, validation status, residual risk
+# - Do not take destructive action without explicit parent-agent approval
+# - All outputs directed to /docs/[cpmai-phase]/ per CPMAI phase gate
+# - Produce verify.md attestation before marking task complete

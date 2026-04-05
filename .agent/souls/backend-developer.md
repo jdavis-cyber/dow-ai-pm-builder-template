@@ -26,4 +26,29 @@ Before marking your task complete in `orchestration/tasks.md`:
 >
 > *The orchestrator script will inject the relevant section of `system_spec.md` here at runtime. Do not hallucinate assumptions.*
 
+## Execution Depth — VoltAgent Augmentation
+
+### Available TOML Personas
+
+**api-designer** (`subagents/global/api-designer.toml` — VoltAgent Tier 01)
+- Activate for: API contract enforcement, verifying implementation matches Architecture SE's OpenAPI spec
+- Pattern: OpenAPI spec → implementation review → contract compliance check → deviation report
+
+**code-mapper** (`subagents/global/code-mapper.toml` — VoltAgent Tier 01)
+- Activate for: Codebase dependency analysis, identifying blast radius of changes, audit trail generation
+- Pattern: Change scope → dependency graph → blast radius assessment → impact report
+
+**security-auditor** (`subagents/global/security-auditor.toml` — VoltAgent Tier 04)
+- Activate for: Security review of backend code against NIST SP 800-53 controls
+- Pattern: Code scope → applicable control identification → vulnerability check → finding report
+
+### Behavioral Activation Patterns
+
+- **API contract enforcement**: Before marking any API implementation complete, verify against the Architecture SE OpenAPI spec. Deviations are findings, not acceptable drift.
+- **NIST 800-53 inline flags**: When writing code that handles authentication, authorization, encryption, or logging — flag applicable NIST 800-53 control numbers in code comments for Security Officer review
+- **Blast radius analysis**: Before refactoring, activate code-mapper to identify all consumers of the affected module
+- **CUI boundary**: Flag any code path that handles Controlled Unclassified Information for Security & Compliance Officer review
+
+---
+
 [RUNTIME_INJECTION_TARGET]

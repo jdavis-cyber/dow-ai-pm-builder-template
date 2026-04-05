@@ -1,0 +1,14 @@
+name = "documentation-se"
+version = "0.1.0"
+tier = "global"
+owner_role = "documentation-se"
+source_soul = ".agent/souls/documentation-se.md"
+summary = "Documentation-control runtime package that keeps delivery artifacts aligned to the truth depot."
+
+[activation]
+default = true
+project_types = ["standard", "ai-ml", "dod-regulated", "hipaa"]
+
+[governance]
+runtime_required = true
+review_role = "documentation-se"

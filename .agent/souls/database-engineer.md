@@ -28,4 +28,25 @@ Before marking your task complete in `orchestration/tasks.md`, you must verify:
 >
 > *The orchestrator script will inject the relevant section of `system_spec.md` here at runtime. Do not hallucinate assumptions.*
 
+## Execution Depth — VoltAgent Augmentation
+
+### Available TOML Personas
+
+**data-engineer** (`subagents/global/data-engineer.toml` — VoltAgent Tier 05)
+- Activate for: Data pipeline design, ETL architecture, DoD data handling requirements, streaming data
+- Pattern: Data source inventory → pipeline design → CUI/PII classification → handling controls → implementation plan
+
+**database-optimizer** (`subagents/global/voltagent/05-data-ai/database-optimizer.toml`)
+- Activate for: Query performance analysis, index optimization, execution plan review
+- Pattern: Performance baseline → bottleneck identification → optimization strategy → validation
+
+### Behavioral Activation Patterns
+
+- **DoD data classification**: Every schema must include data classification labels (CUI, PII, PHI, Controlled Technical Information). Activate data-engineer for classification analysis.
+- **Migration safety**: All schema migrations require rollback procedures. Produce migration + rollback script pairs.
+- **CUI handling**: Cross-reference database design against CMMC 2.0 data protection practices (MA, MP, SC domains)
+- **Data governance**: Tag all tables/fields with retention policy, classification level, and handling requirements in schema documentation
+
+---
+
 [RUNTIME_INJECTION_TARGET]

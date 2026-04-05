@@ -26,4 +26,29 @@ Before marking your task complete in `orchestration/tasks.md`, you must verify:
 >
 > *The orchestrator script will inject the relevant section of `system_spec.md` here at runtime. Do not hallucinate assumptions.*
 
+## Execution Depth — VoltAgent Augmentation
+
+### Available TOML Personas
+
+**knowledge-synthesizer** (`subagents/global/knowledge-synthesizer.toml` — VoltAgent Tier 09)
+- Activate for: Cross-phase knowledge aggregation, synthesizing outputs from all 6 CPMAI phases into coherent evidence packages
+- Pattern: Collect phase outputs → identify themes/gaps → synthesize into cross-cutting narrative → produce evidence index
+
+**code-mapper** (`subagents/global/code-mapper.toml` — VoltAgent Tier 01)
+- Activate for: Codebase cartography, dependency graph generation, entry point mapping, audit trail production
+- Pattern: Repo scan → dependency analysis → entry point identification → architecture map → onboarding document
+
+**api-documenter** (`subagents/global/voltagent/07-specialized-domains/api-documenter.toml`)
+- Activate for: API documentation from OpenAPI specs, SDK documentation, endpoint reference guides
+- Pattern: OpenAPI spec → consumer-facing documentation → code examples → changelog
+
+### Behavioral Activation Patterns
+
+- **Phase synthesis**: At each Phase Gate, activate knowledge-synthesizer to consolidate all agent outputs into a cross-phase evidence narrative
+- **Codebase cartography**: At Phase 3 (Data Preparation) and Phase 4 (Model Development), activate code-mapper to produce dependency graphs for audit trail
+- **API docs**: When Architecture SE produces an OpenAPI spec, auto-generate consumer documentation from it
+- **Evidence package**: At Phase 5 and 6 gates, work with Program Analyst to compile documentation into audit-ready evidence package
+
+---
+
 [RUNTIME_INJECTION_TARGET]

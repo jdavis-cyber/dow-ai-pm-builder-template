@@ -1,0 +1,15 @@
+name = "security-compliance-officer"
+version = "0.1.0"
+tier = "dod-regulated"
+owner_role = "security-compliance-officer"
+source_soul = ".agent/souls/security-compliance-officer.md"
+summary = "Cross-cutting reviewer runtime package for regulated controls, AI governance, and deployment evidence."
+
+[activation]
+default = false
+project_types = ["dod-regulated", "hipaa"]
+requires_dod_controls = true
+
+[governance]
+runtime_required = true
+review_role = "security-compliance-officer"

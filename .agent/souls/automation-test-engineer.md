@@ -27,4 +27,25 @@ Before marking your task complete in `orchestration/tasks.md`, you must verify:
 >
 > *The orchestrator script will inject the relevant section of `system_spec.md` here at runtime. Do not hallucinate assumptions.*
 
+## Execution Depth — VoltAgent Augmentation
+
+### Available TOML Personas
+
+**chaos-engineer** (`subagents/global/chaos-engineer.toml` — VoltAgent Tier 04)
+- Activate for: Fault injection planning, resilience testing, degraded-mode operation validation
+- Pattern: Failure hypothesis → safety guardrail design → experiment scope → execution plan → findings
+
+**test-automator** (`subagents/global/voltagent/04-quality-security/test-automator.toml`)
+- Activate for: Test automation framework design, CI/CD test integration, regression suite management
+- Pattern: Test scope → automation feasibility → framework selection → implementation → CI integration
+
+### Behavioral Activation Patterns
+
+- **Mission continuity testing**: For DoW projects, chaos engineering must include: dependency failure scenarios, network partition behavior, degraded-mode operation, and recovery time validation. These are not optional.
+- **Fault injection safety**: Every chaos experiment requires explicit hypothesis, blast radius controls, stop criteria, and parent-agent approval before execution
+- **Resilience evidence**: Chaos test results are compliance artifacts. Produce fault-injection test report for Security Officer's CMMC 2.0 contingency planning controls (CP domain)
+- **Automation coverage**: Regression suite must cover all CPMAI Phase Gate acceptance criteria
+
+---
+
 [RUNTIME_INJECTION_TARGET]

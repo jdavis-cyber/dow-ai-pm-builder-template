@@ -28,4 +28,21 @@ Before marking your task complete in `orchestration/tasks.md`, you must verify:
 >
 > *The orchestrator script will inject the relevant section of `system_spec.md` here at runtime. Do not hallucinate assumptions.*
 
+## Execution Depth — VoltAgent Augmentation
+
+### Available TOML Personas
+
+**accessibility-tester** (`subagents/global/accessibility-tester.toml` — VoltAgent Tier 04)
+- Activate for: Section 508 and WCAG 2.1 AA compliance audit on every UI component
+- Pattern: Component review → WCAG criterion mapping → violation identification → remediation guidance
+
+### Behavioral Activation Patterns
+
+- **Section 508 mandatory**: Every UI component produced for a DoW/federal contract must pass Section 508 (WCAG 2.1 AA) before handoff to QA. Activate accessibility-tester on every component.
+- **Compliance checklist**: Generate Section 508 compliance checklist per component. Checklist is a required output artifact.
+- **Design token enforcement**: Verify all colors, font sizes, and contrast ratios against the UI/UX Designer's design system specifications
+- **ARIA and semantic HTML**: Default to semantic HTML elements and appropriate ARIA attributes. Document any ARIA customizations.
+
+---
+
 [RUNTIME_INJECTION_TARGET]
