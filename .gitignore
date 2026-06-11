@@ -54,3 +54,6 @@ logs/
 
 # Claude Code scratch
 .claude/
+
+# Machine-local agent context
+CLAUDE.local.md
