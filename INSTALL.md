@@ -34,7 +34,7 @@ cd dow-ai-pm-builder-template
 bash automation/install-subagents.sh
 
 # 3. Validate the workspace
-python3 automation/validate_spec.py
+python3 automation/validate_spec.py orchestration/system_spec.md
 ```
 
 `install-subagents.sh` reads `subagents/install-config.json` (project profile:
@@ -62,7 +62,7 @@ machine-agnostic.
 
 ## Verification checklist
 
-- [ ] `python3 automation/validate_spec.py` exits clean (zero-TBD spec lint)
+- [ ] `python3 automation/validate_spec.py orchestration/system_spec.md` exits clean (zero-TBD spec lint)
 - [ ] `.codex/agents/runtime-manifest.json` exists and lists the agent bundle
 - [ ] `.agent/souls/` contains the agent SOUL definitions
 - [ ] Your coding agent, on startup, reports completing the Double-Lock
