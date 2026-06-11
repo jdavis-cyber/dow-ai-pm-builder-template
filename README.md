@@ -10,6 +10,8 @@
 
 ---
 
+> **Get started:** [INSTALL.md](INSTALL.md) — fresh machine to activated factory in under 15 minutes. **Demoing?** [DEMO.md](DEMO.md) — scripted auditor and executive walkthroughs.
+
 ## What This Is
 
 A 15-agent autonomous software factory purpose-built for regulated, mission-critical development. Every agent in this system operates under a compliance envelope. Nothing ships without a Phase Gate. Nothing starts without a Definition of Ready. And nothing passes compliance review without the Security & Compliance Officer signing off — or generating a documented Override Register entry explaining exactly why she didn't.
