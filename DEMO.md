@@ -11,7 +11,7 @@ lean into that.
 
 - [ ] Fresh clone on the demo machine; follow `INSTALL.md` exactly —
       any friction found is a doc bug to fix tonight
-- [ ] `bash automation/install-subagents.sh` ran; `.codex/agents/runtime-manifest.json` exists
+- [ ] `python3 automation/install_subagents.py` ran; `.codex/agents/runtime-manifest.json` exists
 - [ ] `python3 automation/validate_spec.py orchestration/system_spec.md` → PASSED
 - [ ] Terminal tabs ready: repo root in an editor/file tree, one shell,
       `git log --oneline -15`
@@ -34,7 +34,7 @@ lean into that.
 Run this in front of them, narrating the lifecycle:
 
 ```bash
-bash automation/init_project.sh demo-project
+python3 automation/init_project.py demo-project
 ```
 
 > "That just stamped out a brand-new project workspace: its own git repo,
