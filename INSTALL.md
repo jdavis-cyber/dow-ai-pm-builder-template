@@ -49,16 +49,42 @@ If you use a local knowledge layer (e.g., the NotebookLM `nlm` CLI), create a
 and notebook IDs. It is gitignored; the committed `CLAUDE.md` stays
 machine-agnostic.
 
+## Starting a New Project (the normal workflow)
+
+**The template repo stays pristine — you never build inside it.** Each
+project gets its own self-contained workspace stamped from the template:
+
+```bash
+bash automation/init_project.sh my-project            # sibling directory
+bash automation/init_project.sh my-project ~/projects # or explicit parent
+```
+
+This creates `my-project/` as a fresh git repository containing the pinned
+factory process (agents, directives, gates), a blank spec and task board
+instantiated from their templates, empty `execution/`, `docs/`,
+`.governance/`, and `requirements/` scaffolds, and a `TEMPLATE_PROVENANCE.md`
+recording exactly which template version governs the build.
+
+**The project folder is the deliverable.** As the factory runs, application
+source accumulates in `execution/`, compliance evidence in `.governance/`,
+and engineering artifacts in `docs/` — so at the end you hand the customer
+one repository: the deployable software plus the complete paperwork their
+accreditors need (RMF/ATO evidence, ADRs, test records, gate sign-offs).
+The template is never part of the delivery; the provenance file ties the
+process back to it.
+
 ## Activation
 
-1. Open the repository root in your AI coding agent (e.g., `claude` in this
-   directory).
+1. Open the **new project directory** in your AI coding agent (e.g.,
+   `claude` in `my-project/`).
 2. The agent's startup protocol is defined in `CLAUDE.md` (or `CODEX.md` /
    `GEMINI.md`): it must read `PROJECT.md`, `orchestration/system_spec.md`,
    and the `directives/` constitution before acting.
-3. To start a new project, instruct: **"Initialize the project and begin
-   Sprint Zero."** The Requirements BA agent runs the discovery interview in
-   `orchestration/sprint-zero-playbook.md`.
+3. Instruct: **"Initialize the project and begin Sprint Zero."** The
+   Requirements BA agent runs the discovery interview in
+   `orchestration/sprint-zero-playbook.md`. Note: the blank spec
+   intentionally fails `validate_spec.py` until Sprint Zero completes —
+   the factory will not build against an unlocked spec.
 
 ## Verification checklist
 
