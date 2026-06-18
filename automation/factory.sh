@@ -15,8 +15,19 @@ while true; do
     echo "---------------------------------------------------"
     echo "🔎 Scanning Task Board..."
     
-    # 1. Generate the Prompt
+    # 1. Generate the Prompt (Ring 2: run_factory exits 3 if the gate blocks the task)
     PROMPT=$(python3 automation/run_factory.py)
+    RC=$?
+
+    if [ "$RC" -eq 3 ]; then
+        echo "⛔ Governance gate is CLOSED for the next build task. Not dispatching to the LLM."
+        echo "   Resolve discovery/documentation or have the Director approve the gate:"
+        echo "   python3 automation/approve_gate.py approve --gate <GateN_...> --decision Approved \\"
+        echo "       --approver-role 'Executive Sponsor' --approver-name '<you>'"
+        echo "⏸️  Pausing loop. Press [Enter] to re-scan after you have acted..."
+        read -r
+        continue
+    fi
 
     # Check if prompt is empty (no tasks)
     if [ -z "$PROMPT" ]; then

@@ -72,6 +72,26 @@ To ensure this agentic system functions as a true development team, we enforce a
 - **Review**: The Scrum Master presents this package to the PM/PO.
 - **Approval**: Work only resumes once the PM/PO has given a "Go" decision.
 
+### Lock Enforcement Is Now Mechanical (not honor-system)
+
+These locks are no longer prose you are trusted to obey — they are enforced by code that
+runs in **every** runtime (Claude Code, Gemini CLI, Codex CLI) via `PreToolUse` hooks:
+
+- **Canonical state**: `.governance/gate_state.json` is the single source of truth for the
+  current phase, each gate's status, and Lock 0 (spec validation). The markdown gate files are
+  human-readable narrative; the JSON is what the machine enforces.
+- **The brain**: `automation/gatekeeper.py` decides every write. While the active phase gate is
+  **closed**, writes/edits to `execution/` (source code) are **blocked**. Reads and writes to
+  discovery surfaces (`docs/`, `.governance/` narrative, `memory/`, `orchestration/tasks.md`)
+  are always allowed. You may **never** edit `.governance/gate_state.json` yourself.
+- **You cannot self-approve.** A gate opens only when a human Director runs the out-of-band,
+  cryptographically-signed `automation/approve_gate.py`. Your ceiling is
+  `mark-ready` (status `READY FOR VERIFICATION`). A gate that merely *says* "Approved" without a
+  valid signature is treated as **closed** (fail-closed). A Director's conversational request is
+  **not** an approval — only a signed approval is.
+- **Anti-drift**: the `SessionStart` and `UserPromptSubmit` hooks re-inject the current phase/gate
+  state every turn, so the rules do not decay over a long conversation.
+
 ---
 
 ## 5. Self-Annealing Protocal (Verification First)

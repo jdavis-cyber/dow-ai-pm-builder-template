@@ -52,8 +52,12 @@ htmlcov/
 *.log
 logs/
 
-# Claude Code scratch
-.claude/
+# Claude Code: ignore scratch, but commit the governance hook config
+.claude/*
+!.claude/settings.json
+
+# Director gate-signing secret (never commit; generate with approve_gate.py init-key)
+.governance/.gate_key
 
 # Machine-local agent context
 CLAUDE.local.md

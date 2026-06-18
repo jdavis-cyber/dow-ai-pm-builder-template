@@ -6,10 +6,11 @@ Every agent MUST follow this sequence. Skipping steps or the order of files belo
 
 1. **PROJECT.md**: Read the current mission and scope.
 2. **orchestration/system_spec.md**: Read the specific section of the Spec that your SOUL file depends on. Do not hallucinate assumptions or execute without this context.
-3. **GEMINI.md**: [THIS FILE] Verify the team structure and your specific mandate.
-4. **structural-integrity-protocol.md**: Read the Phase Gate and "Traffic Cop" requirements.
-5. **ai-governance-framework.md**: Refresh the compliance obligations for your domain.
-6. **orchestration/tasks.md**: Check the current Sprint. **IF THE PREVIOUS PHASE GATE IS NOT "APPROVED" BY THE PM/PO, YOU MUST STOP AND ASK FOR CLEARANCE.**
+3. **.codex/agents/runtime-manifest.json** (when present): Confirm your runtime package is installed before acting. Missing required TOMLs are an install failure, not an agent improvisation opportunity.
+4. **GEMINI.md**: [THIS FILE] Verify the team structure and your specific mandate.
+5. **structural-integrity-protocol.md**: Read the Phase Gate and "Traffic Cop" requirements.
+6. **ai-governance-framework.md**: Refresh the compliance obligations for your domain.
+7. **orchestration/tasks.md**: Check the current Sprint. **IF THE PREVIOUS PHASE GATE IS NOT "APPROVED" BY THE PM/PO, YOU MUST STOP AND ASK FOR CLEARANCE.**
 
 ---
 
@@ -70,6 +71,26 @@ To ensure this agentic system functions as a true development team, we enforce a
 - **The Package**: Includes the PRD + Technical Specs + authored Governance Artifacts.
 - **Review**: The Scrum Master presents this package to the PM/PO.
 - **Approval**: Work only resumes once the PM/PO has given a "Go" decision.
+
+### Lock Enforcement Is Now Mechanical (not honor-system)
+
+These locks are no longer prose you are trusted to obey — they are enforced by code that
+runs in **every** runtime (Claude Code, Gemini CLI, Codex CLI) via `PreToolUse` hooks:
+
+- **Canonical state**: `.governance/gate_state.json` is the single source of truth for the
+  current phase, each gate's status, and Lock 0 (spec validation). The markdown gate files are
+  human-readable narrative; the JSON is what the machine enforces.
+- **The brain**: `automation/gatekeeper.py` decides every write. While the active phase gate is
+  **closed**, writes/edits to `execution/` (source code) are **blocked**. Reads and writes to
+  discovery surfaces (`docs/`, `.governance/` narrative, `memory/`, `orchestration/tasks.md`)
+  are always allowed. You may **never** edit `.governance/gate_state.json` yourself.
+- **You cannot self-approve.** A gate opens only when a human Director runs the out-of-band,
+  cryptographically-signed `automation/approve_gate.py`. Your ceiling is
+  `mark-ready` (status `READY FOR VERIFICATION`). A gate that merely *says* "Approved" without a
+  valid signature is treated as **closed** (fail-closed). A Director's conversational request is
+  **not** an approval — only a signed approval is.
+- **Anti-drift**: the `SessionStart` and `UserPromptSubmit` hooks re-inject the current phase/gate
+  state every turn, so the rules do not decay over a long conversation.
 
 ---
 

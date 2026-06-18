@@ -13,6 +13,10 @@ import os
 import re
 import sys
 
+# Shared governance brain (Ring 2: gate the autonomous loop).
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gatekeeper as gk
+
 # Configuration
 TASKS_FILE = "orchestration/tasks.md"
 MEMORY_DIR = "memory"
@@ -174,7 +178,7 @@ def generate_prompt(role, task_id, title, assigned_to):
     display_name = role.replace("-", " ").title()
 
     prompt = f"""Act as the **{display_name}**.
-Read your soul file `{soul_path}` and `GEMINI.md`.
+Read your soul file `{soul_path}` and your runtime's coordination context (`CLAUDE.md`, `GEMINI.md`, or `CODEX.md`).
 Check `{TASKS_FILE}` and `{MEMORY_DIR}/` for context.
 
 Your assigned task is:
@@ -217,6 +221,28 @@ def main():
         sys.exit(0)
 
     role = resolve_role(assigned_to or "", title or "")
+
+    # Ring 2: refresh Lock 0 and refuse to emit a BUILD prompt for a closed gate.
+    # Discovery roles are never blocked (they produce the docs that open the gate).
+    try:
+        state = gk.refresh_lock0()
+        gid, gate = gk.active_gate(state)
+        gate_open = gk.gate_is_open(state, gid, gate)
+    except Exception as exc:  # state missing/corrupt => fail closed for builders
+        sys.stderr.write(f"[run_factory] gatekeeper unavailable ({exc}); failing closed.\n")
+        state, gid, gate, gate_open = None, None, None, False
+
+    if role in gk.BUILDER_ROLES and not gate_open:
+        status = gate.get("status") if gate else "Not Approved"
+        sys.stderr.write(
+            f"\n⛔ GOVERNANCE BLOCK: task '{task_id or title}' resolves to builder role "
+            f"'{role}', but phase {state.get('current_phase') if state else '?'} gate "
+            f"'{gid}' is '{status}' (closed).\n"
+            f"Building (writes to execution/) is not permitted until a signed Director "
+            f"approval opens this gate (automation/approve_gate.py).\n"
+            f"Redirect to discovery/documentation, or have the Director approve the gate.\n")
+        sys.exit(3)  # distinct "blocked" exit code for factory.sh
+
     prompt = generate_prompt(role, task_id, title, assigned_to)
 
     print(prompt)

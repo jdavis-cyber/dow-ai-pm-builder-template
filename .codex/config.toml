@@ -1,0 +1,16 @@
+# Codex CLI governance hooks — delegate to the shared gatekeeper brain.
+#
+# NOTE: a known Codex bug (openai/codex#17532) can prevent repo-local hooks from
+# firing in interactive sessions. Ring 2 (automation/run_factory.py + factory.sh)
+# and Ring 3 (the signed gate_state.json) enforce the same gate independently, so
+# governance holds even if these hooks do not fire. Route Codex through
+# automation/factory.sh rather than raw `codex` to keep Ring 2 wrapped around it.
+
+[hooks.SessionStart]
+command = ["bash", "governance/hooks/session_start.sh"]
+
+[hooks.UserPromptSubmit]
+command = ["bash", "governance/hooks/user_prompt.sh"]
+
+[hooks.PreToolUse]
+command = ["bash", "governance/hooks/pretooluse.sh", "codex"]

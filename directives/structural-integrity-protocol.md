@@ -77,9 +77,30 @@ To tighten the "Verify" loop, the `verify.md` artifact must contain:
 Agents must follow these files in this PRECISE order. If an agent skips a file, the Scrum Master must flag it as a "Process Violation."
 
 1. **PROJECT.md**: Understand the current Mission.
-2. **GEMINI.md**: Read the Operational Mode (Lite/Full) and Startup Protocol.
+2. **CLAUDE.md / GEMINI.md / CODEX.md**: Read the Operational Mode (Lite/Full) and Startup Protocol.
 3. **structural-integrity-protocol.md**: [THIS FILE] Understand the Gate requirements.
 4. **ai-governance-framework.md**: Understand the Compliance obligations.
 5. **tasks.md**: Check if the current Phase Gate is OPEN.
 
 **IF GATE IS CLOSED: ALL AGENTS STOP BUILDING AND SWITCH TO DISCOVERY/DOCUMENTATION.**
+
+---
+
+## 7. Mechanical Enforcement (Rings of Defense)
+
+The rules above are no longer honor-system. They are enforced by code in **every** runtime
+(Claude Code, Gemini CLI, Codex CLI) through three independently-sufficient rings:
+
+1. **Runtime hooks** — `PreToolUse` hooks call `automation/gatekeeper.py`, which **blocks** writes
+   to `execution/` while the active gate is closed, and re-injects gate state every turn
+   (`SessionStart` / `UserPromptSubmit`) so it cannot decay over a long session.
+2. **Automation gate** — `automation/run_factory.py` refuses to emit a build prompt for a builder
+   role while the gate is closed (covers the autonomous loop even if a runtime skips hooks).
+3. **Signed state** — `.governance/gate_state.json` is the canonical gate truth. A gate opens only
+   via a Director-run, HMAC-signed `automation/approve_gate.py`. The Scrum Master's "physical power
+   to block" (Section 1) is realized by this machinery; the Program Analyst remains the Historian
+   and **cannot** approve. A status of "Approved" without a valid signature is treated as **closed**.
+
+**Separation of powers is now structural:** the same agent cannot both request and approve a gate,
+and a Director's conversational request is not an approval — only a signed approval is.
+Run `python3 automation/gatekeeper.py verify-consistency` to detect any forged/tampered gate.
