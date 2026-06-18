@@ -78,8 +78,9 @@ These locks are no longer prose you are trusted to obey — they are enforced by
 runs in **every** runtime (Claude Code, Gemini CLI, Codex CLI) via `PreToolUse` hooks:
 
 - **Canonical state**: `.governance/gate_state.json` is the single source of truth for the
-  current phase, each gate's status, and Lock 0 (spec validation). The markdown gate files are
-  human-readable narrative; the JSON is what the machine enforces.
+  current phase and each gate's status. The markdown gate files are human-readable narrative; the
+  JSON is what the machine enforces. (Volatile Lock 0 spec-validation state lives separately in the
+  gitignored `.governance/gate_runtime.json`, refreshed each session.)
 - **The brain**: `automation/gatekeeper.py` decides every write. While the active phase gate is
   **closed**, writes/edits to `execution/` (source code) are **blocked**. Reads and writes to
   discovery surfaces (`docs/`, `.governance/` narrative, `memory/`, `orchestration/tasks.md`)
