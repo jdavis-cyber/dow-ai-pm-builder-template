@@ -1,0 +1,5 @@
+{
+  "name": "governance",
+  "version": "1.0.0",
+  "description": "Phase-gate governance enforcement hooks (delegates to automation/gatekeeper.py)."
+}

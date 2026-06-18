@@ -19,3 +19,4 @@ Each package must declare:
 3. Regulated overlays must stay project-local and activate only through explicit profile traits.
 4. Missing runtime packages are install failures. Agents must stop and escalate instead of improvising.
 5. Security and compliance review packages remain reviewers and gate participants, not default implementation workers.
+6. Packages must not register hooks that weaken, bypass, or shadow `automation/gatekeeper.py`, and must never write `.governance/gate_state.json`. The canonical gate state is changed only by the Director-run, signed `automation/approve_gate.py`; a package's ceiling is `mark-ready` (status `READY FOR VERIFICATION`).

@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.0",
+  "project": "AI Governance Framework Control-Plane",
+  "current_phase": "I",
+  "lock0_spec_validation": {
+    "status": "UNKNOWN",
+    "spec_path": "orchestration/system_spec.md",
+    "last_checked_utc": null,
+    "checked_by": null
+  },
+  "gates": {
+    "Gate1_BusinessUnderstanding": {
+      "phase": "I",
+      "status": "Not Approved",
+      "ready_for_verification_by": null,
+      "approval": null
+    },
+    "Gate2_DataUnderstanding": {
+      "phase": "II",
+      "status": "Not Approved",
+      "ready_for_verification_by": null,
+      "approval": null
+    },
+    "Gate3_DataPreparation": {
+      "phase": "III",
+      "status": "Not Approved",
+      "ready_for_verification_by": null,
+      "approval": null
+    },
+    "Gate4_ModelDevelopment": {
+      "phase": "IV",
+      "status": "Not Approved",
+      "ready_for_verification_by": null,
+      "approval": null
+    },
+    "Gate5_ModelEvaluation": {
+      "phase": "V",
+      "status": "Not Approved",
+      "ready_for_verification_by": null,
+      "approval": null
+    },
+    "Gate6_Operationalization": {
+      "phase": "VI",
+      "status": "Not Approved",
+      "ready_for_verification_by": null,
+      "approval": null
+    }
+  }
+}

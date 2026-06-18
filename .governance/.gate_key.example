@@ -1,0 +1,16 @@
+# Director gate-signing key — EXAMPLE ONLY (this file is committed; the real key is not).
+#
+# Do NOT put a real secret here. Generate the real key with:
+#
+#     python3 automation/approve_gate.py init-key
+#
+# That writes .governance/.gate_key (mode 600), which is gitignored. The gatekeeper
+# uses it (or the DOW_GATE_SECRET environment variable) to verify gate approvals.
+#
+# Until a key exists, EVERY gate is treated as closed (fail-closed by default), so a
+# freshly-cloned template blocks all writes to execution/ until a human creates the key
+# and signs the relevant gate with automation/approve_gate.py.
+#
+# For headless / CI Directors: instead of a key file, export
+#     DOW_GATE_SECRET=<64-hex-char secret>
+# in the environment where you run approve_gate.py. Keep it out of the repo and logs.
