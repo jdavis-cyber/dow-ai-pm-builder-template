@@ -225,7 +225,8 @@ def main():
     # Ring 2: refresh Lock 0 and refuse to emit a BUILD prompt for a closed gate.
     # Discovery roles are never blocked (they produce the docs that open the gate).
     try:
-        state = gk.refresh_lock0()
+        gk.refresh_lock0()
+        state = gk.load_state()
         gid, gate = gk.active_gate(state)
         gate_open = gk.gate_is_open(state, gid, gate)
     except Exception as exc:  # state missing/corrupt => fail closed for builders

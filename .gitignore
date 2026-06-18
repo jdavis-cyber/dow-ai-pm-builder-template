@@ -59,5 +59,8 @@ logs/
 # Director gate-signing secret (never commit; generate with approve_gate.py init-key)
 .governance/.gate_key
 
+# Volatile gatekeeper runtime state (Lock 0 result); regenerated each session
+.governance/gate_runtime.json
+
 # Machine-local agent context
 CLAUDE.local.md

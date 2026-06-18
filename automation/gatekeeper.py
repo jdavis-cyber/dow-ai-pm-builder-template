@@ -37,6 +37,9 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 # State/key paths are overridable via env so tests run hermetically against a copy.
 STATE_PATH = pathlib.Path(os.environ.get("DOW_GATE_STATE", ROOT / ".governance" / "gate_state.json"))
 KEY_FILE = pathlib.Path(os.environ.get("DOW_GATE_KEY_FILE", ROOT / ".governance" / ".gate_key"))
+# Volatile runtime state (Lock 0 result + timestamp) lives in a SEPARATE, gitignored
+# file so refreshing it never dirties the committed, durable gate_state.json.
+RUNTIME_PATH = pathlib.Path(os.environ.get("DOW_GATE_RUNTIME", ROOT / ".governance" / "gate_runtime.json"))
 SECRET_ENV = "DOW_GATE_SECRET"
 
 # Gate is open only for these decisions (with a valid signature).
@@ -117,6 +120,40 @@ def active_gate(state):
         if gate.get("phase") == phase:
             return gid, gate
     return None, None
+
+
+def load_runtime():
+    """Volatile runtime state (Lock 0). Absent file => UNKNOWN (fail-closed)."""
+    if RUNTIME_PATH.exists():
+        try:
+            return json.loads(RUNTIME_PATH.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            pass
+    return {"lock0_spec_validation": {"status": "UNKNOWN", "last_checked_utc": None,
+                                      "checked_by": None}}
+
+
+def save_runtime(runtime):
+    tmp = RUNTIME_PATH.with_suffix(".json.tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(runtime, f, indent=2)
+        f.write("\n")
+    os.replace(tmp, RUNTIME_PATH)
+
+
+def lock0_status(state=None):
+    """Current Lock 0 status: runtime file first, then the gate_state seed default."""
+    status = load_runtime().get("lock0_spec_validation", {}).get("status")
+    if status:
+        return status
+    if state is not None:
+        return state.get("lock0_spec_validation", {}).get("status", "UNKNOWN")
+    return "UNKNOWN"
+
+
+def spec_path_for(state):
+    return state.get("lock0_spec_validation", {}).get("spec_path",
+                                                      "orchestration/system_spec.md")
 
 
 # ------------------------------------------------------------------- signing core
@@ -216,7 +253,7 @@ def _gated_write_decision(state, target):
                                "Only the signed approve_gate.py changes gate state.")
     if _is_gated_path(target):
         gid, gate = active_gate(state)
-        lock0 = state.get("lock0_spec_validation", {}).get("status")
+        lock0 = lock0_status(state)
         if lock0 != "PASS":
             return Decision(False, f"Lock 0 (spec validation) is {lock0}. Resolve placeholders in "
                                    f"the system spec before writing to execution/.")
@@ -252,7 +289,7 @@ def evaluate(state, tool, path=None, command=None, blob=None):
     if any(prefix.rstrip("/") + "/" in haystack or haystack.strip().startswith(prefix)
            for prefix in GATED_WRITE_PREFIXES):
         gid, gate = active_gate(state)
-        lock0 = state.get("lock0_spec_validation", {}).get("status")
+        lock0 = lock0_status(state)
         if lock0 != "PASS":
             return Decision(False, f"Lock 0 (spec validation) is {lock0}. Resolve placeholders in "
                                    f"the system spec before writing to execution/.")
@@ -337,27 +374,33 @@ def _emit_decision(runtime, decision):
 # --------------------------------------------------------------------- lock 0
 
 def refresh_lock0(state=None):
+    """Validate the spec and record the result in the gitignored RUNTIME file.
+
+    Crucially this does NOT write gate_state.json, so a SessionStart refresh never
+    dirties the committed, durable state. Returns the runtime dict.
+    """
     import contextlib
     import datetime
     sys.path.insert(0, str(ROOT / "automation"))
     import validate_spec  # local import to keep hooks lightweight
     if state is None:
         state = load_state()
-    spec_path = state.get("lock0_spec_validation", {}).get("spec_path",
-                                                            "orchestration/system_spec.md")
+    spec_path = spec_path_for(state)
     abs_spec = ROOT / spec_path
     # validate_spec prints to stdout; redirect to stderr so it never pollutes a
     # captured prompt (run_factory) or a hook's stdout response.
     with contextlib.redirect_stdout(sys.stderr):
         ok = validate_spec.validate_spec(str(abs_spec))
-    state["lock0_spec_validation"] = {
-        "status": "PASS" if ok else "FAIL",
-        "spec_path": spec_path,
-        "last_checked_utc": datetime.datetime.utcnow().isoformat() + "Z",
-        "checked_by": "gatekeeper",
+    runtime = {
+        "lock0_spec_validation": {
+            "status": "PASS" if ok else "FAIL",
+            "spec_path": spec_path,
+            "last_checked_utc": datetime.datetime.utcnow().isoformat() + "Z",
+            "checked_by": "gatekeeper",
+        }
     }
-    save_state(state)
-    return state
+    save_runtime(runtime)
+    return runtime
 
 
 # --------------------------------------------------------------------- reporting
@@ -366,7 +409,7 @@ def status_text(state, terse=False):
     gid, gate = active_gate(state)
     phase = state.get("current_phase")
     gstatus = gate.get("status") if gate else "UNKNOWN"
-    lock0 = state.get("lock0_spec_validation", {}).get("status", "UNKNOWN")
+    lock0 = lock0_status(state)
     open_ = gate_is_open(state, gid, gate)
     if terse:
         blk = "OPEN: execution/ writes allowed" if open_ else "execution/ writes BLOCKED"
@@ -445,8 +488,8 @@ def main(argv=None):
         return 2
 
     if args.cmd == "refresh-lock0":
-        state = refresh_lock0()
-        print(status_text(state, terse=True))
+        refresh_lock0()
+        print(status_text(load_state(), terse=True))
         return 0
 
     if args.cmd == "status":

@@ -15,9 +15,14 @@ audit-shaped (forgeable) gate state.
    Shims: `governance/hooks/*.sh`.
 2. **Automation gate** — `automation/run_factory.py` refuses to emit a build prompt for a builder
    role while the gate is closed (covers the autonomous loop / the Codex interactive-hooks bug #17532).
-3. **Signed state** — `.governance/gate_state.json` is the canonical gate truth. A gate opens only
-   via the Director-run, HMAC-signed `automation/approve_gate.py`. A gate that merely *says*
-   "Approved" without a valid signature is treated as **closed** (fail-closed).
+3. **Signed state** — `.governance/gate_state.json` is the canonical gate truth (durable: phase,
+   gate statuses, approvals). A gate opens only via the Director-run, HMAC-signed
+   `automation/approve_gate.py`. A gate that merely *says* "Approved" without a valid signature is
+   treated as **closed** (fail-closed).
+
+Volatile Lock 0 (spec-validation) state is kept separately in the gitignored
+`.governance/gate_runtime.json`, refreshed on every session start — so refreshing it never dirties
+the committed `gate_state.json`. Absent runtime file ⇒ Lock 0 is `UNKNOWN` (fail-closed).
 
 ## What is blocked when a gate is CLOSED
 

@@ -14,6 +14,7 @@ trap 'rm -rf "$TMP"' EXIT
 cp .governance/gate_state.json "$TMP/gate_state.json"
 
 export DOW_GATE_STATE="$TMP/gate_state.json"
+export DOW_GATE_RUNTIME="$TMP/gate_runtime.json"   # volatile Lock 0 state (gitignored in real use)
 export DOW_GATE_SECRET="test-secret-$(date +%s)"   # throwaway; never the real key
 
 GK="python3 automation/gatekeeper.py"
@@ -83,10 +84,9 @@ echo "== Lock 0 failure blocks even an approved gate =="
 gate_status "Not Approved" "clear"
 $AP approve --gate Gate1_BusinessUnderstanding --decision Approved \
    --approver-role "Executive Sponsor" --approver-name "Test Director" >/dev/null 2>&1
-python3 - "$DOW_GATE_STATE" <<'PY'
+python3 - "$DOW_GATE_RUNTIME" <<'PY'
 import json,sys
-p=sys.argv[1]; s=json.load(open(p)); s["lock0_spec_validation"]["status"]="FAIL"
-json.dump(s,open(p,"w"),indent=2)
+json.dump({"lock0_spec_validation":{"status":"FAIL"}}, open(sys.argv[1],"w"), indent=2)
 PY
 $GK check-action --tool Write --path execution/app.py >/dev/null 2>&1; RC=$?; assert_rc 2 "Lock0 FAIL blocks execution/ despite approval"
 
