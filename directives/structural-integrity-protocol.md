@@ -92,8 +92,11 @@ The rules above are no longer honor-system. They are enforced by code in **every
 (Claude Code, Gemini CLI, Codex CLI) through three independently-sufficient rings:
 
 1. **Runtime hooks** — `PreToolUse` hooks call `automation/gatekeeper.py`, which **blocks** writes
-   to `execution/` while the active gate is closed, and re-injects gate state every turn
-   (`SessionStart` / `UserPromptSubmit`) so it cannot decay over a long session.
+   to gated implementation paths while the active gate is closed. Default gated paths include
+   `execution/`, `src/`, `app/`, `apps/`, `packages/`, `services/`, `database/`,
+   `infrastructure/`, `.github/workflows/`, and common root-level build/runtime manifests such as
+   `docker-compose.yml`, `package.json`, `go.mod`, and `pyproject.toml`. Hooks also re-inject gate
+   state every turn (`SessionStart` / `UserPromptSubmit`) so it cannot decay over a long session.
 2. **Automation gate** — `automation/run_factory.py` refuses to emit a build prompt for a builder
    role while the gate is closed (covers the autonomous loop even if a runtime skips hooks).
 3. **Signed state** — `.governance/gate_state.json` is the canonical gate truth. A gate opens only

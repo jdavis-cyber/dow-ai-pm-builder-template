@@ -45,8 +45,45 @@ SECRET_ENV = "DOW_GATE_SECRET"
 # Gate is open only for these decisions (with a valid signature).
 OPEN_DECISIONS = {"Approved", "Conditionally Approved"}
 
-# The directory tree that constitutes "building" and is gated (Director decision).
-GATED_WRITE_PREFIXES = ("execution/",)
+# Directory trees that constitute "building" and are gated (Director decision).
+#
+# Earlier template versions only protected execution/. That was too narrow for
+# the single-repo operating model because many real project repos keep source in
+# conventional locations such as src/, apps/, packages/, database/, or
+# infrastructure/. The gatekeeper now protects both the template's legacy
+# execution/ surface and common deployable-product surfaces.
+GATED_WRITE_PREFIXES = (
+    "execution/",
+    "src/",
+    "app/",
+    "apps/",
+    "packages/",
+    "services/",
+    "database/",
+    "infrastructure/",
+    ".github/workflows/",
+)
+
+# Root-level build/runtime manifests that can materially change the deployable
+# product even when they are not located under a gated directory.
+GATED_WRITE_FILES = (
+    "docker-compose.yml",
+    "docker-compose.yaml",
+    "compose.yml",
+    "compose.yaml",
+    "Dockerfile",
+    "Containerfile",
+    "package.json",
+    "package-lock.json",
+    "pnpm-lock.yaml",
+    "yarn.lock",
+    "go.mod",
+    "go.sum",
+    "pyproject.toml",
+    "poetry.lock",
+    "requirements.txt",
+    "requirements-dev.txt",
+)
 
 # Discovery surfaces an agent may always write to, even with a closed gate.
 # (Informational; anything not gated is allowed by default.)
@@ -238,7 +275,10 @@ def _norm_path(path):
 
 def _is_gated_path(path):
     p = _norm_path(path)
-    return any(p.startswith(prefix) for prefix in GATED_WRITE_PREFIXES)
+    name = pathlib.PurePosixPath(p).name
+    return (any(p.startswith(prefix) for prefix in GATED_WRITE_PREFIXES)
+            or p in GATED_WRITE_FILES
+            or name in GATED_WRITE_FILES)
 
 
 def _is_protected_path(path):
@@ -256,7 +296,7 @@ def _gated_write_decision(state, target):
         lock0 = lock0_status(state)
         if lock0 != "PASS":
             return Decision(False, f"Lock 0 (spec validation) is {lock0}. Resolve placeholders in "
-                                   f"the system spec before writing to execution/.")
+                                   f"the system spec before writing to gated implementation paths.")
         if not gate_is_open(state, gid, gate):
             return Decision(False, _closed_reason(state, gid, gate, target))
     return Decision(True)
@@ -286,15 +326,16 @@ def evaluate(state, tool, path=None, command=None, blob=None):
     if ".governance/gate_state.json" in haystack:
         return Decision(False, "Action targets the protected gate_state.json. "
                                "Only the signed approve_gate.py may change gate state.")
-    if any(prefix.rstrip("/") + "/" in haystack or haystack.strip().startswith(prefix)
-           for prefix in GATED_WRITE_PREFIXES):
+    if (any(prefix.rstrip("/") + "/" in haystack or haystack.strip().startswith(prefix)
+            for prefix in GATED_WRITE_PREFIXES)
+            or any(target in haystack for target in GATED_WRITE_FILES)):
         gid, gate = active_gate(state)
         lock0 = lock0_status(state)
         if lock0 != "PASS":
             return Decision(False, f"Lock 0 (spec validation) is {lock0}. Resolve placeholders in "
-                                   f"the system spec before writing to execution/.")
+                                   f"the system spec before writing to gated implementation paths.")
         if not gate_is_open(state, gid, gate):
-            return Decision(False, _closed_reason(state, gid, gate, "execution/"))
+            return Decision(False, _closed_reason(state, gid, gate, "gated implementation paths"))
     return Decision(True)
 
 
@@ -412,7 +453,7 @@ def status_text(state, terse=False):
     lock0 = lock0_status(state)
     open_ = gate_is_open(state, gid, gate)
     if terse:
-        blk = "OPEN: execution/ writes allowed" if open_ else "execution/ writes BLOCKED"
+        blk = "OPEN: implementation writes allowed" if open_ else "implementation writes BLOCKED"
         return f"GOVERNANCE: Phase {phase} | {gid} {gstatus} | {blk} | Lock0 {lock0}"
     name = PHASE_NAMES.get(phase, "")
     lines = [
@@ -421,8 +462,8 @@ def status_text(state, terse=False):
         f"Active Gate: {gid} — {gstatus}" + ("  (OPEN)" if open_ else "  (CLOSED)"),
         f"Lock 0 (spec validation): {lock0}",
         "Enforcement: PreToolUse hooks ACTIVE via automation/gatekeeper.py.",
-        ("Writes to execution/ are BLOCKED until this gate is Approved by a signed Director "
-         "approval." if not open_ else "This gate is OPEN; execution/ writes are permitted."),
+        ("Writes to implementation paths are BLOCKED until this gate is Approved by a signed Director "
+         "approval." if not open_ else "This gate is OPEN; implementation writes are permitted."),
         "You MAY: read anything; write discovery docs to docs/, .governance/ narrative, "
         "memory/, orchestration/tasks.md.",
         "You MAY NOT: edit .governance/gate_state.json (only the human-run approve_gate.py can).",

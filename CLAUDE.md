@@ -82,9 +82,11 @@ runs in **every** runtime (Claude Code, Gemini CLI, Codex CLI) via `PreToolUse` 
   JSON is what the machine enforces. (Volatile Lock 0 spec-validation state lives separately in the
   gitignored `.governance/gate_runtime.json`, refreshed each session.)
 - **The brain**: `automation/gatekeeper.py` decides every write. While the active phase gate is
-  **closed**, writes/edits to `execution/` (source code) are **blocked**. Reads and writes to
-  discovery surfaces (`docs/`, `.governance/` narrative, `memory/`, `orchestration/tasks.md`)
-  are always allowed. You may **never** edit `.governance/gate_state.json` yourself.
+  **closed**, writes/edits to gated implementation paths are **blocked**. Default gated paths include
+  `execution/`, `src/`, `app/`, `apps/`, `packages/`, `services/`, `database/`, `infrastructure/`,
+  `.github/workflows/`, and common root build/runtime manifests. Reads and writes to discovery
+  surfaces (`docs/`, `.governance/` narrative, `memory/`, `orchestration/tasks.md`) are always
+  allowed. You may **never** edit `.governance/gate_state.json` yourself.
 - **You cannot self-approve.** A gate opens only when a human Director runs the out-of-band,
   cryptographically-signed `automation/approve_gate.py`. Your ceiling is
   `mark-ready` (status `READY FOR VERIFICATION`). A gate that merely *says* "Approved" without a
@@ -114,7 +116,8 @@ Every agent follows the **Annealing Loop** for every task. Passivity is failure.
 - `.codex/agents/` — Generated runtime agent bundles materialized from `subagents/`.
 - `orchestration/` — Tasks and sprint definitions.
 - `docs/` — The Shared Discovery Hub (Knowledge Hub).
-- `execution/` — Source code and implementation artifacts.
+- `src/`, `services/`, `packages/`, `database/`, `infrastructure/` — Conventional source/runtime implementation surfaces.
+- `execution/` — Optional/legacy implementation workspace; still gate-protected.
 - `.governance/` — Final authored compliance artifacts.
 - `CLAUDE.md` — This file (Coordination Context).
 - `PROJECT.md` — Project definition and scope.

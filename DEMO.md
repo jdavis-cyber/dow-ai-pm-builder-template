@@ -39,12 +39,13 @@ python3 automation/init_project.py demo-project
 
 > "That just stamped out a brand-new project workspace: its own git repo,
 > the full 15-agent factory pinned at template v4.0.0 — see the provenance
-> file — a blank spec, and empty scaffolds for source code, engineering
-> docs, and compliance evidence. The template stays pristine; the project
-> is born governed. And when the build is done, **this folder is what we
-> hand the customer**: the deployable application in `execution/` plus the
-> complete accreditation paperwork in `.governance/` and `docs/`, captured
-> as the work happened — not reconstructed afterward."
+> file — a blank spec, and empty scaffolds for conventional source paths,
+> engineering docs, decisions, handoff notes, verification evidence, and
+> compliance evidence. The template stays pristine; the project is born
+> governed. And when the build is done, **this folder is what we hand the
+> customer**: the deployable application in the chosen implementation paths
+> plus the complete accreditation paperwork in `.governance/` and `docs/`,
+> captured as the work happened — not reconstructed afterward."
 
 Then show fail-closed immediately:
 
