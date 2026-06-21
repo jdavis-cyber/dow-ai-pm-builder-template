@@ -1,123 +1,128 @@
-# System Specification Document
+# System Specification Document (Template)
 
-**Project Name**: DoW PM Builder Template v4 Control-Plane Upgrade
-**Status**: Draft for Section A with downstream sections locked pending specialist input
-**Last Updated**: 2026-03-29
+**Project Name**: [Inject Project Name]
+**Status**: [Draft / Validated]
+**Last Updated**: [Date]
 
 ---
 
 ## Instructions for Agents
 
-This document is the single source of truth for the project. Agents may act only on the sections owned by their specialty and only after upstream dependencies are validated. If a required detail is not present here, stop and escalate to the Scrum Master instead of guessing.
+This document is the **Single Source of Truth** for the project. When operating in executing or planning modes, refer to the section relevant to your domain. **Do not hallucinate assumptions.** If a required detail is missing from this spec, escalate to the Scrum Master to re-engage the Human Director.
 
 ---
 
 ## A. System Overview
 
+*Populated by: Business Analyst (BA)*
+
 ### Purpose & Problem Statement
 
-The system is a discovery-first AI software factory template that initializes a governed multi-agent delivery workspace. Its purpose is to force project teams to capture requirements, architecture, governance, and verification inputs before implementation work begins, then materialize only the runtime agent bundles appropriate for the project profile.
+*Describe what the system does and why it exists.*
 
-The current problem is that the template has a packaging concept for `subagents/` and generated runtime agents, but it does not yet define the business-level system overview or the project-classification answers required to select those runtime bundles deterministically. Without this section, downstream roles will guess which agents, compliance overlays, and startup checks belong in a given initialized project, which breaks fail-closed behavior and weakens audit traceability.
+- **Good Entry**: "A multi-tenant SaaS application that allows healthcare providers to securely log patient intake forms via OCR, reducing manual entry time."
+- **Poor Entry**: "A healthcare app."
 
 ### Target Users & Permissions
 
-- `Human Director`: Defines mission, intended outcome, adoption risk, and mandatory compliance scope. Approves phase gates and final direction changes.
-- `Scrum Master`: Controls sequencing and work start authority. May block execution when the spec, gates, or dependencies are incomplete.
-- `Requirements BA`: Owns Section A and captures measurable outcomes, roles, and classification answers. May not invent architecture or implementation details.
-- `Architecture SE and DevOps`: Consume the approved classification inputs to define packaging, runtime generation, startup validation, and environment behavior.
-- `Program Analyst`: Converts approved discovery outputs into governance artifacts and sign-off evidence. May reject work that is not traceable to approved requirements.
-- `Project Specialists`: Use only the runtime agents and constraints selected by the approved install profile. They may not self-activate excluded regulated overlays.
+*List explicitly the roles and what they can do.*
+
+- **Good Entry**:
+  - `Admin`: Can provision clinics, view billing, manage all users.
+  - `Provider`: Can view and edit patient records within their assigned clinic only.
+- **Poor Entry**: "People who use the clinic."
 
 ### Success Metrics & Constraints
 
-- `Primary outcome`: A project can be initialized with one approved classification pass that selects the correct runtime agent set and governance overlays without manual per-agent copying.
-- `Spec completeness target`: Section A names the system purpose, user roles, measurable success criteria, and classification inputs with no unresolved placeholders.
-- `Gate 1 contribution target`: Downstream teams can implement `subagents/install-config.json`, startup validation, and documentation updates without inventing missing business or compliance assumptions.
-- `Determinism requirement`: The same approved project classification answers must resolve to the same runtime agent set every time.
-- `Fail-closed requirement`: Missing or contradictory classification inputs must stop installation and trigger escalation rather than allowing partial activation.
-- `Isolation requirement`: Regulated overlays stay local to the initialized project and must not leak into unrelated projects or shared workspace assets.
-- `Compliance scope`: The template must support CPMAI phase discipline for all projects and must support stronger overlays for ISO 42001, NIST AI RMF, NIST SP 800-53 Rev 5, DoD CSRMC, NIST SP 1270, NIST AI 100-1, and OMB M-24-10 when the project profile requires them.
-- `Branch discipline`: Phase 0 control-plane work remains isolated from the dirty default branch until reviewed on the approved staging path.
+*Define measurable success and hard constraints.*
 
-### Project Classification Inputs For Install Profile
-
-The install profile must be driven by explicit answers captured during Sprint Zero. These inputs are the minimum approved business and compliance classification fields for Phase 0.
-
-1. `project_type`
-   Allowed values: `standard`, `ai-ml`, `dod-regulated`, `hipaa`
-   Meaning: Declares the dominant delivery and governance class of the project. This field determines whether regulated overlays are even eligible for activation.
-2. `languages`
-   Allowed values: explicit implementation languages such as `typescript`, `python`, `go`
-   Meaning: Limits project-specific agent packages to the actual build stack.
-3. `platforms`
-   Allowed values: explicit target surfaces such as `web`, `api`, `cli`, `worker`, `infrastructure`
-   Meaning: Prevents activation of delivery packages that do not match the product surface.
-4. `requires_accessibility`
-   Allowed values: `true`, `false`
-   Meaning: States whether accessibility review and supporting specialists are mandatory at launch.
-5. `requires_dod_controls`
-   Allowed values: `true`, `false`
-   Meaning: Separately captures whether DoD or federal control overlays are mandatory, even if the project also contains AI or general software work.
-6. `requires_iso42001`
-   Allowed values: `true`, `false`
-   Meaning: Captures whether the project must operate inside the AI management system evidence model from day one.
-
-### Classification Decision Rules
-
-- If `project_type` is `dod-regulated`, then `requires_dod_controls` must be `true`.
-- If `requires_dod_controls` is `true`, the Security and Compliance Officer support stack is mandatory.
-- If `project_type` is `ai-ml`, then `requires_iso42001` must be explicitly answered and may not be inferred.
-- If the project handles regulated federal or defense scope, the Human Director must declare that scope before implementation begins.
-- If classification answers conflict, installation must stop and the Scrum Master must re-open discovery rather than choosing a best-effort profile.
-
-### Source Questions For Sprint Zero
-
-- What is the single primary outcome this initialized project must achieve?
-- Which user and agent roles need authority in the project, and which roles must remain review-only?
-- Is this project a standard software project, an AI or ML project, a DoD or federal regulated project, or a HIPAA-scoped project?
-- Which implementation languages and delivery platforms are in scope at launch?
-- Are accessibility, ISO 42001 controls, or DoD control overlays mandatory from day one?
+- **Deadline**: [Date or N/A]
+- **Core KPIs**: [E.g., < 2s page load, OCR accuracy > 95%]
+- **Compliance Restrictions**: [E.g., HIPAA compliant, data must reside in US-East]
 
 ---
 
 ## B. Architecture Specification
 
-This section is intentionally unpopulated in this revision. Architecture SE and DevOps must supply the technology stack, runtime packaging design details, and infrastructure constraints after Section A is accepted.
+*Populated by: Systems Engineer (SE) and DevOps Engineer (DevOps)*
+
+### Technology Stack
+
+*Define the exact technologies and versions where known.*
+
+- **Frontend**: [e.g., Next.js 14 App Router, React 18, TailwindCSS]
+- **Backend**: [e.g., FastAPI, Python 3.11]
+- **Database**: [e.g., PostgreSQL 16]
+- **Infrastructure**: [e.g., AWS ECS, Terraform managed]
+
+### Architecture Diagram / Boundaries
+
+*Describe the high-level flow (e.g., Frontend -> API Gateway -> Microservices -> Data Layer).*
+
+### Non-Functional Requirements
+
+- **Scalability**: [e.g., Support 1,000 concurrent users at launch]
+- **Security**: [e.g., JWT Auth, TLS 1.3, AES-256 at rest]
+- **Availability**: [e.g., 99.9% uptime requirement]
 
 ---
 
 ## C. Interface Contracts
 
-This section is intentionally unpopulated in this revision. Database, backend, frontend, and installer-facing contracts remain locked until the architecture and install-profile requirements are accepted.
+*Populated by: Database Engineer (DBE), Backend Developer (BE), and Frontend Developer (FE)*
+
+### Database Schema (DBE)
+
+*Define the core tables, foreign keys, and indexes.*
+
+- **Good Entry**: `Table: Users { id: uuid PK, email: varchar(255) UNIQUE, clinic_id: uuid FK, role: enum }`
+- **Poor Entry**: "We need a users table."
+
+### API Endpoints (BE)
+
+*Explicitly list the REST/GraphQL endpoints, request formats, and response schemas.*
+
+- **Good Entry**:
+  - `GET /api/v1/patients/{id}`
+  - **Auth Required**: Yes (Bearer Token)
+  - **Response 200**: `{ "id": "uuid", "name": "string", "dob": "date" }`
+  - **Response 403**: `{ "error": "Insufficient clinic permissions" }`
+
+### Component Interfaces (FE)
+
+*Define global state shape, routing patterns, and reusable UI contracts.*
 
 ---
 
 ## D. Agent Work Packages
 
-### Requirements BA
+*Auto-generated from the above sections.*
 
-- **Input Dependencies**: Director brief, template governance directives, packaging note, and Sprint Zero interview protocol
-- **Output Contract**: Populate Section A and define the project-classification inputs that govern install-profile selection
-- **Validation**: Section A is explicit, measurable, and free of placeholder text
+### 1. Database Engineer
 
-### Architecture SE and DevOps
+- **Input Dependencies**: Section B (Tech Stack), Section C (Data Model)
+- **Output Contract**: Provide `init_schema.sql` and `seed_data.sql`.
+- **Validation**: Schema must successfully run locally via Docker without errors.
 
-- **Input Dependencies**: Approved Section A classification inputs
-- **Output Contract**: Define packaging logic, startup validation behavior, and runtime generation rules without changing the business classification contract
-- **Validation**: Install behavior is deterministic and fail-closed
+### 2. Backend Developer
 
-### Program Analyst
+- **Input Dependencies**: Section C (API Contracts & Schema)
+- **Output Contract**: Provide standard API routes matching the defined endpoints.
+- **Validation**: 100% of endpoints must pass `pytest` cases provided.
 
-- **Input Dependencies**: Approved Section A and downstream implementation evidence
-- **Output Contract**: Convert approved discovery outputs into governance artifacts and phase-gate evidence
-- **Validation**: Governance artifacts trace back to approved requirements and classification decisions
+### 3. Frontend Developer
+
+- **Input Dependencies**: Section B (UI Framework), Section C (Component Interfaces & API)
+- **Output Contract**: React components mapping to defined user flows.
+- **Validation**: Must pass accessibility audit (axe-core) and render without console errors.
 
 ---
 
-## E. Decision Log
+## E. Decision Log (ADR)
+
+*Populated by: Any Agent making a structural choice during Sprint Zero*
 
 | Date | Agent | Decision Made | Rationale & Alternatives Considered |
 |------|-------|---------------|-------------------------------------|
-| 2026-03-29 | Requirements BA | Limited Phase 0 scope to Section A plus install-profile classification inputs | Parent board explicitly authorizes only missing spec context. Broader implementation or architecture authoring would violate separation of powers. |
-| 2026-03-29 | Requirements BA | Kept the install-profile contract minimal and business-facing | Downstream roles need deterministic classification inputs, not an overbuilt schema. Expanding beyond the minimum would create implementation theater before approval. |
+| [Date] | SE | Used PostgreSQL over MongoDB | Relational integrity required for billing ledgers. |
+| [Date] | BE | Selected FastAPI over Django | Async support needed for OCR processing webhooks. |

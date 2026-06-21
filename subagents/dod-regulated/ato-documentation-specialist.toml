@@ -1,5 +1,5 @@
 # DoW AI PM Builder Template — Custom DoD Regulated TOML
-# Author: Jerome Davis / Katmai Government Services
+# Author: Jerome Davis
 # Framework: FedRAMP + CMMC 2.0 + NIST SP 800-37 Rev 2
 
 name = "ato-documentation-specialist"

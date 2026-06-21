@@ -2,7 +2,7 @@
 
 **Document Status:** Template (awaiting project baseline input)
 **Canonical Path:** `.governance/Phase_Gates/Gate1_BusinessUnderstanding/mission-risk-profile.md`
-**Authority:** `SEC-36`, `directives/ai-governance-framework.md`
+**Authority:** `directives/ai-governance-framework.md`
 **Last Updated:** 2026-03-30
 
 ---
@@ -114,4 +114,4 @@ This document captures the Gate 1 mission-aligned risk baseline. It establishes 
 
 | Date | Version | Author | Change |
 |------|---------|--------|--------|
-| 2026-03-30 | 0.1 | Documentation SE | Initial template materialization per SEC-36 specification |
+| 2026-03-30 | 0.1 | Documentation SE | Initial template materialization |

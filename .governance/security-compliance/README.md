@@ -1,9 +1,8 @@
 # Security & Compliance Evidence Repository
 
-**Project**: AI Governance Framework — Phase 0 Control-Plane Pilot  
+**Project**: *To be populated per project*  
 **Repository Purpose**: Centralized storage for security and compliance artifacts  
-**Custodian**: AI Governance Lead  
-**Last Updated**: 2026-03-30
+**Custodian**: AI Governance Lead
 
 ---
 
@@ -69,8 +68,8 @@
 
 ### CSRMC_Artifacts/Mission_Risk_Profile/
 
-- **Phase I MRP**: `.governance/Cross_Cutting/CSRMC/Mission_Risk_Profile.md`
-- Contains mission statement, critical controls (C1–C6), risk assessment
+- **Phase I MRP**: produced per project from `directives/templates/mission-risk-profile.md`
+- Captures mission statement, critical controls, and risk assessment
 
 *Subsequent CSRMC artifacts populated in Phases II–VI*
 
@@ -84,8 +83,8 @@
 
 ### Audit_Records/Compliance_Checklists/
 
-- **Phase I Checklist**: Gate 1 exit criteria verification (gate-status.md)
-- **SoA Mapping**: ISO 42001 control applicability (Gate1_Initial_SoA.md)
+- **Phase I Checklist**: Gate 1 exit criteria verification (`gate-status.md`, produced per gate)
+- **SoA Mapping**: ISO 42001 control applicability (per-gate SoA from `directives/templates/statement-of-applicability.md`)
 
 *Will be expanded annually and per external audits*
 
@@ -156,15 +155,14 @@
 
 ## Related Documentation
 
-- **Gate 1 Status**: `../Phase_Gates/Gate1_BusinessUnderstanding/gate-status.md`
-- **Gate 1 Review**: `../Phase_Gates/Gate1_BusinessUnderstanding/phase-gate-review.md`
-- **Governance Scope**: `../Phase_Gates/Gate1_BusinessUnderstanding/Governance_Scope_Statement.md`
+- **Gate 1 Scope**: `../Phase_Gates/Gate1_BusinessUnderstanding/governance-scope-statement.md` (blank template)
+- **Gate 1 MRP**: `../Phase_Gates/Gate1_BusinessUnderstanding/mission-risk-profile.md` (blank template)
+- **Gate Review Template**: `../../directives/templates/phase-gate-review.md`
 - **Framework Directive**: `../../directives/ai-governance-framework.md`
 
 ---
 
 *Repository Version*: 1.0  
-*Prepared By*: Pipeline DevOps (a1567652-3092-4800-9004-fb67c6ca0805)  
+*Prepared By*: Pipeline DevOps  
 *Framework Source*: Enterprise AI Governance & Lifecycle Management Framework v1.1.1  
-*Standards References*: ISO/IEC 42001:2023, NIST AI RMF 1.0, DoD CSRMC  
-*Related Issues*: [SEC-34](/SEC/issues/SEC-34), [SEC-36](/SEC/issues/SEC-36), [SEC-67](/SEC/issues/SEC-67)
+*Standards References*: ISO/IEC 42001:2023, NIST AI RMF 1.0, DoD CSRMC

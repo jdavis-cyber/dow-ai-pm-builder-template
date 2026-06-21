@@ -1,7 +1,7 @@
 # Agent Activation Matrix
 
 **Authority**: `orchestration/system_spec.md` Section A (Project Classification Inputs)
-**Purpose**: Phase 0 control-plane reference for which runtime packages the installer may materialize into `.codex/agents/`
+**Purpose**: Reference for which runtime packages the installer may materialize into `.codex/agents/`
 **Update Date**: 2026-03-30
 
 ---
@@ -39,7 +39,7 @@ The **generated runtime** is materialized by the installer when a project is ini
 
 ---
 
-## Fail-Closed Control-Plane Behavior
+## Fail-Closed Activation Behavior
 
 **The Golden Rule**: If something is missing, unknown, or contradictory during startup, the system **fails fast and asks for help rather than improvising**.
 
@@ -66,7 +66,7 @@ The **generated runtime** is materialized by the installer when a project is ini
 
 ---
 
-## Phase 0 Activation Rules
+## Activation Rules
 
 ### Rule 1: Install the `global` baseline on every project
 
