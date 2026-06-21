@@ -64,3 +64,6 @@ logs/
 
 # Machine-local agent context
 CLAUDE.local.md
+
+# graphify generated output (do not commit)
+graphify-out/

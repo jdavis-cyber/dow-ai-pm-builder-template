@@ -1,26 +1,18 @@
 # Long-Term Memory
 
 ## Project Information
-**Created**: 2026-02-05
-**Purpose**: JDavis-Cyber multi-agent development workspace
-**Owner**: Jerome Davis
-**Tech Stack**: Google Antigravity, Gemini, Claude Code, Claude Cowork, AWS, GCP
+**Created**: *To be populated*
+**Purpose**: *To be populated — describe this project's mission*
+**Owner**: *To be assigned*
+**Tech Stack**: *To be populated*
 
 ## Team Preferences
 
 ### Communication Style
-- Structured, peer-to-peer professional tone
-- Summary/key takeaways first
-- Favor structured bullet points over narrative
-- Use tables, matrices, and frameworks liberally
-- Avoid vague generalities
+- (capture the Director's preferred tone and reporting format)
 
 ### Quality Standards
-- All code must include inline comments explaining the why
-- Follow existing patterns in the codebase
-- Write tests for new functionality
-- Update documentation when changing behavior
-- Audit-readiness is critical
+- (capture the project's non-negotiable quality bars)
 
 ### Architecture Decisions
 - (documented as they're made)

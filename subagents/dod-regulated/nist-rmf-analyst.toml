@@ -1,5 +1,5 @@
 # DoW AI PM Builder Template — Custom DoD Regulated TOML
-# Author: Jerome Davis / Katmai Government Services
+# Author: Jerome Davis
 # Framework: NIST AI RMF 1.0 + ISO/IEC 23894
 
 name = "nist-rmf-analyst"

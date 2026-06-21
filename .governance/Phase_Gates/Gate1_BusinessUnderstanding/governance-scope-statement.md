@@ -2,7 +2,7 @@
 
 **Document Status:** Template (awaiting project scope input)
 **Canonical Path:** `.governance/Phase_Gates/Gate1_BusinessUnderstanding/governance-scope-statement.md`
-**Authority:** `SEC-36`, `TEMPLATE-INDEX.md`, `directives/ai-governance-framework.md`
+**Authority:** `TEMPLATE-INDEX.md`, `directives/ai-governance-framework.md`
 **Last Updated:** 2026-03-30
 
 ---
@@ -119,10 +119,10 @@ This document defines the governance boundary and control scope for the AI proje
 
 | Artifact | Owner | Due Date | Status |
 |----------|-------|----------|--------|
-| `gate-status.md` | Program Analyst | — | ✅ Materialized |
+| `gate-status.md` | Program Analyst | — | ⬜ Pending |
 | `phase-gate-review.md` | Gate Owner | — | ⬜ Pending |
 | `mission-risk-profile.md` | Risk Officer | — | ⬜ Pending |
-| `governance-scope-statement.md` | Governance Sponsor | — | ⬜ In Progress |
+| `governance-scope-statement.md` | Governance Sponsor | — | ⬜ Pending |
 
 ### Cross-Cutting Governance References
 
@@ -166,4 +166,4 @@ This document defines the governance boundary and control scope for the AI proje
 
 | Date | Version | Author | Change |
 |------|---------|--------|--------|
-| 2026-03-30 | 0.1 | Documentation SE | Initial template materialization per SEC-36 specification |
+| 2026-03-30 | 0.1 | Documentation SE | Initial template materialization |

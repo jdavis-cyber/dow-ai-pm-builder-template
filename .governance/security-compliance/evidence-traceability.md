@@ -2,7 +2,7 @@
 
 **Document Status:** Master index (updated per gate completion)
 **Canonical Path:** `.governance/security-compliance/evidence-traceability.md`
-**Authority:** SEC-36 specification
+**Authority:** `directives/ai-governance-framework.md`
 **Last Updated:** 2026-03-30
 
 ---
@@ -32,7 +32,7 @@ This index links gate artifacts to security-compliance review outputs and approv
 
 | Artifact | Location | Security Review Status | Approval Record | Compliance Notes |
 |----------|----------|----------------------|-----------------|------------------|
-| Gate Status Record | `.governance/Phase_Gates/Gate1_BusinessUnderstanding/gate-status.md` | ⬜ Pending | — | Control record per SEC-36 spec |
+| Gate Status Record | `.governance/Phase_Gates/Gate1_BusinessUnderstanding/gate-status.md` | ⬜ Pending | — | Per-gate control record |
 | Mission-Risk Profile | `.governance/Phase_Gates/Gate1_BusinessUnderstanding/mission-risk-profile.md` | ⬜ Pending | — | Risk baseline establishment |
 | Governance Scope Statement | `.governance/Phase_Gates/Gate1_BusinessUnderstanding/governance-scope-statement.md` | ⬜ Pending | — | Control scope definition |
 | Phase Gate Review Package | `.governance/Phase_Gates/Gate1_BusinessUnderstanding/phase-gate-review.md` | ⬜ Pending | — | Formal gate package |
@@ -141,4 +141,4 @@ For future gates, use these conventions:
 
 | Date | Version | Author | Change |
 |------|---------|--------|--------|
-| 2026-03-30 | 1.0 | Documentation SE | Initial security-compliance traceability index per SEC-36 specification |
+| 2026-03-30 | 1.0 | Documentation SE | Initial security-compliance traceability index |

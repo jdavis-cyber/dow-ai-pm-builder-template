@@ -1,5 +1,5 @@
 # DoW AI PM Builder Template — Custom DoD Regulated TOML
-# Author: Jerome Davis / Katmai Government Services
+# Author: Jerome Davis
 # Framework: ISO/IEC 42001:2023
 
 name = "iso42001-auditor"

@@ -10,7 +10,7 @@
 
 ---
 
-> **Get started:** [INSTALL.md](INSTALL.md) — fresh machine to activated factory in under 15 minutes. **Demoing?** [DEMO.md](DEMO.md) — scripted auditor and executive walkthroughs.
+> **Get started:** [INSTALL.md](INSTALL.md) — fresh machine to activated factory in under 15 minutes.
 
 ## What This Is
 
