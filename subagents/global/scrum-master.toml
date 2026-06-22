@@ -1,14 +1,16 @@
 name = "scrum-master"
-version = "0.1.0"
+version = "0.2.0"
 tier = "global"
 owner_role = "scrum-master"
 source_soul = ".agent/souls/scrum-master.md"
-summary = "Traffic-cop runtime package that enforces readiness, phase gates, and escalations."
+summary = "Traffic-cop coordination, dependency, and phase-gate enforcement."
 
 [activation]
 default = true
-project_types = ["standard", "ai-ml", "dod-regulated", "hipaa"]
+mandatory = true
+project_types = ["standard", "ai-ml", "factory-governed", "dod-regulated", "hipaa"]
 
 [governance]
 runtime_required = true
+accountable_agent = true
 review_role = "scrum-master"

@@ -1,116 +1,70 @@
 #!/usr/bin/env python3
-"""Materialize the runtime agent bundle from the subagent catalog.
-
-Cross-platform (macOS / Linux / Windows), stdlib only.
-
-Usage:
-    python3 automation/install_subagents.py [config_path] [runtime_dir]
-
-Defaults: subagents/install-config.json -> .codex/agents/
-(install-subagents.sh remains as a thin wrapper for shell users.)
-"""
-
-import json
-import pathlib
-import shutil
-import sys
-
+"""Materialize the runtime agent bundle from the subagent catalog."""
+import json, pathlib, shutil, subprocess, sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+ACCOUNTABLE = ["requirements-ba","user-story-ba","ui-ux-designer","architecture-se","database-engineer","backend-developer","frontend-developer","pipeline-devops","performance-devops","qa-engineer","automation-test-engineer","scrum-master","program-analyst","documentation-se","security-compliance-officer"]
+CATALOG_DIRS = {"global": ROOT/"subagents"/"global", "project-specific": ROOT/"subagents"/"project-specific", "dod-regulated": ROOT/"subagents"/"dod-regulated"}
 
+def source_for(name):
+    for tier, d in CATALOG_DIRS.items():
+        p = d / f"{name}.toml"
+        if p.exists():
+            return tier, p
+    return None, None
 
-def main() -> None:
-    config_path = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "subagents" / "install-config.json"
-    runtime_dir = pathlib.Path(sys.argv[2]) if len(sys.argv) > 2 else ROOT / ".codex" / "agents"
+def git_commit():
+    r = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True)
+    return r.stdout.strip() if r.returncode == 0 else "unknown"
 
-    if not config_path.is_file():
-        raise SystemExit(f"install config not found: {config_path}")
+def entry(name, reason, mandatory=False):
+    tier, p = source_for(name)
+    if not p:
+        raise SystemExit(f"missing runtime package for {name}")
+    return {"name": name, "tier": tier, "reason": reason, "mandatory": bool(mandatory), "source": p.relative_to(ROOT).as_posix(), "source_soul": f".agent/souls/{name}.md"}
 
+def main():
+    config_path = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "subagents/install-config.json"
+    runtime_dir = pathlib.Path(sys.argv[2]) if len(sys.argv) > 2 else ROOT / ".codex/agents"
     config = json.loads(config_path.read_text())
-    required_keys = [
-        "version",
-        "project_type",
-        "languages",
-        "platforms",
-        "requires_accessibility",
-        "requires_dod_controls",
-        "requires_iso42001",
-        "baseline_packages",
-        "project_specific_packages",
-        "regulated_packages",
-    ]
-    missing = [key for key in required_keys if key not in config]
+    if config.get("version") == 1:
+        names = list(dict.fromkeys(config.get("baseline_packages", []) + config.get("project_specific_packages", []) + config.get("regulated_packages", [])))
+        frameworks = {"iso_42001": "baseline" if config.get("requires_iso42001") else "not-selected"}
+    else:
+        names = config.get("accountable_agents", [])
+        frameworks = config.get("frameworks", {})
+    missing = [n for n in ACCOUNTABLE if n not in names]
+    extra = [n for n in names if n not in ACCOUNTABLE]
     if missing:
-        raise SystemExit(f"missing install-config keys: {', '.join(missing)}")
-
-    allowed_project_types = {"standard", "ai-ml", "dod-regulated", "hipaa"}
-    project_type = config["project_type"]
-    if project_type not in allowed_project_types:
-        raise SystemExit(f"unsupported project_type: {project_type}")
-
-    catalog_dirs = {
-        "global": ROOT / "subagents" / "global",
-        "project-specific": ROOT / "subagents" / "project-specific",
-        "dod-regulated": ROOT / "subagents" / "dod-regulated",
-    }
-
-    selected = []
-    seen = set()
-    errors = []
-
-    def add_package(name: str, tier: str, reason: str) -> None:
-        if name in seen:
-            return
-        source = catalog_dirs[tier] / f"{name}.toml"
+        raise SystemExit("missing accountable_agents: " + ", ".join(missing))
+    if extra:
+        raise SystemExit("unknown accountable_agents: " + ", ".join(extra))
+    accountable = [entry(n, "accountable-agent", n in config.get("mandatory_agents", []) or n == "security-compliance-officer") for n in ACCOUNTABLE]
+    ownership_path = ROOT / "subagents/specialization-ownership-map.json"
+    ownership = json.loads(ownership_path.read_text()) if ownership_path.exists() else {}
+    specs = []
+    for rel, meta in ownership.items():
+        owner = meta.get("accountable_owner")
+        if owner not in ACCOUNTABLE and owner != "reference-only":
+            raise SystemExit(f"specialization {rel} has invalid owner {owner}")
+        source = ROOT / "subagents" / rel
         if not source.exists():
-            errors.append(f"missing {tier} package: {source.relative_to(ROOT)}")
-            return
-        seen.add(name)
-        selected.append(
-            {
-                "name": name,
-                "tier": tier,
-                "reason": reason,
-                "source": source.relative_to(ROOT).as_posix(),
-            }
-        )
-
-    for package in config["baseline_packages"]:
-        add_package(package, "global", "baseline")
-
-    for package in config["project_specific_packages"]:
-        add_package(package, "project-specific", "profile-selected")
-
-    if project_type in {"dod-regulated", "hipaa"} or config["requires_dod_controls"]:
-        for package in config["regulated_packages"]:
-            add_package(package, "dod-regulated", "regulated-overlay")
-
-    if errors:
-        raise SystemExit("\n".join(errors))
-
+            raise SystemExit(f"specialization source missing: subagents/{rel}")
+        specs.append({"name": source.stem, "source": "subagents/" + rel, "accountable_owner": owner, "status": meta.get("status", "mapped"), "activation_condition": meta.get("activation_condition", "")})
+    overlays = [entry(n, "regulated-overlay", False) for n in config.get("regulated_overlays", [])]
     runtime_dir.mkdir(parents=True, exist_ok=True)
-    for existing in runtime_dir.iterdir():
-        if existing.is_file():
+    marker = runtime_dir / ".dow-runtime-dir"
+    existing_entries = [p for p in runtime_dir.iterdir()]
+    if existing_entries and not marker.exists():
+        raise SystemExit(f"refusing to overwrite non-runtime directory without marker: {runtime_dir}")
+    for existing in existing_entries:
+        if existing.is_file() and existing.name != marker.name:
             existing.unlink()
-
-    for package in selected:
-        source_path = ROOT / package["source"]
-        shutil.copyfile(source_path, runtime_dir / f"{package['name']}.toml")
-
-    manifest = {
-        "version": config["version"],
-        "project_type": project_type,
-        "profile": {
-            "languages": config["languages"],
-            "platforms": config["platforms"],
-            "requires_accessibility": config["requires_accessibility"],
-            "requires_dod_controls": config["requires_dod_controls"],
-            "requires_iso42001": config["requires_iso42001"],
-        },
-        "packages": selected,
-    }
+    marker.write_text("managed by automation/install_subagents.py\n")
+    for pkg in accountable + overlays:
+        shutil.copyfile(ROOT / pkg["source"], runtime_dir / f"{pkg['name']}.toml")
+    manifest = {"version": 2, "project_type": config.get("project_type", "factory-governed"), "accountable_agents": accountable, "specialization_packages": specs, "regulated_overlays": overlays, "frameworks": frameworks, "source_commit": git_commit(), "runtime_dir": str(runtime_dir)}
     (runtime_dir / "runtime-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     print(json.dumps(manifest, indent=2))
-
 
 if __name__ == "__main__":
     main()

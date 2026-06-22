@@ -1,15 +1,16 @@
 name = "security-compliance-officer"
-version = "0.1.0"
+version = "0.2.0"
 tier = "dod-regulated"
 owner_role = "security-compliance-officer"
 source_soul = ".agent/souls/security-compliance-officer.md"
-summary = "Cross-cutting reviewer runtime package for regulated controls, AI governance, and deployment evidence."
+summary = "Mandatory security/compliance gate enforcement and override register control."
 
 [activation]
-default = false
-project_types = ["dod-regulated", "hipaa"]
-requires_dod_controls = true
+default = true
+mandatory = true
+project_types = ["standard", "ai-ml", "factory-governed", "dod-regulated", "hipaa"]
 
 [governance]
 runtime_required = true
+accountable_agent = true
 review_role = "security-compliance-officer"

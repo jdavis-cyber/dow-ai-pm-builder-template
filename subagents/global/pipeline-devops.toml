@@ -1,14 +1,16 @@
 name = "pipeline-devops"
-version = "0.1.0"
+version = "0.2.0"
 tier = "global"
 owner_role = "pipeline-devops"
 source_soul = ".agent/souls/pipeline-devops.md"
-summary = "Operational runtime package for installer, deployment, telemetry, and release-flow controls."
+summary = "CI/CD, deployment automation, and release controls."
 
 [activation]
 default = true
-project_types = ["standard", "ai-ml", "dod-regulated", "hipaa"]
+mandatory = true
+project_types = ["standard", "ai-ml", "factory-governed", "dod-regulated", "hipaa"]
 
 [governance]
 runtime_required = true
+accountable_agent = true
 review_role = "pipeline-devops"

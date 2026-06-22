@@ -1,107 +1,59 @@
-# Codex/OpenAI - Multi-Agent Orchestration Context
+# Codex Coordination Context — DoW AI PM Builder Template
 
-## 1. MANDATORY: Session Startup Protocol (Double-Lock Check)
+## Startup Protocol
 
-Every agent MUST follow this sequence. Skipping steps or the order of files below is a Process Violation.
+Every agent must read, in order:
 
-1. **PROJECT.md**: Read the current mission and scope.
-2. **orchestration/system_spec.md**: Read the specific section of the Spec that your SOUL file depends on. Do not hallucinate assumptions or execute without this context.
-3. **.codex/agents/runtime-manifest.json** (when present): Confirm your runtime package is installed before acting. Missing required TOMLs are an install failure, not an agent improvisation opportunity.
-4. **CODEX.md**: [THIS FILE] Verify the team structure and your specific mandate.
-5. **structural-integrity-protocol.md**: Read the Phase Gate and "Traffic Cop" requirements.
-6. **ai-governance-framework.md**: Refresh the compliance obligations for your domain.
-7. **orchestration/tasks.md**: Check the current Sprint. **IF THE PREVIOUS PHASE GATE IS NOT "APPROVED" BY THE PM/PO, YOU MUST STOP AND ASK FOR CLEARANCE.**
+1. `PROJECT.md` — current project/package mission and scope.
+2. `orchestration/system_spec.md` or `orchestration/system-spec-template.md` — the relevant system specification section.
+3. `.codex/agents/runtime-manifest.json` when present — confirm the runtime package is installed before acting.
+4. This provider coordination file — Claude, Codex, and Gemini carry the same operating model.
+5. `directives/structural-integrity-protocol.md` — phase-gate and traffic-cop requirements.
+6. `directives/ai-governance-framework.md` and `directives/factory-governance-scope.md` — factory-governance evidence obligations.
+7. `orchestration/tasks.md` — current task board and gate posture.
 
----
+If the previous phase gate is not approved, agents stop and switch to discovery, documentation, remediation, or escalation. Do not perform implementation work without documented readiness.
 
----
+## Operating Model
 
-## 2. Project Philosophy: Discovery-First Execution
+This repository is a provider-agnostic, single-repository AI software factory template. It instantiates one authoritative project package containing application source, governance records, task orchestration, decision records, validation evidence, handoff materials, and agent identity/runtime packages.
 
-**Note**: This file (`CODEX.md`), `GEMINI.md`, and `CLAUDE.md` serve identical purposes: providing the coordination context for the agentic team. Use the file corresponding to your active model/agent identity. The directory structures and protocols (Directives, Souls, Governance) are shared and effectively identical.
+The permanent team is a **15-agent governed scrum team**:
 
-This repository is a **Professional AI Development Factory**. We do not "guess" or "rushing into code." We extract nuance from the **Product Manager (Human Director)** through sequential specialist interviews before any scaffold is built.
+- Requirements BA (`requirements-ba`)
+- User Story BA (`user-story-ba`)
+- UI/UX Designer (`ui-ux-designer`)
+- Architecture SE (`architecture-se`)
+- Database Engineer (`database-engineer`)
+- Backend Developer (`backend-developer`)
+- Frontend Developer (`frontend-developer`)
+- Pipeline DevOps (`pipeline-devops`)
+- Performance DevOps (`performance-devops`)
+- QA Engineer (`qa-engineer`)
+- Automation Test Engineer (`automation-test-engineer`)
+- Scrum Master (`scrum-master`)
+- Program Analyst (`program-analyst`)
+- Documentation SE (`documentation-se`)
+- Security & Compliance Officer (`security-compliance-officer`)
 
-### The Truth Depot (`/docs`)
+Security & Compliance Officer is always installed and participates in every phase gate. It enforces fail-closed findings, compliance gate evidence, and override-register requirements. Program Analyst authors and maintains governance evidence and management-system artifacts; it does not waive Security & Compliance Officer gates.
 
-All specialist intelligence must be deposited in the `/docs` folder. If a decision is not in `/docs`, it does not exist to the rest of the team.
+## Specializations
 
-- `/docs/interviews/`: Raw intelligence from PM/PO specialist sessions.
-- `/docs/product/`: The Master PRD and User Stories.
-- `/docs/architecture/`: Technical bones (ADRs, Schemas).
-- `/docs/verification/`: Personal "Verify" logs for every task (Self-Annealing).
+The 136 VoltAgent packages are specialization/capability packages. They are selected by accountable owners and mapped in `subagents/specialization-ownership-map.json`. They are not autonomous accountable peers and cannot override SOUL files, phase gates, fail-closed controls, or evidence obligations.
 
----
+## Evidence Standard
 
-## 3. Team Structure & Separation of Powers
+Every consequential workflow leaves objective evidence: task assignment, upstream inputs, outputs, verification command or method, handoff record, self-annealing record when defects occur, phase-gate decision, and evidence-index update. Local files are scaffolds until populated and verified.
 
-### The Authority & The Cop
+## Required Validation Commands
 
-- **Human Director (PM/PO)**: The ultimate authority on "What" and "Why." They provide the vision and sign off on Phase Gates.
-- **Scrum Master (The Traffic Cop)**: Owns the "Baton." They are responsible for stopping work if discovery or documentation is missing. They manage the transition between CPMAI phases.
+- `python3 automation/validate_runtime.py .codex/agents/runtime-manifest.json`
+- `python3 automation/validate_spec.py --mode template orchestration/system-spec-template.md`
+- `python3 automation/validate_tasks.py orchestration/task-board-template.md`
+- `python3 automation/validate_template.py`
+- `python3 automation/smoke_test_template.py`
 
-### The Specialists (Discovery Sources)
+## Phase Gate Protocol
 
-- **Business Analysts**: Synthesize interviews into a robust PRD and actionable User Stories.
-- **Architecture & Database**: Design the bones and memory of the system based on the PRD.
-- **UI/UX & Frontend**: Extract the "Feel" and "Soul" of the application.
-- **QA & Security**: Identify the "Edges" and "Failures" before they happen.
-
-### The Documentarian
-
-- **Program Analyst (Author)**: The professional writer of the system. They read the intelligence in `/docs` and "author" the formal CPMAI artifacts in `.governance/`. They do not "enforce" behavior; they "record" it for audit readiness.
-
----
-
-## 4. Phase Gate Protocol (The Double-Lock)
-
-To ensure this agentic system functions as a true development team, we enforce a **Double-Lock Protocol**. Agents must refuse to proceed if these locks are not open.
-
-### Lock 1: Operational Readiness (Scrum Master Enforced)
-
-**Rule**: No task moves to "In Progress" without a documented "Definition of Ready" in the `/docs` folder.
-
-- **Inputs**: Upstream artifacts must exist in the file system (PRD, ADR, etc.).
-- **Refusal**: If inputs are missing, you **MUST** refuse the request.
-
-### Lock 2: Governance Clearance (Scrum Master + PM/PO Approved)
-
-**Rule**: No agent advances to a new CPMAI Phase without a signed Phase Package.
-
-- **The Package**: Includes the PRD + Technical Specs + authored Governance Artifacts.
-- **Review**: The Scrum Master presents this package to the PM/PO.
-- **Approval**: Work only resumes once the PM/PO has given a "Go" decision.
-
----
-
-## 5. Self-Annealing Protocal (Verification First)
-
-Every agent follows the **Annealing Loop** for every task. Passivity is failure.
-
-1. **VALIDATE**: Check upstream foundations in `/docs`.
-2. **EXECUTE**: Perform work using your specialization.
-3. **VERIFY**: Objective review against AC. Create a `verify.md` artifact in the task folder.
-4. **CORRECT**: Fix root causes, not symptoms. Documentings the learning in shared memory.
-
----
-
-## 6. Workspace Structure
-
-- `directives/` — Strategic constraints: Integrity Protocol, Governance Framework.
-- `.agent/souls/` — SOUL files defining agent identities.
-- `subagents/` — Versioned source catalog for installable TOML packages.
-- `.codex/agents/` — Generated runtime agent bundles materialized from `subagents/`.
-- `orchestration/` — Tasks and sprint definitions.
-- `docs/` — The Shared Discovery Hub (Knowledge Hub).
-- `src/`, `services/`, `packages/`, `database/`, `infrastructure/` — Conventional source/runtime implementation surfaces.
-- `execution/` — Optional/legacy implementation workspace.
-- `.governance/` — Final authored compliance artifacts.
-- `CODEX.md` — This file (Coordination Context).
-- `PROJECT.md` — Project definition and scope.
-
----
-
-**Template Version**: 3.0 (The Integrity Revision)
-**Last Updated**: 2026-03-02
-**Maintained By**: All agents contribute improvements
-**Review Cadence**: Continuous improvement as patterns emerge
+The Scrum Master coordinates phase movement. Security & Compliance Officer must review gate evidence. Program Analyst maintains governance artifacts. A gate is approved only when the gate record explicitly says approved and cites evidence; scaffold presence is not approval.

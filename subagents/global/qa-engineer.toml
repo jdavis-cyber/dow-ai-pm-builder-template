@@ -1,9 +1,9 @@
-name = "documentation-se"
+name = "qa-engineer"
 version = "0.2.0"
 tier = "global"
-owner_role = "documentation-se"
-source_soul = ".agent/souls/documentation-se.md"
-summary = "Technical documentation, handoff, and knowledge management."
+owner_role = "qa-engineer"
+source_soul = ".agent/souls/qa-engineer.md"
+summary = "Functional, exploratory, and acceptance testing."
 
 [activation]
 default = true
@@ -13,4 +13,4 @@ project_types = ["standard", "ai-ml", "factory-governed", "dod-regulated", "hipa
 [governance]
 runtime_required = true
 accountable_agent = true
-review_role = "documentation-se"
+review_role = "qa-engineer"

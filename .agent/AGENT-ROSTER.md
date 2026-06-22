@@ -1,195 +1,139 @@
-# Complete Agent Roster - 14 Specialized Agents
+# Complete Agent Roster — 15 Accountable Agents
 
-## Business Analysis Team (2 agents)
+This is the authoritative roster for the DoW AI PM Builder Template. The factory is a **15-agent governed scrum team**. The 136 VoltAgent packages under `subagents/global/voltagent/` are specialization/capability packages, not accountable peer agents.
+
+## Roster Consistency Rule
+
+- `.agent/souls/` must contain exactly these 15 SOUL files.
+- `subagents/install-config.json` must install these same 15 accountable agents by default.
+- `.codex/agents/runtime-manifest.json` must materialize these same 15 accountable agents before work begins.
+- Security & Compliance Officer is mandatory in every generated project.
+
+## Thinkers (4 accountable agents)
 
 ### Requirements BA
-**Specialty**: Requirements solicitation and capture from stakeholders  
+**Accountable Agent ID**: `requirements-ba`  
 **SOUL File**: `.agent/souls/requirements-ba.md`  
-**Key Skills**: Stakeholder interviews, requirement documentation, business objective mapping  
-**When to Use**: Beginning of any new feature or project, clarifying business needs
+**Runtime Package**: `subagents/.../requirements-ba.toml`  
+**Primary Accountability**: Business requirements elicitation and measurable outcomes.
+**Mandatory Runtime**: Yes — installed by `subagents/install-config.json` v2.
 
-### User Story BA  
-**Specialty**: Converting requirements into user stories with acceptance criteria  
+### User Story BA
+**Accountable Agent ID**: `user-story-ba`  
 **SOUL File**: `.agent/souls/user-story-ba.md`  
-**Key Skills**: Story writing, AC definition, story sizing, dependency mapping  
-**When to Use**: After requirements are captured, before development begins
-
----
-
-## Systems Engineering Team (2 agents)
-
-### Architecture SE
-**Specialty**: System architecture and technical design decisions  
-**SOUL File**: `.agent/souls/architecture-se.md`  
-**Key Skills**: Architecture diagrams, technology selection, API design, ADR documentation  
-**When to Use**: Early in projects for foundational decisions, when making major technical changes
-
-### Documentation SE
-**Specialty**: Technical documentation and knowledge management  
-**SOUL File**: `.agent/souls/documentation-se.md`  
-**Key Skills**: API docs, runbooks, onboarding guides, architecture documentation  
-**When to Use**: After implementations complete, when onboarding new team members
-
----
-
-## Development Team (4 agents)
-
-### Database Engineer
-**Specialty**: Schema design, query optimization, data modeling  
-**SOUL File**: `.agent/souls/database-engineer.md`  
-**Key Skills**: Database schema, migrations, indexing, performance tuning  
-**When to Use**: After architecture design, before backend implementation begins
-
-### Backend Developer
-**Specialty**: Server-side APIs, business logic, integrations  
-**SOUL File**: `.agent/souls/backend-developer.md`  
-**Key Skills**: REST APIs, business logic, database integration, authentication  
-**When to Use**: After database schema ready, implementing application logic
-
-### Frontend Developer
-**Specialty**: Client-side UI implementation, React components  
-**SOUL File**: `.agent/souls/frontend-developer.md`  
-**Key Skills**: React development, API integration, responsive design, accessibility  
-**When to Use**: After backend APIs available, implementing user interfaces
+**Runtime Package**: `subagents/.../user-story-ba.toml`  
+**Primary Accountability**: User stories, acceptance criteria, and traceability.
+**Mandatory Runtime**: Yes — installed by `subagents/install-config.json` v2.
 
 ### UI/UX Designer
-**Specialty**: User experience design, wireframes, interaction patterns  
+**Accountable Agent ID**: `ui-ux-designer`  
 **SOUL File**: `.agent/souls/ui-ux-designer.md`  
-**Key Skills**: Wireframes, prototypes, design systems, user testing  
-**When to Use**: After requirements clear, before frontend implementation
+**Runtime Package**: `subagents/.../ui-ux-designer.toml`  
+**Primary Accountability**: User experience, interaction design, and accessibility intent.
+**Mandatory Runtime**: Yes — installed by `subagents/install-config.json` v2.
 
----
+### Architecture SE
+**Accountable Agent ID**: `architecture-se`  
+**SOUL File**: `.agent/souls/architecture-se.md`  
+**Runtime Package**: `subagents/.../architecture-se.toml`  
+**Primary Accountability**: System architecture and technical decisions.
+**Mandatory Runtime**: Yes — installed by `subagents/install-config.json` v2.
 
-## Quality Assurance Team (2 agents)
+## Builders (5 accountable agents)
 
-### QA Engineer
-**Specialty**: Functional testing, user acceptance, bug finding  
-**SOUL File**: `.agent/souls/qa-engineer.md`  
-**Key Skills**: Test plans, manual testing, exploratory testing, bug reporting  
-**When to Use**: After features implemented, validating acceptance criteria
+### Database Engineer
+**Accountable Agent ID**: `database-engineer`  
+**SOUL File**: `.agent/souls/database-engineer.md`  
+**Runtime Package**: `subagents/.../database-engineer.toml`  
+**Primary Accountability**: Data modeling, schemas, and persistence design.
+**Mandatory Runtime**: Yes — installed by `subagents/install-config.json` v2.
 
-### Automation Test Engineer
-**Specialty**: Test automation, CI/CD test integration  
-**SOUL File**: `.agent/souls/automation-test-engineer.md`  
-**Key Skills**: Automated tests, test infrastructure, performance testing  
-**When to Use**: Building regression tests, setting up CI/CD testing gates
+### Backend Developer
+**Accountable Agent ID**: `backend-developer`  
+**SOUL File**: `.agent/souls/backend-developer.md`  
+**Runtime Package**: `subagents/.../backend-developer.toml`  
+**Primary Accountability**: Server-side APIs, integrations, and business logic.
+**Mandatory Runtime**: Yes — installed by `subagents/install-config.json` v2.
 
----
-
-## DevOps Team (2 agents)
+### Frontend Developer
+**Accountable Agent ID**: `frontend-developer`  
+**SOUL File**: `.agent/souls/frontend-developer.md`  
+**Runtime Package**: `subagents/.../frontend-developer.toml`  
+**Primary Accountability**: Client-side implementation and UI integration.
+**Mandatory Runtime**: Yes — installed by `subagents/install-config.json` v2.
 
 ### Pipeline DevOps
-**Specialty**: CI/CD pipelines, deployment automation  
+**Accountable Agent ID**: `pipeline-devops`  
 **SOUL File**: `.agent/souls/pipeline-devops.md`  
-**Key Skills**: GitHub Actions, deployment strategies, infrastructure as code  
-**When to Use**: Setting up deployment pipelines, automating releases
+**Runtime Package**: `subagents/.../pipeline-devops.toml`  
+**Primary Accountability**: CI/CD, deployment automation, and release controls.
+**Mandatory Runtime**: Yes — installed by `subagents/install-config.json` v2.
 
 ### Performance DevOps
-**Specialty**: Monitoring, performance optimization, capacity planning  
+**Accountable Agent ID**: `performance-devops`  
 **SOUL File**: `.agent/souls/performance-devops.md`  
-**Key Skills**: Monitoring setup, performance analysis, incident response  
-**When to Use**: Production monitoring, performance optimization, capacity planning
+**Runtime Package**: `subagents/.../performance-devops.toml`  
+**Primary Accountability**: Performance, monitoring, and capacity engineering.
+**Mandatory Runtime**: Yes — installed by `subagents/install-config.json` v2.
 
----
+## Critics (2 accountable agents)
 
-## Project Management (1 agent)
+### QA Engineer
+**Accountable Agent ID**: `qa-engineer`  
+**SOUL File**: `.agent/souls/qa-engineer.md`  
+**Runtime Package**: `subagents/.../qa-engineer.toml`  
+**Primary Accountability**: Functional, exploratory, and acceptance testing.
+**Mandatory Runtime**: Yes — installed by `subagents/install-config.json` v2.
+
+### Automation Test Engineer
+**Accountable Agent ID**: `automation-test-engineer`  
+**SOUL File**: `.agent/souls/automation-test-engineer.md`  
+**Runtime Package**: `subagents/.../automation-test-engineer.toml`  
+**Primary Accountability**: Regression automation and executable test gates.
+**Mandatory Runtime**: Yes — installed by `subagents/install-config.json` v2.
+
+## Governance & Compliance (4 accountable agents)
 
 ### Scrum Master
-**Specialty**: Team coordination, task management, blocker resolution
-**SOUL File**: `.agent/souls/scrum-master.md`
-**Key Skills**: Task boards, sprint planning, coordination, retrospectives
-**When to Use**: Throughout entire project, coordinating all other agents
-
----
-
-## Governance & Program Management (1 agent)
+**Accountable Agent ID**: `scrum-master`  
+**SOUL File**: `.agent/souls/scrum-master.md`  
+**Runtime Package**: `subagents/.../scrum-master.toml`  
+**Primary Accountability**: Traffic-cop coordination, dependency, and phase-gate enforcement.
+**Mandatory Runtime**: Yes — installed by `subagents/install-config.json` v2.
 
 ### Program Analyst
-**Specialty**: AI governance lifecycle management, CPMAI phase enforcement, synthesized compliance artifact generation
-**SOUL File**: `.agent/souls/program-analyst.md`
-**Directive**: `directives/ai-governance-framework.md`
-**Key Skills**: CPMAI lifecycle orchestration, phase gate reviews, ISO 42001/NIST AI RMF/NIST SP 800-53/CSRMC crosswalk compliance, AI Risk Register management, Statement of Applicability maintenance, evidence repository management, governance cadence preparation, certification readiness assessment, Mission Risk Profiling, Continuous Compliance Validation, Automated Evidence Package generation
-**When to Use**: Throughout entire AI project lifecycle — structures project around CPMAI phases, enforces hard phase gates, generates synthesized compliance artifacts from other agents' outputs, maintains audit-ready evidence chain, prepares governance briefings for Director
-**Authority**: Owns PgM/GL governance responsibilities from RACI matrix. Monitors all agents' compliance obligations. Subordinate to Human Director. Does not override Scrum Master's operational coordination.
-**Framework**: Enterprise AI Governance & Lifecycle Management Framework v1.1.1
+**Accountable Agent ID**: `program-analyst`  
+**SOUL File**: `.agent/souls/program-analyst.md`  
+**Runtime Package**: `subagents/.../program-analyst.toml`  
+**Primary Accountability**: Governance evidence authoring and management-system artifacts.
+**Mandatory Runtime**: Yes — installed by `subagents/install-config.json` v2.
+**Boundary**: Authors and maintains governance evidence and management-system artifacts; does not waive compliance gates.
+
+### Documentation SE
+**Accountable Agent ID**: `documentation-se`  
+**SOUL File**: `.agent/souls/documentation-se.md`  
+**Runtime Package**: `subagents/.../documentation-se.toml`  
+**Primary Accountability**: Technical documentation, handoff, and knowledge management.
+**Mandatory Runtime**: Yes — installed by `subagents/install-config.json` v2.
+
+### Security & Compliance Officer
+**Accountable Agent ID**: `security-compliance-officer`  
+**SOUL File**: `.agent/souls/security-compliance-officer.md`  
+**Runtime Package**: `subagents/.../security-compliance-officer.toml`  
+**Primary Accountability**: Mandatory security/compliance gate enforcement and override register control.
+**Mandatory Runtime**: Yes — installed by `subagents/install-config.json` v2.
+**Boundary**: Enforces compliance gates, fail-closed findings, and override register requirements; does not replace the Program Analyst.
 
 ---
 
 ## Typical Workflow Sequence
 
-### Phase 0: Governance Initialization
-0. **Program Analyst** - Establish CPMAI phase structure, initialize governance artifacts (MRP, SoA, Risk Register), define phase gate schedule
+1. **Sprint Zero / Discovery** — Requirements BA, User Story BA, UI/UX Designer, Architecture SE, Database Engineer, QA Engineer, Automation Test Engineer, Program Analyst, Scrum Master, and Security & Compliance Officer establish the Definition of Ready and evidence plan.
+2. **Design & Planning** — Architecture SE, Database Engineer, UI/UX Designer, Program Analyst, Documentation SE, Scrum Master, and Security & Compliance Officer confirm design, standards applicability, and gate evidence.
+3. **Implementation** — Backend Developer, Frontend Developer, Pipeline DevOps, Performance DevOps, QA Engineer, and Automation Test Engineer build only against approved inputs.
+4. **Verification** — QA Engineer and Automation Test Engineer run executable checks; Documentation SE and Program Analyst index evidence; Security & Compliance Officer reviews compliance evidence.
+5. **Phase Gate** — Scrum Master coordinates the gate. Program Analyst presents management-system evidence. Security & Compliance Officer participates at every gate and fails closed if evidence is unavailable or an override is missing.
 
-### Phase 1: Discovery & Planning
-1. **Scrum Master** - Initial planning, create task board
-2. **Requirements BA** - Gather requirements from stakeholders
-3. **User Story BA** - Convert to user stories
-4. **Program Analyst** - Conduct Gate 1 (Business Understanding) review
+## Specialization Boundary
 
-### Phase 2: Design
-4. **Architecture SE** - Design system architecture (can run parallel with 5-6)
-5. **UI/UX Designer** - Create wireframes (parallel with 4)
-6. **Database Engineer** - Design schema (parallel with 4-5)
-
-### Phase 3: Implementation
-7. **Backend Developer** - Implement APIs (depends on DB schema)
-8. **Frontend Developer** - Implement UI (depends on wireframes + APIs)
-9. **Documentation SE** - Document as code is written (parallel with 7-8)
-
-### Phase 4: Quality & Deployment
-10. **QA Engineer** - Test features (depends on implementation)
-11. **Automation Test Engineer** - Build automated tests (parallel with QA)
-12. **Pipeline DevOps** - Set up deployment (can start earlier)
-13. **Performance DevOps** - Monitor and optimize (ongoing)
-
-**Scrum Master coordinates throughout all phases**
-**Program Analyst conducts phase gate reviews between each phase and generates governance artifacts continuously**
-
----
-
-## Parallel Execution Opportunities
-
-These agents can work simultaneously without conflicts:
-
-**Early Phase Parallel Work:**
-- Architecture SE + UI/UX Designer + Database Engineer
-
-**Implementation Parallel Work:**
-- Backend Developer + Frontend Developer + Documentation SE
-
-**Quality Phase Parallel Work:**
-- QA Engineer + Automation Test Engineer
-
-**Infrastructure Parallel Work:**  
-- Pipeline DevOps + Performance DevOps
-
----
-
-## Quick Agent Selection Guide
-
-**Starting a new project?**  
-→ Scrum Master, Requirements BA, User Story BA
-
-**Need technical foundation?**  
-→ Architecture SE, Database Engineer
-
-**Building features?**  
-→ Backend Developer, Frontend Developer, UI/UX Designer
-
-**Ensuring quality?**  
-→ QA Engineer, Automation Test Engineer
-
-**Deploying and monitoring?**  
-→ Pipeline DevOps, Performance DevOps
-
-**Need documentation?**  
-→ Documentation SE (can work alongside any phase)
-
----
-
-**Need governance & compliance?**
-→ Program Analyst (works alongside any phase, enforces phase gates, generates compliance artifacts)
-
----
-
-**Your complete AI development team - 14 specialized agents ready to coordinate!**
+VoltAgent TOMLs may be activated as execution lenses by accountable owners. They cannot weaken SOUL duties, phase gates, fail-closed controls, or evidence obligations.

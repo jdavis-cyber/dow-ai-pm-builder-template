@@ -1,0 +1,16 @@
+name = "automation-test-engineer"
+version = "0.2.0"
+tier = "global"
+owner_role = "automation-test-engineer"
+source_soul = ".agent/souls/automation-test-engineer.md"
+summary = "Regression automation and executable test gates."
+
+[activation]
+default = true
+mandatory = true
+project_types = ["standard", "ai-ml", "factory-governed", "dod-regulated", "hipaa"]
+
+[governance]
+runtime_required = true
+accountable_agent = true
+review_role = "automation-test-engineer"

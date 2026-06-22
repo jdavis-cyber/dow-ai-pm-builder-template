@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "project_type": "dod-regulated",
+  "version": 2,
+  "project_type": "factory-governed",
   "languages": [
     "markdown",
     "python"
@@ -9,16 +9,33 @@
     "local-cli"
   ],
   "requires_accessibility": false,
-  "requires_dod_controls": true,
-  "requires_iso42001": true,
-  "baseline_packages": [
+  "accountable_agents": [
+    "requirements-ba",
+    "user-story-ba",
+    "ui-ux-designer",
+    "architecture-se",
+    "database-engineer",
+    "backend-developer",
+    "frontend-developer",
+    "pipeline-devops",
+    "performance-devops",
+    "qa-engineer",
+    "automation-test-engineer",
     "scrum-master",
     "program-analyst",
     "documentation-se",
-    "pipeline-devops"
+    "security-compliance-officer"
   ],
-  "project_specific_packages": [],
-  "regulated_packages": [
+  "specialization_packages": [],
+  "regulated_overlays": [],
+  "frameworks": {
+    "cpmai": "baseline",
+    "iso_42001": "baseline",
+    "nist_ai_rmf": "baseline",
+    "iso_27001": "crosswalk-candidate",
+    "iso_27701": "reference-needed"
+  },
+  "mandatory_agents": [
     "security-compliance-officer"
   ]
 }

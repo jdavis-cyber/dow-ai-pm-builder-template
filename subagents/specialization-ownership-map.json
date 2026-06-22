@@ -1,0 +1,2450 @@
+{
+  "global/voltagent/01-core-development/api-designer.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the api-designer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/01-core-development/api-designer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/01-core-development/backend-developer.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the backend-developer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/01-core-development/backend-developer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/01-core-development/code-mapper.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the code-mapper capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/01-core-development/code-mapper.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/01-core-development/electron-pro.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the electron-pro capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/01-core-development/electron-pro.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/01-core-development/frontend-developer.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the frontend-developer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/01-core-development/frontend-developer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/01-core-development/fullstack-developer.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the fullstack-developer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/01-core-development/fullstack-developer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/01-core-development/graphql-architect.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the graphql-architect capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/01-core-development/graphql-architect.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/01-core-development/microservices-architect.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the microservices-architect capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/01-core-development/microservices-architect.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/01-core-development/mobile-developer.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the mobile-developer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/01-core-development/mobile-developer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/01-core-development/ui-designer.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the ui-designer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/01-core-development/ui-designer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/01-core-development/ui-fixer.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the ui-fixer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/01-core-development/ui-fixer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/01-core-development/websocket-engineer.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the websocket-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/01-core-development/websocket-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/angular-architect.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the angular-architect capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/angular-architect.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/cpp-pro.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the cpp-pro capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/cpp-pro.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/csharp-developer.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the csharp-developer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/csharp-developer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/django-developer.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the django-developer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/django-developer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/dotnet-core-expert.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the dotnet-core-expert capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/dotnet-core-expert.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/dotnet-framework-4.8-expert.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the dotnet-framework-4.8-expert capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/dotnet-framework-4.8-expert.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/elixir-expert.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the elixir-expert capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/elixir-expert.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/erlang-expert.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the erlang-expert capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/erlang-expert.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/flutter-expert.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the flutter-expert capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/flutter-expert.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/golang-pro.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the golang-pro capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/golang-pro.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/java-architect.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the java-architect capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/java-architect.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/javascript-pro.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the javascript-pro capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/javascript-pro.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/kotlin-specialist.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the kotlin-specialist capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/kotlin-specialist.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/laravel-specialist.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the laravel-specialist capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/laravel-specialist.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/nextjs-developer.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the nextjs-developer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/nextjs-developer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/php-pro.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the php-pro capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/php-pro.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/powershell-5.1-expert.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the powershell-5.1-expert capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/powershell-5.1-expert.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/powershell-7-expert.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the powershell-7-expert capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/powershell-7-expert.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/python-pro.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the python-pro capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/python-pro.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/rails-expert.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the rails-expert capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/rails-expert.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/react-specialist.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the react-specialist capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/react-specialist.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/rust-engineer.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the rust-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/rust-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/spring-boot-engineer.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the spring-boot-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/spring-boot-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/sql-pro.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the sql-pro capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/sql-pro.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/swift-expert.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the swift-expert capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/swift-expert.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/typescript-pro.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the typescript-pro capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/typescript-pro.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/02-language-specialists/vue-expert.toml": {
+    "accountable_owner": "backend-developer",
+    "status": "mapped",
+    "activation_condition": "Activated by Backend Developer when task scope requires the vue-expert capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/02-language-specialists/vue-expert.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/03-infrastructure/azure-infra-engineer.toml": {
+    "accountable_owner": "pipeline-devops",
+    "status": "mapped",
+    "activation_condition": "Activated by Pipeline DevOps when task scope requires the azure-infra-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/03-infrastructure/azure-infra-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/03-infrastructure/cloud-architect.toml": {
+    "accountable_owner": "pipeline-devops",
+    "status": "mapped",
+    "activation_condition": "Activated by Pipeline DevOps when task scope requires the cloud-architect capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/03-infrastructure/cloud-architect.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/03-infrastructure/database-administrator.toml": {
+    "accountable_owner": "pipeline-devops",
+    "status": "mapped",
+    "activation_condition": "Activated by Pipeline DevOps when task scope requires the database-administrator capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/03-infrastructure/database-administrator.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/03-infrastructure/deployment-engineer.toml": {
+    "accountable_owner": "pipeline-devops",
+    "status": "mapped",
+    "activation_condition": "Activated by Pipeline DevOps when task scope requires the deployment-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/03-infrastructure/deployment-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/03-infrastructure/devops-engineer.toml": {
+    "accountable_owner": "pipeline-devops",
+    "status": "mapped",
+    "activation_condition": "Activated by Pipeline DevOps when task scope requires the devops-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/03-infrastructure/devops-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/03-infrastructure/devops-incident-responder.toml": {
+    "accountable_owner": "pipeline-devops",
+    "status": "mapped",
+    "activation_condition": "Activated by Pipeline DevOps when task scope requires the devops-incident-responder capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/03-infrastructure/devops-incident-responder.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/03-infrastructure/docker-expert.toml": {
+    "accountable_owner": "pipeline-devops",
+    "status": "mapped",
+    "activation_condition": "Activated by Pipeline DevOps when task scope requires the docker-expert capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/03-infrastructure/docker-expert.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/03-infrastructure/incident-responder.toml": {
+    "accountable_owner": "pipeline-devops",
+    "status": "mapped",
+    "activation_condition": "Activated by Pipeline DevOps when task scope requires the incident-responder capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/03-infrastructure/incident-responder.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/03-infrastructure/kubernetes-specialist.toml": {
+    "accountable_owner": "pipeline-devops",
+    "status": "mapped",
+    "activation_condition": "Activated by Pipeline DevOps when task scope requires the kubernetes-specialist capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/03-infrastructure/kubernetes-specialist.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/03-infrastructure/network-engineer.toml": {
+    "accountable_owner": "pipeline-devops",
+    "status": "mapped",
+    "activation_condition": "Activated by Pipeline DevOps when task scope requires the network-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/03-infrastructure/network-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/03-infrastructure/platform-engineer.toml": {
+    "accountable_owner": "pipeline-devops",
+    "status": "mapped",
+    "activation_condition": "Activated by Pipeline DevOps when task scope requires the platform-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/03-infrastructure/platform-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/03-infrastructure/security-engineer.toml": {
+    "accountable_owner": "pipeline-devops",
+    "status": "mapped",
+    "activation_condition": "Activated by Pipeline DevOps when task scope requires the security-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/03-infrastructure/security-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/03-infrastructure/sre-engineer.toml": {
+    "accountable_owner": "pipeline-devops",
+    "status": "mapped",
+    "activation_condition": "Activated by Pipeline DevOps when task scope requires the sre-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/03-infrastructure/sre-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/03-infrastructure/terraform-engineer.toml": {
+    "accountable_owner": "pipeline-devops",
+    "status": "mapped",
+    "activation_condition": "Activated by Pipeline DevOps when task scope requires the terraform-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/03-infrastructure/terraform-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/03-infrastructure/terragrunt-expert.toml": {
+    "accountable_owner": "pipeline-devops",
+    "status": "mapped",
+    "activation_condition": "Activated by Pipeline DevOps when task scope requires the terragrunt-expert capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/03-infrastructure/terragrunt-expert.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/03-infrastructure/windows-infra-admin.toml": {
+    "accountable_owner": "pipeline-devops",
+    "status": "mapped",
+    "activation_condition": "Activated by Pipeline DevOps when task scope requires the windows-infra-admin capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/03-infrastructure/windows-infra-admin.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/04-quality-security/accessibility-tester.toml": {
+    "accountable_owner": "security-compliance-officer",
+    "status": "mapped",
+    "activation_condition": "Activated by Security & Compliance Officer when task scope requires the accessibility-tester capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/04-quality-security/accessibility-tester.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/04-quality-security/ad-security-reviewer.toml": {
+    "accountable_owner": "security-compliance-officer",
+    "status": "mapped",
+    "activation_condition": "Activated by Security & Compliance Officer when task scope requires the ad-security-reviewer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/04-quality-security/ad-security-reviewer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/04-quality-security/architect-reviewer.toml": {
+    "accountable_owner": "security-compliance-officer",
+    "status": "mapped",
+    "activation_condition": "Activated by Security & Compliance Officer when task scope requires the architect-reviewer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/04-quality-security/architect-reviewer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/04-quality-security/browser-debugger.toml": {
+    "accountable_owner": "security-compliance-officer",
+    "status": "mapped",
+    "activation_condition": "Activated by Security & Compliance Officer when task scope requires the browser-debugger capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/04-quality-security/browser-debugger.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/04-quality-security/chaos-engineer.toml": {
+    "accountable_owner": "security-compliance-officer",
+    "status": "mapped",
+    "activation_condition": "Activated by Security & Compliance Officer when task scope requires the chaos-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/04-quality-security/chaos-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/04-quality-security/code-reviewer.toml": {
+    "accountable_owner": "security-compliance-officer",
+    "status": "mapped",
+    "activation_condition": "Activated by Security & Compliance Officer when task scope requires the code-reviewer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/04-quality-security/code-reviewer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/04-quality-security/compliance-auditor.toml": {
+    "accountable_owner": "security-compliance-officer",
+    "status": "mapped",
+    "activation_condition": "Activated by Security & Compliance Officer when task scope requires the compliance-auditor capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/04-quality-security/compliance-auditor.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/04-quality-security/debugger.toml": {
+    "accountable_owner": "security-compliance-officer",
+    "status": "mapped",
+    "activation_condition": "Activated by Security & Compliance Officer when task scope requires the debugger capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/04-quality-security/debugger.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/04-quality-security/error-detective.toml": {
+    "accountable_owner": "security-compliance-officer",
+    "status": "mapped",
+    "activation_condition": "Activated by Security & Compliance Officer when task scope requires the error-detective capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/04-quality-security/error-detective.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/04-quality-security/penetration-tester.toml": {
+    "accountable_owner": "security-compliance-officer",
+    "status": "mapped",
+    "activation_condition": "Activated by Security & Compliance Officer when task scope requires the penetration-tester capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/04-quality-security/penetration-tester.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/04-quality-security/performance-engineer.toml": {
+    "accountable_owner": "security-compliance-officer",
+    "status": "mapped",
+    "activation_condition": "Activated by Security & Compliance Officer when task scope requires the performance-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/04-quality-security/performance-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/04-quality-security/powershell-security-hardening.toml": {
+    "accountable_owner": "security-compliance-officer",
+    "status": "mapped",
+    "activation_condition": "Activated by Security & Compliance Officer when task scope requires the powershell-security-hardening capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/04-quality-security/powershell-security-hardening.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/04-quality-security/qa-expert.toml": {
+    "accountable_owner": "security-compliance-officer",
+    "status": "mapped",
+    "activation_condition": "Activated by Security & Compliance Officer when task scope requires the qa-expert capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/04-quality-security/qa-expert.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/04-quality-security/reviewer.toml": {
+    "accountable_owner": "security-compliance-officer",
+    "status": "mapped",
+    "activation_condition": "Activated by Security & Compliance Officer when task scope requires the reviewer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/04-quality-security/reviewer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/04-quality-security/security-auditor.toml": {
+    "accountable_owner": "security-compliance-officer",
+    "status": "mapped",
+    "activation_condition": "Activated by Security & Compliance Officer when task scope requires the security-auditor capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/04-quality-security/security-auditor.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/04-quality-security/test-automator.toml": {
+    "accountable_owner": "security-compliance-officer",
+    "status": "mapped",
+    "activation_condition": "Activated by Security & Compliance Officer when task scope requires the test-automator capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/04-quality-security/test-automator.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/05-data-ai/ai-engineer.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the ai-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/05-data-ai/ai-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/05-data-ai/data-analyst.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the data-analyst capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/05-data-ai/data-analyst.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/05-data-ai/data-engineer.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the data-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/05-data-ai/data-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/05-data-ai/data-scientist.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the data-scientist capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/05-data-ai/data-scientist.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/05-data-ai/database-optimizer.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the database-optimizer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/05-data-ai/database-optimizer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/05-data-ai/llm-architect.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the llm-architect capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/05-data-ai/llm-architect.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/05-data-ai/machine-learning-engineer.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the machine-learning-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/05-data-ai/machine-learning-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/05-data-ai/ml-engineer.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the ml-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/05-data-ai/ml-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/05-data-ai/mlops-engineer.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the mlops-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/05-data-ai/mlops-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/05-data-ai/nlp-engineer.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the nlp-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/05-data-ai/nlp-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/05-data-ai/postgres-pro.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the postgres-pro capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/05-data-ai/postgres-pro.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/05-data-ai/prompt-engineer.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the prompt-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/05-data-ai/prompt-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/06-developer-experience/build-engineer.toml": {
+    "accountable_owner": "documentation-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Documentation SE when task scope requires the build-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/06-developer-experience/build-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/06-developer-experience/cli-developer.toml": {
+    "accountable_owner": "documentation-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Documentation SE when task scope requires the cli-developer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/06-developer-experience/cli-developer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/06-developer-experience/dependency-manager.toml": {
+    "accountable_owner": "documentation-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Documentation SE when task scope requires the dependency-manager capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/06-developer-experience/dependency-manager.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/06-developer-experience/documentation-engineer.toml": {
+    "accountable_owner": "documentation-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Documentation SE when task scope requires the documentation-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/06-developer-experience/documentation-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/06-developer-experience/dx-optimizer.toml": {
+    "accountable_owner": "documentation-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Documentation SE when task scope requires the dx-optimizer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/06-developer-experience/dx-optimizer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/06-developer-experience/git-workflow-manager.toml": {
+    "accountable_owner": "documentation-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Documentation SE when task scope requires the git-workflow-manager capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/06-developer-experience/git-workflow-manager.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/06-developer-experience/legacy-modernizer.toml": {
+    "accountable_owner": "documentation-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Documentation SE when task scope requires the legacy-modernizer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/06-developer-experience/legacy-modernizer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/06-developer-experience/mcp-developer.toml": {
+    "accountable_owner": "documentation-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Documentation SE when task scope requires the mcp-developer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/06-developer-experience/mcp-developer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/06-developer-experience/powershell-module-architect.toml": {
+    "accountable_owner": "documentation-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Documentation SE when task scope requires the powershell-module-architect capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/06-developer-experience/powershell-module-architect.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/06-developer-experience/powershell-ui-architect.toml": {
+    "accountable_owner": "documentation-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Documentation SE when task scope requires the powershell-ui-architect capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/06-developer-experience/powershell-ui-architect.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/06-developer-experience/refactoring-specialist.toml": {
+    "accountable_owner": "documentation-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Documentation SE when task scope requires the refactoring-specialist capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/06-developer-experience/refactoring-specialist.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/06-developer-experience/slack-expert.toml": {
+    "accountable_owner": "documentation-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Documentation SE when task scope requires the slack-expert capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/06-developer-experience/slack-expert.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/06-developer-experience/tooling-engineer.toml": {
+    "accountable_owner": "documentation-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Documentation SE when task scope requires the tooling-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/06-developer-experience/tooling-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/07-specialized-domains/api-documenter.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the api-documenter capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/07-specialized-domains/api-documenter.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/07-specialized-domains/blockchain-developer.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the blockchain-developer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/07-specialized-domains/blockchain-developer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/07-specialized-domains/embedded-systems.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the embedded-systems capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/07-specialized-domains/embedded-systems.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/07-specialized-domains/fintech-engineer.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the fintech-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/07-specialized-domains/fintech-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/07-specialized-domains/game-developer.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the game-developer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/07-specialized-domains/game-developer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/07-specialized-domains/iot-engineer.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the iot-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/07-specialized-domains/iot-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/07-specialized-domains/m365-admin.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the m365-admin capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/07-specialized-domains/m365-admin.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/07-specialized-domains/mobile-app-developer.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the mobile-app-developer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/07-specialized-domains/mobile-app-developer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/07-specialized-domains/payment-integration.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the payment-integration capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/07-specialized-domains/payment-integration.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/07-specialized-domains/quant-analyst.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the quant-analyst capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/07-specialized-domains/quant-analyst.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/07-specialized-domains/risk-manager.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the risk-manager capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/07-specialized-domains/risk-manager.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/07-specialized-domains/seo-specialist.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Activated by Architecture SE when task scope requires the seo-specialist capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/07-specialized-domains/seo-specialist.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/08-business-product/business-analyst.toml": {
+    "accountable_owner": "requirements-ba",
+    "status": "mapped",
+    "activation_condition": "Activated by Requirements BA when task scope requires the business-analyst capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/08-business-product/business-analyst.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/08-business-product/content-marketer.toml": {
+    "accountable_owner": "requirements-ba",
+    "status": "mapped",
+    "activation_condition": "Activated by Requirements BA when task scope requires the content-marketer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/08-business-product/content-marketer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/08-business-product/customer-success-manager.toml": {
+    "accountable_owner": "requirements-ba",
+    "status": "mapped",
+    "activation_condition": "Activated by Requirements BA when task scope requires the customer-success-manager capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/08-business-product/customer-success-manager.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/08-business-product/legal-advisor.toml": {
+    "accountable_owner": "requirements-ba",
+    "status": "mapped",
+    "activation_condition": "Activated by Requirements BA when task scope requires the legal-advisor capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/08-business-product/legal-advisor.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/08-business-product/product-manager.toml": {
+    "accountable_owner": "requirements-ba",
+    "status": "mapped",
+    "activation_condition": "Activated by Requirements BA when task scope requires the product-manager capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/08-business-product/product-manager.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/08-business-product/project-manager.toml": {
+    "accountable_owner": "requirements-ba",
+    "status": "mapped",
+    "activation_condition": "Activated by Requirements BA when task scope requires the project-manager capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/08-business-product/project-manager.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/08-business-product/sales-engineer.toml": {
+    "accountable_owner": "requirements-ba",
+    "status": "mapped",
+    "activation_condition": "Activated by Requirements BA when task scope requires the sales-engineer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/08-business-product/sales-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/08-business-product/scrum-master.toml": {
+    "accountable_owner": "requirements-ba",
+    "status": "mapped",
+    "activation_condition": "Activated by Requirements BA when task scope requires the scrum-master capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/08-business-product/scrum-master.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/08-business-product/technical-writer.toml": {
+    "accountable_owner": "requirements-ba",
+    "status": "mapped",
+    "activation_condition": "Activated by Requirements BA when task scope requires the technical-writer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/08-business-product/technical-writer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/08-business-product/ux-researcher.toml": {
+    "accountable_owner": "requirements-ba",
+    "status": "mapped",
+    "activation_condition": "Activated by Requirements BA when task scope requires the ux-researcher capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/08-business-product/ux-researcher.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/08-business-product/wordpress-master.toml": {
+    "accountable_owner": "requirements-ba",
+    "status": "mapped",
+    "activation_condition": "Activated by Requirements BA when task scope requires the wordpress-master capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/08-business-product/wordpress-master.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/09-meta-orchestration/agent-installer.toml": {
+    "accountable_owner": "scrum-master",
+    "status": "mapped",
+    "activation_condition": "Activated by Scrum Master when task scope requires the agent-installer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/09-meta-orchestration/agent-installer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/09-meta-orchestration/agent-organizer.toml": {
+    "accountable_owner": "scrum-master",
+    "status": "mapped",
+    "activation_condition": "Activated by Scrum Master when task scope requires the agent-organizer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/09-meta-orchestration/agent-organizer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/09-meta-orchestration/context-manager.toml": {
+    "accountable_owner": "scrum-master",
+    "status": "mapped",
+    "activation_condition": "Activated by Scrum Master when task scope requires the context-manager capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/09-meta-orchestration/context-manager.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/09-meta-orchestration/error-coordinator.toml": {
+    "accountable_owner": "scrum-master",
+    "status": "mapped",
+    "activation_condition": "Activated by Scrum Master when task scope requires the error-coordinator capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/09-meta-orchestration/error-coordinator.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/09-meta-orchestration/it-ops-orchestrator.toml": {
+    "accountable_owner": "scrum-master",
+    "status": "mapped",
+    "activation_condition": "Activated by Scrum Master when task scope requires the it-ops-orchestrator capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/09-meta-orchestration/it-ops-orchestrator.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/09-meta-orchestration/knowledge-synthesizer.toml": {
+    "accountable_owner": "scrum-master",
+    "status": "mapped",
+    "activation_condition": "Activated by Scrum Master when task scope requires the knowledge-synthesizer capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/09-meta-orchestration/knowledge-synthesizer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/09-meta-orchestration/multi-agent-coordinator.toml": {
+    "accountable_owner": "scrum-master",
+    "status": "mapped",
+    "activation_condition": "Activated by Scrum Master when task scope requires the multi-agent-coordinator capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/09-meta-orchestration/multi-agent-coordinator.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/09-meta-orchestration/performance-monitor.toml": {
+    "accountable_owner": "scrum-master",
+    "status": "mapped",
+    "activation_condition": "Activated by Scrum Master when task scope requires the performance-monitor capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/09-meta-orchestration/performance-monitor.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/09-meta-orchestration/task-distributor.toml": {
+    "accountable_owner": "scrum-master",
+    "status": "mapped",
+    "activation_condition": "Activated by Scrum Master when task scope requires the task-distributor capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/09-meta-orchestration/task-distributor.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/09-meta-orchestration/workflow-orchestrator.toml": {
+    "accountable_owner": "scrum-master",
+    "status": "mapped",
+    "activation_condition": "Activated by Scrum Master when task scope requires the workflow-orchestrator capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/09-meta-orchestration/workflow-orchestrator.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/10-research-analysis/competitive-analyst.toml": {
+    "accountable_owner": "requirements-ba",
+    "status": "mapped",
+    "activation_condition": "Activated by Requirements BA when task scope requires the competitive-analyst capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/10-research-analysis/competitive-analyst.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/10-research-analysis/data-researcher.toml": {
+    "accountable_owner": "requirements-ba",
+    "status": "mapped",
+    "activation_condition": "Activated by Requirements BA when task scope requires the data-researcher capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/10-research-analysis/data-researcher.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/10-research-analysis/docs-researcher.toml": {
+    "accountable_owner": "requirements-ba",
+    "status": "mapped",
+    "activation_condition": "Activated by Requirements BA when task scope requires the docs-researcher capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/10-research-analysis/docs-researcher.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/10-research-analysis/market-researcher.toml": {
+    "accountable_owner": "requirements-ba",
+    "status": "mapped",
+    "activation_condition": "Activated by Requirements BA when task scope requires the market-researcher capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/10-research-analysis/market-researcher.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/10-research-analysis/research-analyst.toml": {
+    "accountable_owner": "requirements-ba",
+    "status": "mapped",
+    "activation_condition": "Activated by Requirements BA when task scope requires the research-analyst capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/10-research-analysis/research-analyst.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/10-research-analysis/search-specialist.toml": {
+    "accountable_owner": "requirements-ba",
+    "status": "mapped",
+    "activation_condition": "Activated by Requirements BA when task scope requires the search-specialist capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/10-research-analysis/search-specialist.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/voltagent/10-research-analysis/trend-analyst.toml": {
+    "accountable_owner": "requirements-ba",
+    "status": "mapped",
+    "activation_condition": "Activated by Requirements BA when task scope requires the trend-analyst capability.",
+    "reason_for_selection": "Specialized capability package supporting the accountable owner; not an accountable peer agent.",
+    "source_toml_path": "subagents/global/voltagent/10-research-analysis/trend-analyst.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  }
+}

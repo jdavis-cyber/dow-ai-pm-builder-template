@@ -1,14 +1,16 @@
 name = "program-analyst"
-version = "0.1.0"
+version = "0.2.0"
 tier = "global"
 owner_role = "program-analyst"
 source_soul = ".agent/souls/program-analyst.md"
-summary = "Artifact-authoring runtime package for governance evidence and audit-ready delivery."
+summary = "Governance evidence authoring and management-system artifacts."
 
 [activation]
 default = true
-project_types = ["standard", "ai-ml", "dod-regulated", "hipaa"]
+mandatory = true
+project_types = ["standard", "ai-ml", "factory-governed", "dod-regulated", "hipaa"]
 
 [governance]
 runtime_required = true
+accountable_agent = true
 review_role = "program-analyst"
