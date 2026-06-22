@@ -8,6 +8,18 @@
 
 ---
 
+## Repository Operating Model
+
+This repo is intended to be the authoritative project package, not only a governance sidecar. A completed or in-progress project clone should contain:
+
+- deployable application source and runtime manifests;
+- governance state, phase gates, risk, SoA, standards, and control evidence;
+- decision records and architecture records;
+- verification evidence and audit trail;
+- handoff/continuation instructions for the next human or agent.
+
+Keep implementation and governance separated by folder boundaries, not by separate repositories. If a project requires a different implementation layout, agree the layout and folder boundaries before implementation begins and record the change in `docs/decisions/`.
+
 ## Overview
 
 [2–3 sentence description of what this project is and what problem it solves.]
@@ -15,7 +27,7 @@
 ## Demo
 
 - **Live Demo**: [URL or "Not Deployed"]
-- **Screenshots**: See `execution/design/screenshots/`
+- **Screenshots**: See `docs/verification/` or the project-specific design artifact path
 - **Video Walkthrough**: [URL or N/A]
 
 ## Tech Stack

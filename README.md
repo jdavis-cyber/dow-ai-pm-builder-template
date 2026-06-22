@@ -16,6 +16,15 @@
 
 A 15-agent autonomous software factory purpose-built for regulated, mission-critical development. Every agent in this system operates under a compliance envelope. Nothing ships without a Phase Gate. Nothing starts without a Definition of Ready. And nothing passes compliance review without the Security & Compliance Officer signing off — or generating a documented Override Register entry explaining exactly why she didn't.
 
+This repository is a **self-contained governed project package**. The deployable application, governance logic, decision records, verification evidence, handoff notes, and agent orchestration live together in one clone with clear folder boundaries. Source code and governance are separated by directory, not by separate repositories.
+
+A cloned project should answer four audit/continuity questions without requiring a second repo:
+
+1. What was built?
+2. Why was it built that way?
+3. What governance/evidence supports the current state?
+4. What must the next human or agent not assume?
+
 This is not a template you configure. It is a governed system you activate.
 
 ---

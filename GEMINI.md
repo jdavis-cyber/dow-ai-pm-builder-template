@@ -90,7 +90,8 @@ Every agent follows the **Annealing Loop** for every task. Passivity is failure.
 - `.agent/souls/` — SOUL files defining agent identities.
 - `orchestration/` — Tasks and sprint definitions.
 - `docs/` — The Shared Discovery Hub (Knowledge Hub).
-- `execution/` — Source code and implementation artifacts.
+- `src/`, `services/`, `packages/`, `database/`, `infrastructure/` — Conventional source/runtime implementation surfaces.
+- `execution/` — Optional/legacy implementation workspace.
 - `.governance/` — Final authored compliance artifacts.
 - `GEMINI.md` — This file (Coordination Context).
 - `PROJECT.md` — Project definition and scope.

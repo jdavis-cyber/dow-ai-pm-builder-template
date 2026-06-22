@@ -75,17 +75,19 @@ python3 automation/init_project.py my-project ~/projects # or explicit parent
 
 This creates `my-project/` as a fresh git repository containing the pinned
 factory process (agents, directives, gates), a blank spec and task board
-instantiated from their templates, empty `execution/`, `docs/`,
-`.governance/`, and `requirements/` scaffolds, and a `TEMPLATE_PROVENANCE.md`
-recording exactly which template version governs the build.
+instantiated from their templates, conventional implementation surfaces
+(`src/`, `services/`, `packages/`, `database/`, `infrastructure/`, and optional
+`execution/`), `docs/`, `.governance/`, and `requirements/` scaffolds, and a
+`TEMPLATE_PROVENANCE.md` recording exactly which template version governs the build.
 
 **The project folder is the deliverable.** As the factory runs, application
-source accumulates in `execution/`, compliance evidence in `.governance/`,
-and engineering artifacts in `docs/` — so at the end you hand the customer
-one repository: the deployable software plus the complete paperwork their
-accreditors need (RMF/ATO evidence, ADRs, test records, gate sign-offs).
-The template is never part of the delivery; the provenance file ties the
-process back to it.
+source accumulates in the chosen implementation surfaces, compliance evidence
+in `.governance/`, decision/handoff records in `docs/decisions/` and
+`docs/handoff/`, and verification/engineering artifacts in `docs/` — so at the
+end you hand the customer one repository: the deployable software plus the
+complete paperwork their accreditors need (RMF/ATO evidence, ADRs, test records,
+gate sign-offs). The template is never part of the delivery; the provenance file
+ties the process back to it.
 
 ## Activation
 
