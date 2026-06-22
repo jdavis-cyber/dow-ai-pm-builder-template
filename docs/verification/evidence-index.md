@@ -1,22 +1,10 @@
 # Verification Evidence Index
 
-> Template status: scaffold. Use this index to point reviewers to append-only verification records in `docs/verification/` and formal governance evidence in `.governance/`.
-
-## Artifact Status
-
-| Field | Value |
-|---|---|
-| Status | Draft |
-| Approval State | Not Approved |
-| Evidence Type | Template Scaffold |
-| Owner | Program Analyst / QA / Security & Compliance Officer |
-| Last Updated | [YYYY-MM-DD] |
-
-## Evidence Register
+> Template status: gap-labeled scaffold. Use this index to point reviewers to append-only verification records in `docs/verification/` and formal governance evidence in `.governance/`.
 
 | Evidence ID | Date | Artifact | Claim Supported | Verification Method | Hash / Commit | Status |
 |---|---|---|---|---|---|---|
-| EV-001 | [YYYY-MM-DD] | [path] | [claim] | [command/tool/review] | [hash/commit] | Draft |
+| EV-001 | [YYYY-MM-DD] | [path] | [claim] | [command/tool/review] | [hash/commit] | Draft / Gap |
 
 ## Evidence Quality Rules
 

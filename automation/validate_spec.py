@@ -1,62 +1,44 @@
 #!/usr/bin/env python3
-import sys
-import re
-import os
+import argparse, pathlib, re, sys
+PLACEHOLDER_RE = re.compile(r'(?<![!])\[[^\]]+\](?!\()')
+REQUIRED_TEMPLATE_FIELDS = ['Project Name','Status','System Overview','Architecture Specification','Agent Work Packages']
+GAP_LABELS = ['Draft','Gap','Reference Needed','Not Authoritatively Mapped','Pending','N/A','Not Approved']
 
-def validate_spec(file_path):
-    if not os.path.exists(file_path):
-        print(f"ERROR: Spec file not found at {file_path}")
+def validate(path, mode):
+    p = pathlib.Path(path)
+    if not p.exists():
+        print(f"ERROR: Spec file not found: {p}")
         return False
-
-    with open(file_path, 'r', encoding='utf-8') as f:
-        content = f.read()
-
+    txt = p.read_text(encoding='utf-8')
     errors = []
-    lines = content.split('\n')
-    
-    # Check for empty brackets [ ] or [inject ...] or placeholder text
-    bracket_pattern = re.compile(r'\[(.*?)\]')
-    
-    for line_num, line in enumerate(lines, 1):
-        # Ignore markdown link syntax [text](url) checking for unfilled brackets
-        # but match things like [ ], [Inject...], [Date]
-        
-        # Check for explicitly empty brackets (like unfilled checkboxes or empty fields)
-        if '[ ]' in line and not line.strip().startswith('- [ ]'): 
-            # Allow checklist '- [ ]' but warn on inline empty brackets
-            errors.append(f"Line {line_num}: Contains empty brackets '[ ]', please provide explicit values.")
-            
-        # Check for placeholder keywords inside brackets
-        matches = bracket_pattern.finditer(line)
-        for match in matches:
-            inner_text = match.group(1).lower().strip()
-            # If the bracket text contains placeholder-like terms
-            if any(term in inner_text for term in ['inject', 'date', 'e.g.', 'draft', 'template', 'tbd', 'todo']):
-                # Special case to ignore the template header itself if still present
-                if 'template' in inner_text and 'System Specification Document' in lines[0]:
-                    pass # Relaxed rule for the header if it's the literal title
-                else:
-                    errors.append(f"Line {line_num}: Contains placeholder text -> '[{match.group(1)}]'")
-        
-        # Check for TBD or TODO outside brackets
-        if 'TBD' in line or 'TODO' in line:
-            errors.append(f"Line {line_num}: Contains 'TBD' or 'TODO'. Explicit values required.")
-
+    if mode == 'template':
+        for field in REQUIRED_TEMPLATE_FIELDS:
+            if field not in txt:
+                errors.append(f"template integrity missing required field: {field}")
+        if not PLACEHOLDER_RE.search(txt):
+            errors.append('template integrity requires explicit placeholders')
+    elif mode == 'draft':
+        if not any(label in txt for label in GAP_LABELS):
+            errors.append('draft completeness: unresolved values require an explicit Draft/Gap/Pending/Not Approved status label')
+        for i, line in enumerate(txt.splitlines(), 1):
+            if ('TBD' in line or 'TODO' in line) and not any(label in line for label in GAP_LABELS):
+                errors.append(f"draft completeness line {i}: TBD/TODO requires explicit gap/status label")
+    elif mode == 'locked':
+        for i, line in enumerate(txt.splitlines(), 1):
+            if PLACEHOLDER_RE.search(line) or 'TBD' in line or 'TODO' in line:
+                errors.append(f"lock readiness line {i}: unresolved placeholder/TBD/TODO")
+            if any(label in line for label in ['Reference Needed','Not Authoritatively Mapped','Pending']):
+                errors.append(f"lock readiness line {i}: unresolved gap label remains")
     if errors:
-        print(f"\n--- SPEC VALIDATION FAILED for {file_path} ---")
-        for error in errors:
-            print(error)
-        print("\nPlease resolve these placeholders before proceeding to Lock 1.\n")
+        print(f"--- SPEC VALIDATION FAILED ({mode}) for {p} ---")
+        print('\n'.join(errors))
         return False
-
-    print(f"\n+++ SPEC VALIDATION PASSED for {file_path} +++\n")
+    print(f"+++ SPEC VALIDATION PASSED ({mode}) for {p} +++")
     return True
 
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python validate_spec.py <path/to/system_spec.md>")
-        sys.exit(1)
-        
-    target_file = sys.argv[1]
-    success = validate_spec(target_file)
-    sys.exit(0 if success else 1)
+if __name__ == '__main__':
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--mode', choices=['template','draft','locked'], default='locked')
+    ap.add_argument('spec')
+    ns = ap.parse_args()
+    sys.exit(0 if validate(ns.spec, ns.mode) else 1)

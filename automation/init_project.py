@@ -49,6 +49,10 @@ WORK_SCAFFOLD = [
     "docs/decisions",
     "docs/handoff",
     "docs/verification",
+    "docs/governance-frameworks",
+    ".governance/security-compliance",
+    ".governance/Phase_Gates",
+    ".governance/Cross_Cutting/Evidence_Index",
     "requirements",
 ]
 
@@ -108,6 +112,7 @@ def main() -> None:
         "docs/handoff/repo-controls-checklist.md",
         "docs/templates/artifact-status-block.md",
         "docs/verification/evidence-index.md",
+        "docs/governance-frameworks/framework-status.md",
     ]:
         src = TEMPLATE_ROOT / rel
         dst = target / rel
@@ -134,7 +139,8 @@ def main() -> None:
         f"| Template version | {template_version} |\n"
         f"| Template commit | {template_commit} |\n"
         f"| Instantiated | {instantiated} |\n"
-        f"| Project name | {project_name} |\n\n"
+        f"| Project name | {project_name} |\n"
+        "| Validation status | Draft / Not Approved |\n\n"
         "The factory process that governs this project (agent roster, directives,\n"
         "phase gates) is pinned to the version above. For accreditation review of the\n"
         "development process itself, refer to that template version.\n"

@@ -1,72 +1,24 @@
-# [Project Name]
+# DoW AI PM Builder Template
 
-**Project ID**: [PROJ-XXX]
-**Status**: [Planning | Active | Complete | Archived]
-**Started**: [YYYY-MM-DD]
-**Completed**: [YYYY-MM-DD or In Progress]
-**CPMAI Phase**: [Phase I–VI or N/A]
-
----
+**Status**: Template / Scaffold
+**Operating Model**: single-repository governed AI software factory
 
 ## Repository Operating Model
 
-This repo is intended to be the authoritative project package, not only a governance sidecar. A completed or in-progress project clone should contain:
+This repo is the authoritative template package. Each generated project contains deployable application source, governance state, decision records, verification evidence, handoff materials, agent identities, runtime packages, and orchestration logic in one repository.
 
-- deployable application source and runtime manifests;
-- governance state, phase gates, risk, SoA, standards, and control evidence;
-- decision records and architecture records;
-- verification evidence and audit trail;
-- handoff/continuation instructions for the next human or agent.
+## Corrected Factory Design
 
-Keep implementation and governance separated by folder boundaries, not by separate repositories. If a project requires a different implementation layout, agree the layout and folder boundaries before implementation begins and record the change in `docs/decisions/`.
+- 15 permanent accountable agents are always present.
+- Security & Compliance Officer is mandatory for every generated project.
+- 136 VoltAgent packages are specialization/capability packages mapped to accountable owners, not accountable peer agents.
+- Factory-governance evidence applies to the AI-driven production method itself.
+- ISO/IEC 27701 remains Reference Needed / Not Authoritatively Mapped until an authoritative reference is available.
+- CMMC, FedRAMP, HIPAA, SOC 2, and similar frameworks are conditional product overlays, not universal baseline claims.
 
-## Overview
+## Canonical Evidence Paths
 
-[2–3 sentence description of what this project is and what problem it solves.]
-
-## Demo
-
-- **Live Demo**: [URL or "Not Deployed"]
-- **Screenshots**: See `docs/verification/` or the project-specific design artifact path
-- **Video Walkthrough**: [URL or N/A]
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend | [e.g., React, Next.js, Tailwind] |
-| Backend | [e.g., Node.js, Python, FastAPI] |
-| Database | [e.g., PostgreSQL, MongoDB] |
-| Infrastructure | [e.g., AWS, Vercel, Docker] |
-| AI/ML | [e.g., OpenAI API, LangChain, local model] |
-
-## Key Features
-
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
-
-## Governance Artifacts
-
-This project was built using the AI PM Builder's Template governance framework. Key artifacts:
-
-| Artifact | Status | Location |
-|----------|--------|----------|
-| Mission Risk Profile | [Draft/Complete/N/A] | `.governance/Phase_Gates/Gate1_BusinessUnderstanding/` |
-| Governance Scope Statement | [Draft/Complete/N/A] | `.governance/Phase_Gates/Gate1_BusinessUnderstanding/` |
-| Architecture Decision Records | [Draft/Complete/N/A] | `architecture/` |
-| Phase Gate Reviews | [Draft/Complete/N/A] | `.governance/Phase_Gates/` |
-| Risk Register | [Draft/Complete/N/A] | `.governance/Cross_Cutting/Risk_Register/` |
-
-## Lessons Learned
-
-[Captured post-project. What worked, what didn't, what would you do differently.]
-
-## Build Notes
-
-[How to run this project locally. Setup instructions, environment variables, dependencies.]
-
----
-
-*Built with the AI PM Builder's Template — Enterprise AI Governance & Lifecycle Management Framework*
-*Author: Jerome Davis*
+- `.governance/` — formal gate, compliance, risk, standards, and override records.
+- `docs/` — discovery, product, architecture, decision, handoff, and verification evidence.
+- `.agent/` and `subagents/` — governed identity and runtime package source.
+- `.codex/agents/` — generated runtime output; ignored by git unless project policy changes.
