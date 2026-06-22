@@ -30,7 +30,7 @@ def main():
         print('ERROR missing KICKOFF.md'); ok=False
     else:
         kt=kickoff.read_text()
-        for phrase in ['Start a new project from the DoW AI PM Builder Template.', 'canonical operator phrase', 'Sprint Zero / Phase 0', 'stop at Gate 1 readiness', 'The interview owns discovery details', 'project name/path', 'files, links', 'authority boundaries']:
+        for phrase in ['Start a new project from the DoW AI PM Builder Template and begin Sprint Zero.', 'canonical operator phrase', 'Sprint Zero / Phase 0', 'stop at Gate 1 readiness', 'The interview owns discovery details', 'project name/path', 'files, links', 'authority boundaries']:
             if phrase not in kt: print('ERROR KICKOFF.md missing '+phrase); ok=False
     stale=['14 specialized' + ' agents','complete AI development team - ' + '14','Template Version ' + '3.0']
     for p in ROOT.glob('**/*'):

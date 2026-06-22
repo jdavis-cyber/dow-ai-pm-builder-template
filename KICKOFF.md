@@ -3,7 +3,7 @@
 ## Canonical operator phrase
 
 ```text
-Start a new project from the DoW AI PM Builder Template.
+Start a new project from the DoW AI PM Builder Template and begin Sprint Zero.
 ```
 
 That phrase is intentionally sufficient. Operators should not have to front-load the project name, mission, objective, inputs, files, links, or governance caveats in the kickoff prompt. The factory must gather those details through Sprint Zero / Phase 0 discovery and the interview sequence.

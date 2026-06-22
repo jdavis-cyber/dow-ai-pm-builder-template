@@ -45,7 +45,7 @@ python3 automation/validate_runtime.py .codex/agents/runtime-manifest.json
 For agent/operator kickoff, use the canonical phrase in `KICKOFF.md`:
 
 ```text
-Start a new project from the DoW AI PM Builder Template.
+Start a new project from the DoW AI PM Builder Template and begin Sprint Zero.
 ```
 
 The factory should ask only for the minimum missing workspace detail, then let the Sprint Zero / Phase 0 interview collect mission, objectives, inputs, links, constraints, and authority boundaries.
