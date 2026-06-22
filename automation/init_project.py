@@ -169,7 +169,7 @@ def main() -> None:
         "   Gemini CLI all work**; the matching coordination file (`CLAUDE.md`,\n"
         "   `CODEX.md`, `GEMINI.md`) carries the same governance protocol, so you can\n"
         "   switch providers mid-project without losing process state.\n"
-        '2. Instruct: **"Start a new project from the DoW AI PM Builder Template."**\n'
+        '2. Instruct: **"Start a new project from the DoW AI PM Builder Template and begin Sprint Zero."**\n'
         "3. Follow `KICKOFF.md`; the Sprint Zero / Phase 0 interview collects the\n"
         "   mission, objectives, inputs, files, links, constraints, and authority\n"
         "   boundaries. Implementation remains blocked until the spec is locked and\n"
@@ -198,7 +198,7 @@ def main() -> None:
     print("✔ Fresh git repo with initial commit; agent bundle materialized")
     print()
     print(f"Next: open {target} in your AI coding agent (Claude Code, Codex, or Gemini)")
-    print('  and instruct: "Start a new project from the DoW AI PM Builder Template."')
+    print('  and instruct: "Start a new project from the DoW AI PM Builder Template and begin Sprint Zero."')
 
 
 if __name__ == "__main__":

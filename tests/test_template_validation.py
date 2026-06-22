@@ -27,7 +27,8 @@ class TemplateValidationTests(unittest.TestCase):
         kickoff=ROOT/'KICKOFF.md'
         self.assertTrue(kickoff.exists(), 'KICKOFF.md must be present at template root')
         txt=kickoff.read_text()
-        self.assertIn('Start a new project from the DoW AI PM Builder Template.', txt)
+        self.assertIn('Start a new project from the DoW AI PM Builder Template and begin Sprint Zero.', txt)
+        self.assertNotIn('Start a new project from the DoW AI PM Builder Template.\n', txt)
         self.assertIn('canonical operator phrase', txt.lower())
         self.assertIn('Sprint Zero / Phase 0', txt)
         self.assertIn('stop at Gate 1 readiness', txt)

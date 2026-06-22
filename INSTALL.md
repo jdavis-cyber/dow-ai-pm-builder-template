@@ -32,7 +32,7 @@ python3 automation/init_project.py my-project /path/to/parent
 For conversational startup, the canonical operator phrase is documented in `KICKOFF.md`:
 
 ```text
-Start a new project from the DoW AI PM Builder Template.
+Start a new project from the DoW AI PM Builder Template and begin Sprint Zero.
 ```
 
 The interview process owns discovery details; operators should not need to supply mission, objectives, inputs, files, links, or governance caveats in the initial phrase.

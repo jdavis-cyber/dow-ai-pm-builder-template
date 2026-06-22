@@ -18,9 +18,9 @@ def main():
         for d in ['.governance','docs/verification','docs/handoff','docs/product','docs/architecture','docs/governance-frameworks','orchestration']:
             assert (project/d).exists(), f'missing {d}'
         kickoff=(project/'KICKOFF.md').read_text()
-        assert 'Start a new project from the DoW AI PM Builder Template.' in kickoff, 'kickoff protocol missing canonical phrase'
+        assert 'Start a new project from the DoW AI PM Builder Template and begin Sprint Zero.' in kickoff, 'kickoff protocol missing canonical phrase'
         readme=(project/'README.md').read_text()
-        assert 'Start a new project from the DoW AI PM Builder Template.' in readme, 'generated README missing canonical kickoff phrase'
+        assert 'Start a new project from the DoW AI PM Builder Template and begin Sprint Zero.' in readme, 'generated README missing canonical kickoff phrase'
         run([sys.executable,str(project/'automation/validate_spec.py'),'--mode','draft',str(project/'orchestration/system_spec.md')], project)
         print('golden-path smoke test passed')
     finally:
