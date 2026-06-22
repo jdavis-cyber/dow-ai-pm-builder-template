@@ -23,6 +23,18 @@ class TemplateValidationTests(unittest.TestCase):
     def test_spec_modes_and_template_validator(self):
         self.assertEqual(run(sys.executable,'automation/validate_spec.py','--mode','template','orchestration/system-spec-template.md').returncode,0)
         self.assertEqual(run(sys.executable,'automation/validate_template.py').returncode,0)
+    def test_kickoff_protocol_exists_and_is_operator_concise(self):
+        kickoff=ROOT/'KICKOFF.md'
+        self.assertTrue(kickoff.exists(), 'KICKOFF.md must be present at template root')
+        txt=kickoff.read_text()
+        self.assertIn('Start a new project from the DoW AI PM Builder Template.', txt)
+        self.assertIn('canonical operator phrase', txt.lower())
+        self.assertIn('Sprint Zero / Phase 0', txt)
+        self.assertIn('stop at Gate 1 readiness', txt)
+        self.assertIn('The interview owns discovery details', txt)
+        self.assertIn('project name/path', txt)
+        self.assertIn('files, links', txt)
+        self.assertIn('authority boundaries', txt)
     def test_golden_path_smoke(self):
         r=run(sys.executable,'automation/smoke_test_template.py'); self.assertEqual(r.returncode,0,r.stdout+r.stderr)
 if __name__=='__main__': unittest.main()
