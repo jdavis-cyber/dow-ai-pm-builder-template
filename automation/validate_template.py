@@ -25,6 +25,13 @@ def main():
         if '15-agent' not in txt and '15 agent' not in txt.lower(): print('ERROR provider lacks 15-agent '+f); ok=False
         if 'Security & Compliance Officer' not in txt: print('ERROR provider lacks security '+f); ok=False
         if 'Protocal' in txt or ('Template Version ' + '3.0') in txt: print('ERROR stale provider text '+f); ok=False
+    kickoff=ROOT/'KICKOFF.md'
+    if not kickoff.exists():
+        print('ERROR missing KICKOFF.md'); ok=False
+    else:
+        kt=kickoff.read_text()
+        for phrase in ['Start a new project from the DoW AI PM Builder Template.', 'canonical operator phrase', 'Sprint Zero / Phase 0', 'stop at Gate 1 readiness', 'The interview owns discovery details', 'project name/path', 'files, links', 'authority boundaries']:
+            if phrase not in kt: print('ERROR KICKOFF.md missing '+phrase); ok=False
     stale=['14 specialized' + ' agents','complete AI development team - ' + '14','Template Version ' + '3.0']
     for p in ROOT.glob('**/*'):
         if p.is_file() and '.git' not in p.parts and p.suffix in {'.md','.py','.json','.toml','.yml','.yaml','.sh'}:

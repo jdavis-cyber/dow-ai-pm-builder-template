@@ -29,7 +29,7 @@ from pathlib import Path
 TEMPLATE_ROOT = Path(__file__).resolve().parent.parent
 
 SCAFFOLD_DIRS = ["directives", "subagents", "automation", ".agent", "memory", ".governance"]
-SCAFFOLD_FILES = ["CLAUDE.md", "CODEX.md", "GEMINI.md", "PROJECT.md", "LICENSE", ".gitignore"]
+SCAFFOLD_FILES = ["CLAUDE.md", "CODEX.md", "GEMINI.md", "PROJECT.md", "KICKOFF.md", "LICENSE", ".gitignore"]
 ORCHESTRATION_FILES = [
     "system-spec-template.md",
     "task-board-template.md",
@@ -169,9 +169,11 @@ def main() -> None:
         "   Gemini CLI all work**; the matching coordination file (`CLAUDE.md`,\n"
         "   `CODEX.md`, `GEMINI.md`) carries the same governance protocol, so you can\n"
         "   switch providers mid-project without losing process state.\n"
-        '2. Instruct: **"Initialize the project and begin Sprint Zero."**\n'
-        "3. The factory runs discovery first — no implementation until the spec is\n"
-        "   locked and Gate 1 clears.\n\n"
+        '2. Instruct: **"Start a new project from the DoW AI PM Builder Template."**\n'
+        "3. Follow `KICKOFF.md`; the Sprint Zero / Phase 0 interview collects the\n"
+        "   mission, objectives, inputs, files, links, constraints, and authority\n"
+        "   boundaries. Implementation remains blocked until the spec is locked and\n"
+        "   Gate 1 clears.\n\n"
         "## Delivery\n\n"
         "This entire repository is the deliverable: deployable source plus the\n"
         "complete evidence package needed for security accreditation review.\n"
@@ -196,7 +198,7 @@ def main() -> None:
     print("✔ Fresh git repo with initial commit; agent bundle materialized")
     print()
     print(f"Next: open {target} in your AI coding agent (Claude Code, Codex, or Gemini)")
-    print('  and instruct: "Initialize the project and begin Sprint Zero."')
+    print('  and instruct: "Start a new project from the DoW AI PM Builder Template."')
 
 
 if __name__ == "__main__":
