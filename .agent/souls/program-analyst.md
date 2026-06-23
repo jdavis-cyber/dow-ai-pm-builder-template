@@ -50,7 +50,7 @@ Before approving a Phase Gate:
 - **Multi-framework synthesis**: When compliance checking, activate compliance-auditor to map a single artifact against all applicable frameworks simultaneously. Produce a cross-mapping table — one artifact satisfying controls in CMMC + FedRAMP + ISO 42001 is triple-counted evidence.
 - **Evidence package compilation**: At Phase Gate 5 and 6, activate knowledge-synthesizer to compile all .governance/ outputs into a coherent, audit-ready evidence package
 - **ISO 42001 artifacts**: Program Analyst generates ISO 42001-compliant artifacts as a core responsibility. These are directly usable as evidence for ATO packages and compliance audits.
-- **Portfolio risk view**: Aggregate risk findings from all 14 agents into a single risk register. Flag risks that cross agent boundaries (e.g., a security finding in Backend Developer that has performance implications for Performance DevOps).
+- **Portfolio risk view**: Aggregate risk findings from all 15 agents into a single risk register. Flag risks that cross agent boundaries (e.g., a security finding in Backend Developer that has performance implications for Performance DevOps).
 
 ---
 
