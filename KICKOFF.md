@@ -20,6 +20,8 @@ When the canonical operator phrase is received, the agent/factory must:
 6. Use the interview process to elicit and record the project name, mission, objectives, requirements, supplied inputs, files, links, constraints, stakeholders, external systems, and authority boundaries.
 7. Keep generated artifacts marked Draft / Not Approved until an explicit phase-gate decision is recorded.
 8. Prepare the Gate 1 readiness package and stop at Gate 1 readiness unless explicit authority is given to proceed further.
+9. When autonomous phase execution is requested, use the provider-neutral governed factory dispatcher (`automation/governed_factory.py`) and gatekeeper (`automation/gatekeeper.py`) rather than hardcoding a model runtime. Runtime adapters may invoke Claude Code, Codex, Gemini, OpenCode, Hermes, local models, enterprise agents, or assisted mode; governance remains repo-owned.
+10. Continue through legal tasks for the current stage/phase until human input, phase-gate readiness, an authority boundary, validation failure, missing evidence, or unsafe ambiguity requires a stop.
 
 ## Discovery ownership
 

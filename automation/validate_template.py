@@ -24,7 +24,21 @@ def main():
         txt=(ROOT/f).read_text()
         if '15-agent' not in txt and '15 agent' not in txt.lower(): print('ERROR provider lacks 15-agent '+f); ok=False
         if 'Security & Compliance Officer' not in txt: print('ERROR provider lacks security '+f); ok=False
+        if 'provider-neutral' not in txt or 'automation/governed_factory.py' not in txt: print('ERROR provider lacks governed factory startup '+f); ok=False
         if 'Protocal' in txt or ('Template Version ' + '3.0') in txt: print('ERROR stale provider text '+f); ok=False
+    for rel in ['automation/governed_factory.py','automation/gatekeeper.py','factory.config.example.json']:
+        if not (ROOT/rel).exists(): print('ERROR missing provider-neutral factory control '+rel); ok=False
+    factory_sh=(ROOT/'automation/factory.sh').read_text()
+    if 'LLM_COMMAND' in factory_sh: print('ERROR factory.sh still hardcodes LLM_COMMAND assisted-mode control'); ok=False
+    if 'FACTORY_ADAPTER' not in factory_sh or 'automation/governed_factory.py' not in factory_sh: print('ERROR factory.sh missing adapter dispatcher'); ok=False
+    gf=(ROOT/'automation/governed_factory.py').read_text()
+    if 'Provider-neutral' not in gf and 'provider-neutral' not in gf: print('ERROR governed_factory missing provider-neutral contract'); ok=False
+    if 'FACTORY_ADAPTER_COMMAND' not in gf: print('ERROR governed_factory missing shell adapter command hook'); ok=False
+    gk=(ROOT/'automation/gatekeeper.py').read_text()
+    for token in ['implementation_authorized','external_tracker_writes_authorized','deployment_authorized','control_closure_authorized']:
+        if token not in gk: print('ERROR gatekeeper missing authority token '+token); ok=False
+    cfg_example=json.loads((ROOT/'factory.config.example.json').read_text())
+    if not cfg_example.get('factory',{}).get('provider_neutral_contract'): print('ERROR factory config missing provider-neutral contract flag'); ok=False
     kickoff=ROOT/'KICKOFF.md'
     if not kickoff.exists():
         print('ERROR missing KICKOFF.md'); ok=False

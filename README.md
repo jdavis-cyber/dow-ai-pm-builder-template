@@ -21,7 +21,7 @@
 | Governed team | **15 accountable agents** (mandatory roster) — Security & Compliance Officer in every gate |
 | Specialization library | **136 capability packages** across **10 domains** under `subagents/global/voltagent/` |
 | Ownership mapping | **272-entry** specialization → accountable-owner map |
-| Governance directives | **11 directives** + **8 automation scripts** (validate, smoke-test, init, runtime-validate) |
+| Governance directives | **11 directives** + **10 automation scripts** (validate, smoke-test, init, runtime-validate, gatekeeper, governed factory) |
 | Default posture | Generated projects start **Draft / Not Approved** until phase-gate evidence exists |
 | Framework coverage | CPMAI · ISO/IEC 42001 · NIST AI RMF · ISO/IEC 27001 (+ conditional CMMC / FedRAMP / HIPAA / SOC 2) |
 
@@ -72,6 +72,35 @@ See `.agent/AGENT-ROSTER.md` and `subagents/SPECIALIZATION-LIBRARY.md`.
 | CMMC / FedRAMP / HIPAA / SOC 2 | Conditional product overlays only |
 
 **Do not infer product compliance or fabricate mappings.** This guardrail is intentional: the template scaffolds the *discipline and evidence trail*, not a compliance claim.
+
+## Governed factory runner
+
+The factory runner is **provider-neutral**. Governance lives in repo-local automation; model execution is supplied by an adapter.
+
+```bash
+# Safe default: print the next legal governed task packet.
+./automation/factory.sh
+
+# Autonomous adapter pattern: pipe the task packet to your chosen agent CLI.
+FACTORY_ADAPTER=shell \
+FACTORY_ADAPTER_COMMAND='codex exec --stdin' \
+./automation/factory.sh
+```
+
+Other adapters can wrap Claude Code, Gemini CLI, OpenCode, Hermes, a local model runner, or an enterprise agent runtime. The invariant is:
+
+```text
+Runtime is replaceable. Governance is not.
+```
+
+Core controls:
+
+- `automation/governed_factory.py` selects the next legal task from `orchestration/tasks.md`.
+- `automation/gatekeeper.py` enforces `.governance/gate_state.json` authority boundaries.
+- `automation/run_factory.py` remains as a backward-compatible assisted wrapper.
+- `factory.config.example.json` documents adapter configuration and stop conditions.
+
+The dispatcher must stop on human input, phase-gate readiness, authority boundaries, validation failures, missing evidence, or unexpected dirty state. It must not implement, admit source, write external trackers, deploy, use real data/APIs, submit CDRLs, accept risk, or close controls unless the gate state explicitly authorizes that action.
 
 ## Fresh clone validation
 
