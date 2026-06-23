@@ -8,7 +8,7 @@
   <img src="https://img.shields.io/badge/Approach-Governance--as--Code-111?style=for-the-badge" alt="Governance as Code">
 </p>
 
-> ### For hiring managers — what this demonstrates
+> ### What this demonstrates
 > This is a **governance-as-code blueprint for building AI software the way regulated and DoD environments require it.** Instead of bolting compliance on at the end, the template ships a 15-agent governed scrum team where a **Security & Compliance Officer sits in every phase gate**, projects start in *Draft / Not Approved* until evidence is populated, and framework mappings are explicitly fenced ("do not infer product compliance or fabricate mappings"). It's the operating model behind my thesis: **build the systems, govern the systems, defend the evidence** — turned into a reusable, validatable factory.
 >
 > **Bridges:** DoD/federal program execution · AI governance (CPMAI / ISO 42001 / NIST AI RMF) · security/compliance/audit · agentic GenAI orchestration · governance-as-code.
