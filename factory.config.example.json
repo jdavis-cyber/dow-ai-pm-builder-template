@@ -1,0 +1,34 @@
+{
+  "factory": {
+    "mode": "assisted",
+    "adapter": "assisted",
+    "loop": false,
+    "interval_seconds": 5,
+    "record_packets_by_default": false,
+    "provider_neutral_contract": true,
+    "stop_on": [
+      "human_input_required",
+      "phase_gate_readiness",
+      "authority_boundary",
+      "validation_failure",
+      "dirty_unexpected_state",
+      "missing_evidence"
+    ]
+  },
+  "adapters": {
+    "assisted": {
+      "description": "Print the governed task packet for manual execution. Safe default."
+    },
+    "shell": {
+      "description": "Pipe the governed task prompt to any configured LLM/agent CLI.",
+      "command_env": "FACTORY_ADAPTER_COMMAND",
+      "examples": [
+        "codex exec --stdin",
+        "claude -p",
+        "gemini -p",
+        "opencode run --stdin",
+        "hermes chat -q"
+      ]
+    }
+  }
+}

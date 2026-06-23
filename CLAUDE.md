@@ -8,9 +8,10 @@ Every agent must read, in order:
 2. `orchestration/system_spec.md` or `orchestration/system-spec-template.md` — the relevant system specification section.
 3. `.codex/agents/runtime-manifest.json` when present — confirm the runtime package is installed before acting.
 4. This provider coordination file — Claude, Codex, and Gemini carry the same operating model.
-5. `directives/structural-integrity-protocol.md` — phase-gate and traffic-cop requirements.
-6. `directives/ai-governance-framework.md` and `directives/factory-governance-scope.md` — factory-governance evidence obligations.
-7. `orchestration/tasks.md` — current task board and gate posture.
+5. `factory.config.example.json` and `automation/governed_factory.py` when autonomous execution is expected — the factory is provider-neutral; runtime adapters execute tasks, but governance remains repo-owned.
+6. `directives/structural-integrity-protocol.md` — phase-gate and traffic-cop requirements.
+7. `directives/ai-governance-framework.md` and `directives/factory-governance-scope.md` — factory-governance evidence obligations.
+8. `orchestration/tasks.md` — current task board and gate posture.
 
 If the previous phase gate is not approved, agents stop and switch to discovery, documentation, remediation, or escalation. Do not perform implementation work without documented readiness.
 

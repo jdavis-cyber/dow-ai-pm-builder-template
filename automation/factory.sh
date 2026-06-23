@@ -1,49 +1,34 @@
 #!/bin/bash
+set -euo pipefail
 
-# Factory Runner Wrapper
-# Usage: ./automation/factory.sh
+# Provider-neutral governed factory wrapper.
+#
+# Default: assisted mode prints the next legal governed task packet.
+# Autonomous provider execution is enabled through an adapter, not by hardcoding
+# any LLM runtime into the template.
+#
+# Examples:
+#   ./automation/factory.sh
+#   FACTORY_ADAPTER=shell FACTORY_ADAPTER_COMMAND='codex exec --stdin' ./automation/factory.sh
+#   FACTORY_ADAPTER=shell FACTORY_ADAPTER_COMMAND='claude -p' ./automation/factory.sh
+#   FACTORY_ADAPTER=shell FACTORY_ADAPTER_COMMAND='gemini -p' ./automation/factory.sh
+#
+# The shell adapter receives the task prompt on stdin and environment variables:
+#   FACTORY_TASK_PACKET=/path/to/task-packet.json
+#   FACTORY_TASK_PROMPT=<prompt text>
 
-# Configuration
-# Set your preferred CLI tool here (e.g., "claude", "ollama run llama3", "llm").
-# Leave empty for "Assisted Mode" (copy/paste).
-LLM_COMMAND="" 
+ADAPTER="${FACTORY_ADAPTER:-assisted}"
+INTERVAL="${FACTORY_INTERVAL:-5}"
+LOOP_FLAG=""
 
-echo "🏭 Factory Runner: Starting Continuous Loop..."
-echo "Press [CTRL+C] to stop."
+if [[ "${FACTORY_LOOP:-false}" == "true" ]]; then
+  LOOP_FLAG="--loop"
+fi
 
-while true; do
-    echo "---------------------------------------------------"
-    echo "🔎 Scanning Task Board..."
-    
-    # 1. Generate the Prompt
-    PROMPT=$(python3 automation/run_factory.py)
+echo "🏭 Governed Factory Runner"
+echo "Adapter: ${ADAPTER}"
+echo "Loop: ${FACTORY_LOOP:-false}"
+echo "Provider-neutral contract: factory owns governance; adapter owns model execution."
+echo "---------------------------------------------------"
 
-    # Check if prompt is empty (no tasks)
-    if [ -z "$PROMPT" ]; then
-        echo "✅ No pending tasks found. Waiting 10 seconds..."
-        sleep 10
-        continue
-    fi
-
-    echo "🤖 Next Task Identified:"
-    echo "$PROMPT"
-    echo "---------------------------------------------------"
-
-    # 2. Execute or Assist
-    if [ -n "$LLM_COMMAND" ]; then
-        echo "🚀 Autonomous Mode: Sending to $LLM_COMMAND..."
-        
-        # Pipe prompt to LLM and capture output (optional: tee to log)
-        echo "$PROMPT" | $LLM_COMMAND
-        
-        echo "✅ Task execution complete."
-        echo "⏳ Cooling down for 5 seconds..."
-        sleep 5
-    else
-        echo "📋 Assisted Mode: Prompt generated above."
-        echo "👉 Action: Copy the prompt above, paste into your Agent, and perform the task."
-        echo "👉 Then marks the task as [x] in tasks.md to continue."
-        echo "⏸️  Pausing loop. Press [Enter] when ready for the next task..."
-        read -r
-    fi
-done
+python3 automation/governed_factory.py --adapter "${ADAPTER}" --interval "${INTERVAL}" ${LOOP_FLAG}

@@ -29,7 +29,7 @@ from pathlib import Path
 TEMPLATE_ROOT = Path(__file__).resolve().parent.parent
 
 SCAFFOLD_DIRS = ["directives", "subagents", "automation", ".agent", "memory", ".governance"]
-SCAFFOLD_FILES = ["CLAUDE.md", "CODEX.md", "GEMINI.md", "PROJECT.md", "KICKOFF.md", "LICENSE", ".gitignore"]
+SCAFFOLD_FILES = ["CLAUDE.md", "CODEX.md", "GEMINI.md", "PROJECT.md", "KICKOFF.md", "factory.config.example.json", "LICENSE", ".gitignore"]
 ORCHESTRATION_FILES = [
     "system-spec-template.md",
     "task-board-template.md",
