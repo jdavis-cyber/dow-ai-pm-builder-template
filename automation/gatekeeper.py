@@ -80,7 +80,9 @@ def check_action(action: str, path: str | None = None, state: dict | None = None
         return True, "read/inspect/validate/plan actions are allowed"
 
     if action in {"write", "edit", "create"}:
-        if path and is_protected_source_path(path) and not state.get("implementation_authorized", False):
+        if path and is_protected_source_path(path):
+            if state.get("implementation_authorized", False):
+                return True, f"implementation/source write allowed for {rel(path)}; implementation_authorized is true"
             return False, f"implementation/source write blocked for {rel(path)}; implementation_authorized is false"
         if path and is_planning_path(path):
             return True, f"planning/governance write allowed for {rel(path)}"

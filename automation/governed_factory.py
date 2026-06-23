@@ -64,6 +64,8 @@ HUMAN_STOP_PATTERNS = (
     "phase gate",
     "gate decision",
     "director input",
+    "advances gate",
+    "blocks gate",
 )
 
 
