@@ -62,15 +62,15 @@ This index links gate artifacts to security-compliance review outputs and approv
 
 ## Gate 2-6 Placeholders
 
-*Traceability entries for Gates 2-6 will be added as they materialize. Phase-name remediation is required before these gates can be compliant.*
+*Traceability entries for Gates 2-6 will be added as they materialize. Phase-name remediation completed 2026-07-10: task boards use “CPMAI Phase N — <Name>” matching the GateN_<Name> directories and the activation matrix.*
 
 | Gate | Path | Status | Phase-Name Issue |
 |------|------|--------|-----------------|
-| Gate2 | `.governance/Phase_Gates/Gate2_DataUnderstanding/` | ⬜ Not Started | **Remediation Required**: Template phase name mismatch |
-| Gate3 | `.governance/Phase_Gates/Gate3_DataPreparation/` | ⬜ Not Started | **Remediation Required**: Template phase name mismatch |
-| Gate4 | `.governance/Phase_Gates/Gate4_ModelDevelopment/` | ⬜ Not Started | **Remediation Required**: Template phase name mismatch |
-| Gate5 | `.governance/Phase_Gates/Gate5_ModelEvaluation/` | ⬜ Not Started | **Remediation Required**: Template phase name mismatch |
-| Gate6 | `.governance/Phase_Gates/Gate6_Operationalization/` | ⬜ Not Started | **Remediation Required**: Template phase name mismatch |
+| Gate2 | `.governance/Phase_Gates/Gate2_DataUnderstanding/` | ⬜ Not Started | Resolved 2026-07-10 (naming aligned) |
+| Gate3 | `.governance/Phase_Gates/Gate3_DataPreparation/` | ⬜ Not Started | Resolved 2026-07-10 (naming aligned) |
+| Gate4 | `.governance/Phase_Gates/Gate4_ModelDevelopment/` | ⬜ Not Started | Resolved 2026-07-10 (naming aligned) |
+| Gate5 | `.governance/Phase_Gates/Gate5_ModelEvaluation/` | ⬜ Not Started | Resolved 2026-07-10 (naming aligned) |
+| Gate6 | `.governance/Phase_Gates/Gate6_Operationalization/` | ⬜ Not Started | Resolved 2026-07-10 (naming aligned) |
 
 ---
 

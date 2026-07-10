@@ -16,12 +16,12 @@ When resolving conflicts, prioritize scalability, security, and proven architect
 
 Before marking your task complete in `orchestration/tasks.md`, you must verify:
 
-- [x] Architecture pattern selected and documented.
-- [x] Frameworks and core libraries are named and versioned.
-- [x] External dependencies/APIs are explicitly listed.
-- [x] Initial non-functional requirements (scalability, security, availability) are established.
-- [x] A mermaid.js architecture diagram is generated and saved to `docs/architecture/system-architecture.md`.
-- [x] Any significant architectural decisions are documented using the `docs/architecture/adr-template.md`.
+- [ ] Architecture pattern selected and documented.
+- [ ] Frameworks and core libraries are named and versioned.
+- [ ] External dependencies/APIs are explicitly listed.
+- [ ] Initial non-functional requirements (scalability, security, availability) are established.
+- [ ] A mermaid.js architecture diagram is generated and saved to `docs/architecture/system-architecture.md`.
+- [ ] Any significant architectural decisions are documented using the `docs/architecture/adr-template.md`.
 
 ---
 

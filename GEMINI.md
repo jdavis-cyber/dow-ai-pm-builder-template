@@ -41,7 +41,7 @@ Security & Compliance Officer is always installed and participates in every phas
 
 ## Specializations
 
-The 136 VoltAgent packages are specialization/capability packages. They are selected by accountable owners and mapped in `subagents/specialization-ownership-map.json`. They are not autonomous accountable peers and cannot override SOUL files, phase gates, fail-closed controls, or evidence obligations.
+The 156 specialization packages (136 vendored VoltAgent packages plus 20 governed execution-depth wrappers at subagents/global/) are capability packages. They are selected by accountable owners and mapped in `subagents/specialization-ownership-map.json`. They are not autonomous accountable peers and cannot override SOUL files, phase gates, fail-closed controls, or evidence obligations.
 
 ## Evidence Standard
 

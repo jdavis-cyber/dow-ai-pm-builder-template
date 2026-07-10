@@ -5,7 +5,7 @@ All TOML packages under `subagents/` must preserve the template's discovery-firs
 ## Package Classes
 
 - **Accountable agents**: the permanent 15-agent scrum team listed in `.agent/AGENT-ROSTER.md` and installed by `subagents/install-config.json`.
-- **Specialization packages**: the 136 VoltAgent capability packages mapped in `subagents/specialization-ownership-map.json`.
+- **Specialization packages**: the 156 capability packages mapped in `subagents/specialization-ownership-map.json` — 136 vendored VoltAgent packages under `global/voltagent/` plus 20 governed execution-depth wrappers at `global/*.toml`.
 - **Regulated overlays**: optional product/engagement overlays activated only when project classification requires them.
 
 ## Required Metadata

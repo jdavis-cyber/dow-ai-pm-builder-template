@@ -245,6 +245,56 @@ def dispatch(packet: dict, adapter: str) -> int:
     return 2
 
 
+def working_tree_changes() -> set[str] | None:
+    """Paths currently dirty per git. None when the audit is unavailable.
+
+    Detective control: only NEW dirty paths (post-dispatch minus pre-dispatch)
+    are attributed to the adapter run, so pre-existing dirt in a path can mask
+    writes there. Run the factory from a clean tree for full coverage.
+    """
+    r = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, cwd=ROOT)
+    if r.returncode != 0:
+        return None
+    return {line[3:].strip().strip('"') for line in r.stdout.splitlines() if line.strip()}
+
+
+def evidence_paths(task: dict) -> list[str]:
+    field = str(task.get("Evidence Required", ""))
+    return [tok.strip() for tok in re.findall(r"`([^`]+)`", field) if "/" in tok]
+
+
+def missing_evidence(task: dict) -> list[str]:
+    return [p for p in evidence_paths(task) if not (ROOT / p).exists()]
+
+
+def unauthorized_writes(before: set[str], after: set[str], state: dict) -> list[str]:
+    if state.get("implementation_authorized", False):
+        return []
+    return sorted(p for p in (after - before) if p.startswith(gatekeeper.PROTECTED_SOURCE_PREFIXES))
+
+
+def post_dispatch_checks(task: dict, state: dict, before: set[str] | None) -> int:
+    """Fail-closed detective stops after an autonomous adapter run."""
+    after = working_tree_changes()
+    if before is None or after is None:
+        print("WARNING: post-run write audit unavailable (git not usable here); detective control skipped")
+    else:
+        viol = unauthorized_writes(before, after, state)
+        if viol:
+            print("STOP: unauthorized protected-source writes detected after dispatch: " + ", ".join(viol))
+            print("Fail-closed halt. Revert or authorize via .governance/gate_state.json and record the event in .governance/security-compliance/override-register.md.")
+            return 3
+    missing = missing_evidence(task)
+    if missing:
+        print(f"STOP: required evidence missing after dispatch for {task['Task ID']}: " + ", ".join(missing))
+        return 3
+    refreshed = {t["Task ID"]: t for t in parse_tasks(TASKS_FILE.read_text())}
+    if status_kind(refreshed.get(task["Task ID"], {}).get("Status", "")) == "open":
+        print(f"STOP: {task['Task ID']} is still open after dispatch; halting to prevent a redispatch loop. The adapter must update task status and evidence.")
+        return 3
+    return 0
+
+
 def once(adapter: str) -> int:
     if not TASKS_FILE.exists():
         print(f"REFUSAL: missing task board {TASKS_FILE}")
@@ -257,7 +307,14 @@ def once(adapter: str) -> int:
     if not task:
         print(reason)
         return 0 if reason.startswith("STOP: no ready") else 2
-    packet = build_packet(task, gatekeeper.load_state())
+    state = gatekeeper.load_state()
+    packet = build_packet(task, state)
+    if adapter.lower().strip() == "shell":
+        before = working_tree_changes()
+        code = dispatch(packet, adapter)
+        if code != 0:
+            return code
+        return post_dispatch_checks(task, state, before)
     return dispatch(packet, adapter)
 
 

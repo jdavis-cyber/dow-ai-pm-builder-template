@@ -16,11 +16,11 @@ When resolving conflicts, prioritize data integrity, normal forms, and proper in
 
 Before marking your task complete in `orchestration/tasks.md`, you must verify:
 
-- [x] Schema successfully executes locally without errors.
-- [x] Primary and foreign keys are explicitly defined to enforce relational integrity.
-- [x] Multi-tenancy isolation (if spec'd) is strictly applied (e.g., RLS).
-- [x] Sample seed data is provided for immediate development testing.
-- [x] Any new dependencies, engines, or paradigms added are documented using the `docs/architecture/adr-template.md`.
+- [ ] Schema successfully executes locally without errors.
+- [ ] Primary and foreign keys are explicitly defined to enforce relational integrity.
+- [ ] Multi-tenancy isolation (if spec'd) is strictly applied (e.g., RLS).
+- [ ] Sample seed data is provided for immediate development testing.
+- [ ] Any new dependencies, engines, or paradigms added are documented using the `docs/architecture/adr-template.md`.
 
 ---
 

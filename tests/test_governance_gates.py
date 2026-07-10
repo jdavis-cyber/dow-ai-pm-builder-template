@@ -68,5 +68,45 @@ class TaskNeedsHumanGateTests(unittest.TestCase):
         )
 
 
+class PostDispatchDetectiveControlTests(unittest.TestCase):
+    """The dispatcher's governance claim depends on observing the adapter
+    AFTER dispatch, not just gating selection before it. These tests pin the
+    fail-closed detective behavior so a refactor cannot silently return the
+    factory to advisory-only governance."""
+
+    def test_unauthorized_protected_write_detected(self):
+        viol = governed_factory.unauthorized_writes(
+            set(), {"src/app.py", "docs/notes.md"}, {"implementation_authorized": False}
+        )
+        self.assertEqual(viol, ["src/app.py"])
+
+    def test_authorized_write_not_flagged(self):
+        viol = governed_factory.unauthorized_writes(
+            set(), {"src/app.py"}, {"implementation_authorized": True}
+        )
+        self.assertEqual(viol, [])
+
+    def test_preexisting_dirt_not_attributed_to_adapter(self):
+        viol = governed_factory.unauthorized_writes(
+            {"src/app.py"}, {"src/app.py"}, {"implementation_authorized": False}
+        )
+        self.assertEqual(viol, [])
+
+    def test_missing_evidence_reported(self):
+        task = {"Task ID": "TASK-999", "Evidence Required": "`docs/verification/TASK-999/verify.md`"}
+        self.assertEqual(
+            governed_factory.missing_evidence(task),
+            ["docs/verification/TASK-999/verify.md"],
+        )
+
+    def test_existing_evidence_passes(self):
+        task = {"Task ID": "TASK-000", "Evidence Required": "`README.md` and `automation/gatekeeper.py`"}
+        self.assertEqual(governed_factory.missing_evidence(task), [])
+
+    def test_non_path_backticks_ignored(self):
+        task = {"Task ID": "TASK-000", "Evidence Required": "`approved` marker in gate record"}
+        self.assertEqual(governed_factory.evidence_paths(task), [])
+
+
 if __name__ == "__main__":
     unittest.main()

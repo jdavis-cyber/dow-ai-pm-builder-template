@@ -16,10 +16,10 @@ When resolving conflicts, prioritize usability, clarity, and the declared Design
 
 Before marking your task complete in `orchestration/tasks.md`, you must verify:
 
-- [x] The UI framework/component library constraint is respected.
-- [x] Specific layout archetypes and color schemes are documented.
-- [x] Responsive layout targets (mobile vs. desktop) are explicitly defined.
-- [x] A minimum of one complex user flow has been documented step-by-step.
+- [ ] The UI framework/component library constraint is respected.
+- [ ] Specific layout archetypes and color schemes are documented.
+- [ ] Responsive layout targets (mobile vs. desktop) are explicitly defined.
+- [ ] A minimum of one complex user flow has been documented step-by-step.
 
 ---
 

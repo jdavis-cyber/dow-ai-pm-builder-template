@@ -1,0 +1,12 @@
+{
+  "approval_state": "draft",
+  "current_phase": "Sprint Zero / Phase 0",
+  "implementation_authorized": false,
+  "source_admission_authorized": false,
+  "external_tracker_writes_authorized": false,
+  "deployment_authorized": false,
+  "real_data_or_api_authorized": false,
+  "cdrl_submission_authorized": false,
+  "risk_acceptance_authorized": false,
+  "control_closure_authorized": false
+}

@@ -19,9 +19,9 @@
 | Signal | Value |
 | --- | --- |
 | Governed team | **15 accountable agents** (mandatory roster) — Security & Compliance Officer in every gate |
-| Specialization library | **136 capability packages** across **10 domains** under `subagents/global/voltagent/` |
-| Ownership mapping | **272-entry** specialization → accountable-owner map |
-| Governance directives | **11 directives** + **10 automation scripts** (validate, smoke-test, init, runtime-validate, gatekeeper, governed factory) |
+| Specialization library | **156 capability packages** — 136 vendored (VoltAgent, 10 domains) + 20 governed execution-depth wrappers |
+| Ownership mapping | **156-entry** specialization → accountable-owner map (every package has an accountable owner) |
+| Governance directives | **7 governance directives** + **29 artifact templates** + **13 automation scripts** (validate, smoke-test, init, runtime-validate, gatekeeper, governed factory) |
 | Default posture | Generated projects start **Draft / Not Approved** until phase-gate evidence exists |
 | Framework coverage | CPMAI · ISO/IEC 42001 · NIST AI RMF · ISO/IEC 27001 (+ conditional CMMC / FedRAMP / HIPAA / SOC 2) |
 
@@ -43,7 +43,7 @@ flowchart TB
     end
 
     Gate --> Team
-    Team --> Lib[136 VoltAgent specialization packages<br/>10 domains · 272 ownership entries]
+    Team --> Lib[156 specialization packages<br/>136 vendored + 20 wrappers · all owner-mapped]
     SCO --> Frame[Framework overlays<br/>CPMAI · ISO 42001 · NIST AI RMF · 27001<br/>+ conditional CMMC / FedRAMP / ATO]
     Team --> Out[Generated project<br/>Draft / Not Approved → evidence → approved]
 
@@ -56,7 +56,8 @@ flowchart TB
 
 - **15 accountable agents** are permanent and mandatory in the factory handoff model (rosters in `.agent/AGENT-ROSTER.md` and `.agent/souls/`).
 - **Security & Compliance Officer is always installed** and participates in every phase gate.
-- **136 specialization packages** under `subagents/global/voltagent/` (10 domain categories) are capability packages/tools mapped to accountable owners in `subagents/specialization-ownership-map.json`.
+- **156 specialization packages** — 136 vendored under `subagents/global/voltagent/` (10 domain categories) plus 20 governed execution-depth wrappers at `subagents/global/*.toml` — all mapped to accountable owners in `subagents/specialization-ownership-map.json`. They are adapted from the MIT-licensed [VoltAgent awesome-claude-code-subagents](https://github.com/VoltAgent/awesome-claude-code-subagents) collection — attribution and upstream license in `THIRD_PARTY_LICENSES.md`.
+- **Root-level packages** in `subagents/global/*.toml` are 14 accountable-agent identity packages (this repo's own work, generated from `.agent/souls/`) plus 20 VoltAgent-derived execution-depth wrappers with governance metadata added — boundary detailed in `subagents/SPECIALIZATION-LIBRARY.md`.
 
 See `.agent/AGENT-ROSTER.md` and `subagents/SPECIALIZATION-LIBRARY.md`.
 
@@ -100,7 +101,9 @@ Core controls:
 - `automation/run_factory.py` remains as a backward-compatible assisted wrapper.
 - `factory.config.example.json` documents adapter configuration and stop conditions.
 
-The dispatcher must stop on human input, phase-gate readiness, authority boundaries, validation failures, missing evidence, or unexpected dirty state. It must not implement, admit source, write external trackers, deploy, use real data/APIs, submit CDRLs, accept risk, or close controls unless the gate state explicitly authorizes that action.
+The dispatcher stops on human input, phase-gate readiness, authority boundaries, and validation failures before dispatch — and, on autonomous (shell-adapter) runs, applies **fail-closed detective stops after every dispatch**: unauthorized protected-source writes (git-audited against `.governance/gate_state.json`), missing required evidence, or a task left open each halt the loop with a violation report. Authority state ships fail-closed (all authorizations `false`); grants and violations are recorded in `.governance/security-compliance/override-register.md`.
+
+**Known limitations (stated on purpose):** pre-dispatch action inference is keyword-based over task text — the post-dispatch git audit is the backstop for misclassified tasks; the write audit is detective, not preventive (an adapter command runs with the operator's own privileges); and evidence checks verify artifact existence, not artifact quality — that remains the phase gate's job.
 
 ## Fresh clone validation
 
@@ -135,4 +138,4 @@ Generated projects begin in **Draft / Not Approved** status. Sprint Zero discove
 
 Built by **Jerome Davis** — a governance operator bridging DoD/federal program execution, security/compliance/audit, ISO 42001/27001 + NIST AI RMF, and hands-on agentic GenAI. This template is part of a portfolio demonstrating governance-as-code from agent runtime to auditor evidence.
 
-🔗 **[secondorderstrategy.com](https://secondorderstrategy.com)** · companion projects: [Lliam-GOV](https://github.com/jdavis-cyber/lliam-gov) (governed AI agent) · [Priora](https://github.com/jdavis-cyber/priora) (AI lifecycle governance platform)
+🔗 **[secondorderstrategy.com](https://secondorderstrategy.com)** · companion projects (private during hardening; available on request): Lliam-GOV — governed AI agent · Priora — AI lifecycle governance platform

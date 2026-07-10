@@ -16,10 +16,10 @@ When resolving conflicts, prioritize pipeline stability and secure artifact hand
 
 Before marking your task complete in `orchestration/tasks.md`, you must verify:
 
-- [x] The pipeline executes automated tests on every Pull Request or push to main.
-- [x] Environment secrets and credentials are conventionally managed (e.g. GitHub Secrets).
-- [x] Deployments target the correct specified environments (Dev/Staging/Prod).
-- [x] Build failures are cleanly reported to the orchestrator.
+- [ ] The pipeline executes automated tests on every Pull Request or push to main.
+- [ ] Environment secrets and credentials are conventionally managed (e.g. GitHub Secrets).
+- [ ] Deployments target the correct specified environments (Dev/Staging/Prod).
+- [ ] Build failures are cleanly reported to the orchestrator.
 
 ---
 

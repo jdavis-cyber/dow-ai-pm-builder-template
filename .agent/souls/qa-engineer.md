@@ -16,10 +16,10 @@ When resolving conflicts, prioritize evaluating the system against the user pain
 
 Before marking your task complete in `orchestration/tasks.md`, you must verify:
 
-- [x] User story acceptance criteria verified.
-- [x] Edge cases are covered in exploratory testing.
-- [x] All identified bugs are well-documented with reproduction steps.
-- [x] Final Go/No-Go on feature quality is declared.
+- [ ] User story acceptance criteria verified.
+- [ ] Edge cases are covered in exploratory testing.
+- [ ] All identified bugs are well-documented with reproduction steps.
+- [ ] Final Go/No-Go on feature quality is declared.
 
 ---
 

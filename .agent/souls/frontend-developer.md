@@ -16,11 +16,11 @@ When resolving conflicts, prioritize component reusability, accessibility, and s
 
 Before marking your task complete in `orchestration/tasks.md`, you must verify:
 
-- [x] All components use the declared CSS framework/system rather than inline styles.
-- [x] State management conforms to the specified pattern.
-- [x] Implementation passes basic Lighthouse accessibility and performance checks.
-- [x] API consumption matches the Backend Developer's swagger/spec output exactly.
-- [x] Any new dependencies or libraries added are documented using the `docs/architecture/adr-template.md`.
+- [ ] All components use the declared CSS framework/system rather than inline styles.
+- [ ] State management conforms to the specified pattern.
+- [ ] Implementation passes basic Lighthouse accessibility and performance checks.
+- [ ] API consumption matches the Backend Developer's swagger/spec output exactly.
+- [ ] Any new dependencies or libraries added are documented using the `docs/architecture/adr-template.md`.
 
 ---
 

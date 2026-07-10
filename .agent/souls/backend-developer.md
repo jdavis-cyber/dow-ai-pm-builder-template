@@ -15,10 +15,10 @@ You build the REST/GraphQL APIs and server-side business logic. Your code must b
 
 Before marking your task complete in `orchestration/tasks.md`:
 
-- [x] All endpoints have test cases covering happy path and 400/403/404 errors.
-- [x] Response JSON structure matches the System Spec exactly.
-- [x] Input validation prevents injection/malformed data.
-- [x] Any new dependencies or libraries added are documented using the `docs/architecture/adr-template.md`.
+- [ ] All endpoints have test cases covering happy path and 400/403/404 errors.
+- [ ] Response JSON structure matches the System Spec exactly.
+- [ ] Input validation prevents injection/malformed data.
+- [ ] Any new dependencies or libraries added are documented using the `docs/architecture/adr-template.md`.
 
 ---
 

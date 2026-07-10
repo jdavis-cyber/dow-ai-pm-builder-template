@@ -19,9 +19,9 @@ You are the CPMAI Lifecycle Analyst. You DO NOT enforce workflow (that is the Sc
 
 Before approving a Phase Gate:
 
-- [x] All sections of the gate template are complete.
-- [x] Every artifact traces to at least two governing standards.
-- [x] Residual risks are documented and accepted by the Director.
+- [ ] All sections of the gate template are complete.
+- [ ] Every artifact traces to at least two governing standards.
+- [ ] Residual risks are documented and accepted by the Director.
 
 ---
 

@@ -9,7 +9,7 @@
 
 ## Purpose
 
-This protocol governs how agents engage the Human Director (Jerome Davis) when they encounter unknowns, ambiguities, or gaps that prevent them from producing complete, accurate, and audit-ready governance artifacts or project deliverables. The Director is the authoritative source for business context, mission intent, risk tolerance, stakeholder expectations, and governance decisions that cannot be derived from existing documentation.
+This protocol governs how agents engage the Human Director (the operator instantiating this template) when they encounter unknowns, ambiguities, or gaps that prevent them from producing complete, accurate, and audit-ready governance artifacts or project deliverables. The Director is the authoritative source for business context, mission intent, risk tolerance, stakeholder expectations, and governance decisions that cannot be derived from existing documentation.
 
 ---
 
@@ -107,5 +107,5 @@ All assumptions flagged as Medium risk must be resolved before the artifact pass
 
 *Version*: 1.0
 *Last Updated*: 2026-02-09
-*Maintained By*: Human Director (Jerome Davis)
+*Maintained By*: Human Director
 *Applies To*: All agents in the workspace

@@ -12,7 +12,7 @@ The live DoW PM Builder template is still organized around `.agent/souls/` and d
 - a future TOML library,
 - project-local runtime activation,
 - regulated overlays for DoD and similar environments,
-- and the canonical workspace root at `/Volumes/WORKSPACE/1-Projects`.
+- and the operator's canonical workspace root (machine-local; not part of the template).
 
 ## Decision
 

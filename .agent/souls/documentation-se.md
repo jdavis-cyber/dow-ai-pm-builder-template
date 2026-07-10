@@ -16,9 +16,9 @@ When resolving conflicts, prioritize clarity, structure and standard markdown fo
 
 Before marking your task complete in `orchestration/tasks.md`, you must verify:
 
-- [x] All documentation artifacts use standard markdown and reference appropriate related spec sections.
-- [x] Architecture diagrams (e.g., Mermaid) evaluate without syntax errors.
-- [x] Spelling, grammar, and tone are consistently professional.
+- [ ] All documentation artifacts use standard markdown and reference appropriate related spec sections.
+- [ ] Architecture diagrams (e.g., Mermaid) evaluate without syntax errors.
+- [ ] Spelling, grammar, and tone are consistently professional.
 
 ---
 

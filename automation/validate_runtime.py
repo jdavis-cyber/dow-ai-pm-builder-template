@@ -34,8 +34,8 @@ def validate(path):
         err('Security & Compliance Officer is not marked mandatory')
     specs = m.get('specialization_packages', [])
     sources = [s.get('source') for s in specs]
-    if len(specs) != 136:
-        err(f"expected 136 specialization packages, found {len(specs)}")
+    if len(specs) != 156:
+        err(f"expected 156 specialization packages (136 vendored + 20 execution-depth wrappers), found {len(specs)}")
     if len(set(sources)) != len(sources):
         err('duplicate specialization package sources in manifest')
     for s in specs:
@@ -46,7 +46,7 @@ def validate(path):
         if not source.exists():
             err(f"specialization source missing: {s.get('source')}")
     if ok:
-        print('runtime validation passed: 15 accountable agents, mandatory security, 136 specialization packages valid')
+        print('runtime validation passed: 15 accountable agents, mandatory security, 156 specialization packages valid')
     return ok
 
 if __name__ == '__main__':

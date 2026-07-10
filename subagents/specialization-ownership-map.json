@@ -2446,5 +2446,365 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ]
+  },
+  "global/accessibility-tester.toml": {
+    "accountable_owner": "frontend-developer",
+    "status": "mapped",
+    "activation_condition": "Soul-referenced execution-depth wrapper; activated by frontend-developer per its SOUL delegation rules when the task requires the accessibility-tester capability.",
+    "reason_for_selection": "Governed execution-depth wrapper (VoltAgent-derived, governance metadata added); not an accountable peer agent.",
+    "source_toml_path": "subagents/global/accessibility-tester.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/ai-engineer.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Soul-referenced execution-depth wrapper; activated by architecture-se per its SOUL delegation rules when the task requires the ai-engineer capability.",
+    "reason_for_selection": "Governed execution-depth wrapper (VoltAgent-derived, governance metadata added); not an accountable peer agent.",
+    "source_toml_path": "subagents/global/ai-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/api-designer.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Soul-referenced execution-depth wrapper; activated by architecture-se per its SOUL delegation rules when the task requires the api-designer capability.",
+    "reason_for_selection": "Governed execution-depth wrapper (VoltAgent-derived, governance metadata added); not an accountable peer agent.",
+    "source_toml_path": "subagents/global/api-designer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/architect-reviewer.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Soul-referenced execution-depth wrapper; activated by architecture-se per its SOUL delegation rules when the task requires the architect-reviewer capability.",
+    "reason_for_selection": "Governed execution-depth wrapper (VoltAgent-derived, governance metadata added); not an accountable peer agent.",
+    "source_toml_path": "subagents/global/architect-reviewer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/chaos-engineer.toml": {
+    "accountable_owner": "automation-test-engineer",
+    "status": "mapped",
+    "activation_condition": "Soul-referenced execution-depth wrapper; activated by automation-test-engineer per its SOUL delegation rules when the task requires the chaos-engineer capability.",
+    "reason_for_selection": "Governed execution-depth wrapper (VoltAgent-derived, governance metadata added); not an accountable peer agent.",
+    "source_toml_path": "subagents/global/chaos-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/cloud-architect.toml": {
+    "accountable_owner": "pipeline-devops",
+    "status": "mapped",
+    "activation_condition": "Soul-referenced execution-depth wrapper; activated by pipeline-devops per its SOUL delegation rules when the task requires the cloud-architect capability.",
+    "reason_for_selection": "Governed execution-depth wrapper (VoltAgent-derived, governance metadata added); not an accountable peer agent.",
+    "source_toml_path": "subagents/global/cloud-architect.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/code-mapper.toml": {
+    "accountable_owner": "documentation-se",
+    "status": "mapped",
+    "activation_condition": "Soul-referenced execution-depth wrapper; activated by documentation-se per its SOUL delegation rules when the task requires the code-mapper capability.",
+    "reason_for_selection": "Governed execution-depth wrapper (VoltAgent-derived, governance metadata added); not an accountable peer agent.",
+    "source_toml_path": "subagents/global/code-mapper.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/compliance-auditor.toml": {
+    "accountable_owner": "program-analyst",
+    "status": "mapped",
+    "activation_condition": "Soul-referenced execution-depth wrapper; activated by program-analyst per its SOUL delegation rules when the task requires the compliance-auditor capability.",
+    "reason_for_selection": "Governed execution-depth wrapper (VoltAgent-derived, governance metadata added); not an accountable peer agent.",
+    "source_toml_path": "subagents/global/compliance-auditor.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/context-manager.toml": {
+    "accountable_owner": "scrum-master",
+    "status": "mapped",
+    "activation_condition": "Soul-referenced execution-depth wrapper; activated by scrum-master per its SOUL delegation rules when the task requires the context-manager capability.",
+    "reason_for_selection": "Governed execution-depth wrapper (VoltAgent-derived, governance metadata added); not an accountable peer agent.",
+    "source_toml_path": "subagents/global/context-manager.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/data-engineer.toml": {
+    "accountable_owner": "database-engineer",
+    "status": "mapped",
+    "activation_condition": "Soul-referenced execution-depth wrapper; activated by database-engineer per its SOUL delegation rules when the task requires the data-engineer capability.",
+    "reason_for_selection": "Governed execution-depth wrapper (VoltAgent-derived, governance metadata added); not an accountable peer agent.",
+    "source_toml_path": "subagents/global/data-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/docker-expert.toml": {
+    "accountable_owner": "pipeline-devops",
+    "status": "mapped",
+    "activation_condition": "Soul-referenced execution-depth wrapper; activated by pipeline-devops per its SOUL delegation rules when the task requires the docker-expert capability.",
+    "reason_for_selection": "Governed execution-depth wrapper (VoltAgent-derived, governance metadata added); not an accountable peer agent.",
+    "source_toml_path": "subagents/global/docker-expert.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/knowledge-synthesizer.toml": {
+    "accountable_owner": "program-analyst",
+    "status": "mapped",
+    "activation_condition": "Soul-referenced execution-depth wrapper; activated by program-analyst per its SOUL delegation rules when the task requires the knowledge-synthesizer capability.",
+    "reason_for_selection": "Governed execution-depth wrapper (VoltAgent-derived, governance metadata added); not an accountable peer agent.",
+    "source_toml_path": "subagents/global/knowledge-synthesizer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/kubernetes-specialist.toml": {
+    "accountable_owner": "pipeline-devops",
+    "status": "mapped",
+    "activation_condition": "Soul-referenced execution-depth wrapper; activated by pipeline-devops per its SOUL delegation rules when the task requires the kubernetes-specialist capability.",
+    "reason_for_selection": "Governed execution-depth wrapper (VoltAgent-derived, governance metadata added); not an accountable peer agent.",
+    "source_toml_path": "subagents/global/kubernetes-specialist.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/llm-architect.toml": {
+    "accountable_owner": "architecture-se",
+    "status": "mapped",
+    "activation_condition": "Soul-referenced execution-depth wrapper; activated by architecture-se per its SOUL delegation rules when the task requires the llm-architect capability.",
+    "reason_for_selection": "Governed execution-depth wrapper (VoltAgent-derived, governance metadata added); not an accountable peer agent.",
+    "source_toml_path": "subagents/global/llm-architect.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/mlops-engineer.toml": {
+    "accountable_owner": "pipeline-devops",
+    "status": "mapped",
+    "activation_condition": "Soul-referenced execution-depth wrapper; activated by pipeline-devops per its SOUL delegation rules when the task requires the mlops-engineer capability.",
+    "reason_for_selection": "Governed execution-depth wrapper (VoltAgent-derived, governance metadata added); not an accountable peer agent.",
+    "source_toml_path": "subagents/global/mlops-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/security-auditor.toml": {
+    "accountable_owner": "security-compliance-officer",
+    "status": "mapped",
+    "activation_condition": "Soul-referenced execution-depth wrapper; activated by security-compliance-officer per its SOUL delegation rules when the task requires the security-auditor capability.",
+    "reason_for_selection": "Governed execution-depth wrapper (VoltAgent-derived, governance metadata added); not an accountable peer agent.",
+    "source_toml_path": "subagents/global/security-auditor.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/security-engineer.toml": {
+    "accountable_owner": "security-compliance-officer",
+    "status": "mapped",
+    "activation_condition": "Soul-referenced execution-depth wrapper; activated by security-compliance-officer per its SOUL delegation rules when the task requires the security-engineer capability.",
+    "reason_for_selection": "Governed execution-depth wrapper (VoltAgent-derived, governance metadata added); not an accountable peer agent.",
+    "source_toml_path": "subagents/global/security-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/sre-engineer.toml": {
+    "accountable_owner": "pipeline-devops",
+    "status": "mapped",
+    "activation_condition": "Soul-referenced execution-depth wrapper; activated by pipeline-devops per its SOUL delegation rules when the task requires the sre-engineer capability.",
+    "reason_for_selection": "Governed execution-depth wrapper (VoltAgent-derived, governance metadata added); not an accountable peer agent.",
+    "source_toml_path": "subagents/global/sre-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/terraform-engineer.toml": {
+    "accountable_owner": "pipeline-devops",
+    "status": "mapped",
+    "activation_condition": "Soul-referenced execution-depth wrapper; activated by pipeline-devops per its SOUL delegation rules when the task requires the terraform-engineer capability.",
+    "reason_for_selection": "Governed execution-depth wrapper (VoltAgent-derived, governance metadata added); not an accountable peer agent.",
+    "source_toml_path": "subagents/global/terraform-engineer.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
+  },
+  "global/terragrunt-expert.toml": {
+    "accountable_owner": "pipeline-devops",
+    "status": "mapped",
+    "activation_condition": "Soul-referenced execution-depth wrapper; activated by pipeline-devops per its SOUL delegation rules when the task requires the terragrunt-expert capability.",
+    "reason_for_selection": "Governed execution-depth wrapper (VoltAgent-derived, governance metadata added); not an accountable peer agent.",
+    "source_toml_path": "subagents/global/terragrunt-expert.toml",
+    "evidence_obligations": [
+      "cite owner task ID",
+      "record activation reason",
+      "produce verification or handoff evidence path",
+      "preserve SOUL and phase-gate obligations"
+    ],
+    "prohibitions": [
+      "may not weaken owner SOUL",
+      "may not bypass phase gates",
+      "may not approve its own compliance evidence"
+    ]
   }
 }

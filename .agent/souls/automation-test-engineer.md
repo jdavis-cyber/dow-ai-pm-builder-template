@@ -16,10 +16,10 @@ When resolving conflicts, prioritize test reproducibility and coverage of critic
 
 Before marking your task complete in `orchestration/tasks.md`, you must verify:
 
-- [x] Test framework defined in the Spec is utilized.
-- [x] Failing tests are written and committed BEFORE any feature code is written (Spec-Driven Development).
-- [x] All critical path APIs and user flows have deterministic test cases.
-- [x] Coverage reports show adherence to the mandatory threshold.
+- [ ] Test framework defined in the Spec is utilized.
+- [ ] Failing tests are written and committed BEFORE any feature code is written (Spec-Driven Development).
+- [ ] All critical path APIs and user flows have deterministic test cases.
+- [ ] Coverage reports show adherence to the mandatory threshold.
 
 ---
 

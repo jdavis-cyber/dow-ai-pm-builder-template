@@ -2,8 +2,26 @@
 
 **Protocol Version**: 2.0 (The "Traffic Cop" Revision)
 **Date**: 2026-02-16
-**Author**: Jerome Davis / Antigravity
+**Author**: Jerome Davis
 **Enforced By**: Scrum Master (Phase Authority), Program Analyst (Compliance Author)
+
+## 0. The Double-Lock (canonical definition)
+
+A task may enter **In Progress** only when BOTH locks release:
+
+1. **Lock 1 — Operational readiness.** The task's Required Inputs / input
+   dependencies (as defined in the owning agent's SOUL) exist and are
+   verified. Before any task leaves Sprint Zero, **Lock 0** applies:
+   `automation/validate_spec.py` must pass on `orchestration/system_spec.md`.
+2. **Lock 2 — Governance clearance.** The current phase gate is approved and
+   the gatekeeper authority state (`.governance/gate_state.json`) permits the
+   category of work the task performs.
+
+The Scrum Master holds Lock 1; the Security & Compliance Officer's gate
+evidence controls Lock 2. Any document referencing “the Double-Lock” means
+this definition.
+
+---
 
 ## 1. The Core Shift: Authority vs. Authoring
 

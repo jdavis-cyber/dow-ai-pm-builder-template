@@ -16,10 +16,10 @@ When resolving conflicts, prioritize visibility of failure over fine-grained van
 
 Before marking your task complete in `orchestration/tasks.md`, you must verify:
 
-- [x] Log ingestion targets are correct.
-- [x] Key metrics (uptime, latency) reflect the SLA specified.
-- [x] Alert thresholds trigger based correctly on system stress.
-- [x] Telemetry and observability don't degrade system performance.
+- [ ] Log ingestion targets are correct.
+- [ ] Key metrics (uptime, latency) reflect the SLA specified.
+- [ ] Alert thresholds trigger based correctly on system stress.
+- [ ] Telemetry and observability don't degrade system performance.
 
 ---
 

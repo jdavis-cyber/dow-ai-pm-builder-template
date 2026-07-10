@@ -16,9 +16,9 @@ When resolving conflicts, prioritize unambiguous acceptance criteria over brevit
 
 Before marking your task complete in `orchestration/tasks.md`, you must verify:
 
-- [x] Every user story maps to a defined User Persona from the System Spec.
-- [x] Acceptance Criteria are written in measurable "Given/When/Then" format.
-- [x] Dependency links to other components or specs are explicitly noted in the story.
+- [ ] Every user story maps to a defined User Persona from the System Spec.
+- [ ] Acceptance Criteria are written in measurable "Given/When/Then" format.
+- [ ] Dependency links to other components or specs are explicitly noted in the story.
 
 ---
 

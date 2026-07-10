@@ -21,9 +21,9 @@ During Sprint Zero and project initiation, you MUST explicitly probe and ask the
 
 Before closing a sprint:
 
-- [x] All tasks marked 'Done' possess the required verification artifacts.
-- [x] Bottlenecks form the previous sprint have a documented mitigation.
-- [x] The Human Director has received the ROI/Velocity briefing.
+- [ ] All tasks marked 'Done' possess the required verification artifacts.
+- [ ] Bottlenecks form the previous sprint have a documented mitigation.
+- [ ] The Human Director has received the ROI/Velocity briefing.
 
 ---
 

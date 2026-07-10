@@ -46,9 +46,12 @@ def main():
         kt=kickoff.read_text()
         for phrase in ['Start a new project from the DoW AI PM Builder Template and begin Sprint Zero.', 'canonical operator phrase', 'Sprint Zero / Phase 0', 'stop at Gate 1 readiness', 'The interview owns discovery details', 'project name/path', 'files, links', 'authority boundaries']:
             if phrase not in kt: print('ERROR KICKOFF.md missing '+phrase); ok=False
+    provider_bodies={f:(ROOT/f).read_text().split('\n',1)[1] for f in ['CLAUDE.md','CODEX.md','GEMINI.md']}
+    if len(set(provider_bodies.values()))!=1: print('ERROR provider files out of sync (CLAUDE.md/CODEX.md/GEMINI.md must be identical below the title line)'); ok=False
     stale=['14 specialized' + ' agents','complete AI development team - ' + '14','Template Version ' + '3.0']
+    SKIP_DIRS={'.git','graphify-out','.claude','.codex','node_modules','venv','env','.pytest_cache','htmlcov'}
     for p in ROOT.glob('**/*'):
-        if p.is_file() and '.git' not in p.parts and p.suffix in {'.md','.py','.json','.toml','.yml','.yaml','.sh'}:
+        if p.is_file() and not (SKIP_DIRS & set(p.parts)) and p.suffix in {'.md','.py','.json','.toml','.yml','.yaml','.sh'}:
             txt=p.read_text(errors='ignore')
             for s in stale:
                 if s in txt and p.name!='validate_template.py': print(f'ERROR stale string {s} in {p.relative_to(ROOT)}'); ok=False

@@ -12,7 +12,7 @@ See `orchestration/task-schema.md`. Task status is not approval evidence.
 
 #### TASK-001: Discovery intake and readiness package
 **Task ID**: TASK-001  
-**Phase**: CPMAI Phase I  
+**Phase**: CPMAI Phase 1 — Business Understanding  
 **Status**: Ready  
 **Owner Agent**: Requirements BA  
 **Required Inputs**: PROJECT.md, PM/PO interview notes or explicit discovery request  
@@ -25,7 +25,7 @@ See `orchestration/task-schema.md`. Task status is not approval evidence.
 
 #### TASK-002: Security and compliance gate review scaffold
 **Task ID**: TASK-002  
-**Phase**: CPMAI Phase I  
+**Phase**: CPMAI Phase 1 — Business Understanding  
 **Status**: Pending  
 **Owner Agent**: Security & Compliance Officer  
 **Required Inputs**: TASK-001 evidence; standards applicability record  

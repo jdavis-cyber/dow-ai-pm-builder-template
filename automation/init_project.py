@@ -100,6 +100,13 @@ def main() -> None:
     for d in WORK_SCAFFOLD:
         (target / d).mkdir(parents=True, exist_ok=True)
         (target / d / ".gitkeep").touch()
+
+    # ── Authority store + override register start fail-closed ──────────────
+    shutil.copyfile(TEMPLATE_ROOT / ".governance" / "gate_state.json", target / ".governance" / "gate_state.json")
+    shutil.copyfile(
+        TEMPLATE_ROOT / ".governance" / "security-compliance" / "override-register.md",
+        target / ".governance" / "security-compliance" / "override-register.md",
+    )
     shutil.copyfile(
         TEMPLATE_ROOT / "docs" / "architecture" / "adr-template.md",
         target / "docs" / "architecture" / "adr-template.md",

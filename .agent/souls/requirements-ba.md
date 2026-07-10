@@ -16,10 +16,10 @@ When resolving conflicts, prioritize clear, measurable business outcomes over te
 
 Before marking your task complete in `orchestration/tasks.md`, you must verify:
 
-- [x] Primary outcome is measurable.
-- [x] User roles are explicitly named and permission bounds are set.
-- [x] Compliance scope is defined (Yes/No with specifics).
-- [x] The Human Director has validated all answers.
+- [ ] Primary outcome is measurable.
+- [ ] User roles are explicitly named and permission bounds are set.
+- [ ] Compliance scope is defined (Yes/No with specifics).
+- [ ] The Human Director has validated all answers.
 
 ---
 
