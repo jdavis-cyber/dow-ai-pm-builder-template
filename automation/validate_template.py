@@ -70,6 +70,21 @@ def main():
         fm=fcm.read_text()
         for needle in ['ISO/IEC 42001','NIST AI RMF','not a certification claim','Known gaps']:
             if needle not in fm: print('ERROR factory control matrix missing: '+needle); ok=False
+    assurance={
+        'docs/governance-frameworks/factory-soa.md':['ISO/IEC 42001','NIST AI RMF','not a certification claim','Known gaps','MAP 2','A.7','GOVERN 3','Verified against commit'],
+        'docs/governance-frameworks/factory-risk-register.md':['not a certification claim','Known gaps','FR-01','Verified against commit'],
+        'docs/governance-frameworks/factory-objectives.md':['not a certification claim','Known gaps','FO-1','Threshold','Verified against commit'],
+        'docs/governance-frameworks/model-supplier-criteria.md':['not a certification claim','Known gaps','provider-neutral','Verified against commit'],
+        'docs/governance-frameworks/factory-ai-policy.md':['not a certification claim','Known gaps','Review cadence','fail-closed','Verified against commit'],
+    }
+    for rel,needles in assurance.items():
+        p=ROOT/rel
+        if not p.exists(): print('ERROR missing assurance doc '+rel); ok=False; continue
+        txt=p.read_text()
+        for needle in needles:
+            if needle not in txt: print(f'ERROR {rel} missing: {needle}'); ok=False
+    if not (ROOT/'automation/factory_metrics.py').exists(): print('ERROR missing factory_metrics.py'); ok=False
+    if 'Incident communication' not in (ROOT/'SECURITY.md').read_text(): print('ERROR SECURITY.md missing incident-communication path'); ok=False
     print('whole-template validation passed' if ok else 'whole-template validation failed')
     return 0 if ok else 1
 if __name__=='__main__': sys.exit(main())

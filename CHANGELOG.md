@@ -4,6 +4,34 @@ All notable changes to the DoW AI PM Builder Template are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versioning
 follows SemVer aligned to the template's major revisions.
 
+## [Unreleased]
+
+Factory assurance layer (AI-547…AI-551): the reverse sweep to the control
+matrix, plus the assurance artifacts it depends on. Each carries a
+verified-SHA stamp per the standing rule from the 2026-07-10 cohesion audit.
+
+### Added
+- `docs/governance-frameworks/factory-soa.md` — Statement of Applicability:
+  explicit disposition for every ISO/IEC 42001 Annex A control (A.2–A.10) and
+  every NIST AI RMF category, incl. MAP 2 factory categorization; grounded
+  citations; consolidated known-gaps taxonomy (adopter-attached /
+  operationally-gated / intentionally unmapped).
+- `docs/governance-frameworks/factory-risk-register.md` — 13 factory-level
+  risks (FR-01…FR-13) with treatments mapped to operating mechanisms.
+- `docs/governance-frameworks/factory-objectives.md` — measurable factory
+  objectives (FO-1…FO-5: metric, target, threshold, method, frequency, owner)
+  and `automation/factory_metrics.py` aggregating run-result records, with
+  regression tests (`tests/test_factory_metrics.py`).
+- `docs/governance-frameworks/model-supplier-criteria.md` — runtime-provider
+  selection/review criteria with review triggers and an organization-record
+  bridge.
+- `docs/governance-frameworks/factory-ai-policy.md` — the factory's own AI
+  policy with explicit review cadence (version bump + annual).
+- `SECURITY.md` — incident-communication path for template users (advisory +
+  CHANGELOG + in-repo correction).
+- `validate_template.py` guards for all five assurance docs (existence +
+  honesty-language needles) and the metrics script.
+
 ## [4.1.0] — 2026-07-10
 
 Public-readiness hardening pass (adversarial pre-publication review).
