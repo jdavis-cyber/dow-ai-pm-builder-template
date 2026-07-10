@@ -108,5 +108,20 @@ class PostDispatchDetectiveControlTests(unittest.TestCase):
         self.assertEqual(governed_factory.evidence_paths(task), [])
 
 
+    def test_run_result_is_persisted(self):
+        import json, tempfile, pathlib as pl
+        orig = governed_factory.LOG_DIR
+        try:
+            with tempfile.TemporaryDirectory() as td:
+                governed_factory.LOG_DIR = pl.Path(td)
+                task = {"Task ID": "TASK-TEST"}
+                path = governed_factory.write_run_result(task, {"record_type": "factory-run-result", "outcome": "pass"})
+                data = json.loads(path.read_text())
+                self.assertEqual(data["outcome"], "pass")
+                self.assertTrue(path.name.endswith("TASK-TEST-result.json"))
+        finally:
+            governed_factory.LOG_DIR = orig
+
+
 if __name__ == "__main__":
     unittest.main()
