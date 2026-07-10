@@ -9,6 +9,7 @@ follows SemVer aligned to the template's major revisions.
 Public-readiness hardening pass (adversarial pre-publication review).
 
 ### Added
+- `docs/governance-frameworks/factory-control-matrix.md` — 14 factory mechanisms clause-mapped to ISO/IEC 42001 and NIST AI RMF with evidence pointers, per-row verification commands, and an explicit known-gaps section; guarded by `validate_template.py`.
 - Factory self-evidence: every autonomous dispatch persists a run-result record (checks run, pass/violation) alongside the task packet in `docs/verification/factory-runs/`.
 - Post-dispatch detective stops in `automation/governed_factory.py` (shell adapter): git-audited unauthorized protected-source writes, missing-evidence halt, and open-task redispatch guard — with regression tests in `tests/test_governance_gates.py`.
 - `.governance/gate_state.json` (fail-closed authority store) and `.governance/security-compliance/override-register.md` now ship in the template and are scaffolded by `automation/init_project.py`.

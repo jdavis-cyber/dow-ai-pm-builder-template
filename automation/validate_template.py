@@ -64,6 +64,12 @@ def main():
     ok = run([sys.executable,'automation/validate_spec.py','--mode','template','orchestration/system-spec-template.md']) and ok
     ok = run([sys.executable,'automation/validate_tasks.py','orchestration/task-board-template.md']) and ok
     if 'Reference Needed' not in (ROOT/'directives/templates/standards-crosswalk-matrix.md').read_text(): print('ERROR ISO 27701 not gap-labeled'); ok=False
+    fcm=ROOT/'docs/governance-frameworks/factory-control-matrix.md'
+    if not fcm.exists(): print('ERROR missing factory control matrix'); ok=False
+    else:
+        fm=fcm.read_text()
+        for needle in ['ISO/IEC 42001','NIST AI RMF','not a certification claim','Known gaps']:
+            if needle not in fm: print('ERROR factory control matrix missing: '+needle); ok=False
     print('whole-template validation passed' if ok else 'whole-template validation failed')
     return 0 if ok else 1
 if __name__=='__main__': sys.exit(main())
