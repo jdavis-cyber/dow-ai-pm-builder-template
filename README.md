@@ -21,7 +21,7 @@
 | Governed team | **15 accountable agents** (mandatory roster) — Security & Compliance Officer in every gate |
 | Specialization library | **156 capability packages** — 136 vendored (VoltAgent, 10 domains) + 20 governed execution-depth wrappers |
 | Ownership mapping | **156-entry** specialization → accountable-owner map (every package has an accountable owner) |
-| Governance directives | **7 governance directives** + **29 artifact templates** + **13 automation scripts** (validate, smoke-test, init, runtime-validate, gatekeeper, governed factory) |
+| Governance directives | **7 governance directives** + **29 artifact templates** + **14 automation scripts** (validate, smoke-test, init, runtime-validate, gatekeeper, governed factory, metrics) |
 | Default posture | Generated projects start **Draft / Not Approved** until phase-gate evidence exists |
 | Framework coverage | CPMAI · ISO/IEC 42001 · NIST AI RMF · ISO/IEC 27001 (+ conditional CMMC / FedRAMP / HIPAA / SOC 2) |
 

@@ -34,6 +34,10 @@ verified-SHA stamp per the standing rule from the 2026-07-10 cohesion audit.
 - `validate_template.py` guards for all five assurance docs (existence +
   honesty-language needles) and the metrics script.
 
+### Changed
+- Automation script count is 14 (`factory_metrics.py` added); README metric
+  updated from the 13 stated at v4.1.0.
+
 ## [4.1.0] — 2026-07-10
 
 Public-readiness hardening pass (adversarial pre-publication review).
