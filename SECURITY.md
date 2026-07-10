@@ -31,6 +31,14 @@ There is no user registry and no push notification channel: watchers and
 adopters are expected to follow the repository. This is stated as a known
 limitation, not hidden.
 
+**Self-detected violations (operators of generated projects):** when the
+factory's own detective stops report a violation (a run-result record with
+`outcome: violation`), the operator records the disposition in
+`.governance/security-compliance/override-register.md` and communicates it
+through their organization's incident process. Violations that trace back to
+a defect in this template should also be reported upstream via the path
+above.
+
 ## Scope notes
 
 - This repository is a **template**. It contains no deployed services, no

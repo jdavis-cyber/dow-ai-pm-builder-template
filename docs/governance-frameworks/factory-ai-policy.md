@@ -48,13 +48,17 @@ This policy operates alongside, and defers to where applicable:
 - `LICENSE` and `THIRD_PARTY_LICENSES.md` — licensing and attribution.
 - The adopting organization's AI, security, and quality policies on adoption.
 
-## Review cadence (A.2.4)
+## Review cadence and review log (A.2.4)
 
-This policy is reviewed **at every factory version bump and at least
-annually**, by the Human Director, for continuing suitability, adequacy, and
-effectiveness. Reviews that change policy substance are recorded in
-`CHANGELOG.md`; the verification stamp below is updated even when no change
-is needed, so staleness is detectable.
+This policy is reviewed **at every tagged release or quarterly, whichever
+comes first**, by the Human Director, for continuing suitability, adequacy,
+and effectiveness. Reviews that change policy substance are recorded in
+`CHANGELOG.md`; the review log below is updated even when no change is
+needed, so staleness is detectable.
+
+| Review date | Reviewer | Trigger | Outcome |
+|-------------|----------|---------|---------|
+| 2026-07-10 | Human Director | Initial adoption (assurance layer, AI-551) | Policy adopted; verified against the factory at commit `8991e57` |
 
 ## Known gaps (stated on purpose)
 
