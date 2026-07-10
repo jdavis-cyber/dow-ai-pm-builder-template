@@ -16,8 +16,10 @@ verified-SHA stamp per the standing rule from the 2026-07-10 cohesion audit.
   every NIST AI RMF category, incl. MAP 2 factory categorization; grounded
   citations; consolidated known-gaps taxonomy (adopter-attached /
   operationally-gated / intentionally unmapped).
-- `docs/governance-frameworks/factory-risk-register.md` — 13 factory-level
-  risks (FR-01…FR-13) with treatments mapped to operating mechanisms.
+- `docs/governance-frameworks/factory-risk-register.md` — 17 factory-level
+  risks (FR-01…FR-17, incl. the adversarial-review seed set: adapter
+  compromise, prompt injection, evidence fabrication, model drift) with
+  treatments mapped to operating mechanisms.
 - `docs/governance-frameworks/factory-objectives.md` — measurable factory
   objectives (FO-1…FO-5: metric, target, threshold, method, frequency, owner)
   and `automation/factory_metrics.py` aggregating run-result records, with

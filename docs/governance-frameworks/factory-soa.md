@@ -142,7 +142,7 @@ accepted-gap rationale or a tracking reference — nothing is left implicit.
 | MAP 1 | Context established and understood | ✅ | Sprint Zero discovery interview + Lock 0 (matrix row 3) |
 | MAP 2 | Categorization of the AI system performed | ✅ | §Factory categorization above (task definition, oversight points, TEVV) |
 | MAP 3 | Capabilities, usage, benefits/costs vs benchmarks | ◐ | Capabilities and intended usage documented (README, this file); no cost/benefit benchmark data at template scope — **accepted gap: benchmarks require operational runs; FO-2/FO-3 metrics accumulate the data once runs exist** |
-| MAP 4 | Risks mapped for all components incl. third-party | ✅ | Factory risk register (FR-01..FR-13) + third-party attribution/ownership |
+| MAP 4 | Risks mapped for all components incl. third-party | ✅ | Factory risk register (FR-01..FR-17) + third-party attribution/ownership |
 | MAP 5 | Impacts characterized | ✅ | Mission risk profile at Gate 1; register rows FR-03/FR-06/FR-09 |
 | MEASURE 1 | Appropriate methods and metrics identified/applied | ✅ | Validation gauntlet + CI + `factory_metrics.py` |
 | MEASURE 2 | Systems evaluated for trustworthy characteristics | ◐ | Validity/reliability covered by the gauntlet; bias and explainability are not measured at factory level — **accepted gap: measurement attaches to a generated product with real usage (register FR-03)** |
