@@ -60,8 +60,10 @@ action) · **Measurement method** · **Frequency** · **Owner**.
   the next autonomous dispatch.
 - **Measurement method:** detective-stop results inside run-result records
   (`automation/governed_factory.py`, `post_dispatch_checks`); regression
-  coverage in `tests/test_governance_gates.py`.
-- **Frequency:** per run.
+  coverage in `tests/test_governance_gates.py`. At each release, review any
+  unauthorized-write findings for keyword-inference misclassification as the
+  root cause (register FR-12) and correct the inference where confirmed.
+- **Frequency:** per run; misclassification review per release.
 - **Owner:** Human Director.
 
 ## FO-5 — Documentation verified against the factory it describes

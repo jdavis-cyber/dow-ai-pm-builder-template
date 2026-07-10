@@ -32,10 +32,14 @@ def summarize(records):
                and r.get('record_type') == 'factory-run-result']
     violated = [r for r in results
                 if str(r.get('outcome', '')).startswith('violation')]
+    by_type = {}
+    for r in violated:
+        by_type[r['outcome']] = by_type.get(r['outcome'], 0) + 1
     return {
         'runs_recorded': len(results),
         'runs_passed': len(results) - len(violated),
         'runs_with_violations': len(violated),
+        'violations_by_type': by_type,
         'pass_rate': (round((len(results) - len(violated)) / len(results), 4)
                       if results else None),
         'unreadable_records': [r['file'] for r in parse_errors],
