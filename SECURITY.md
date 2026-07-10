@@ -13,6 +13,24 @@ says it cannot, or leaked sensitive material — please report it privately:
 You can expect an acknowledgment within a few days. This is a solo-maintained
 portfolio project, not a staffed product; there is no bug-bounty program.
 
+## Incident communication to template users
+
+If a confirmed issue affects people who have already cloned or adopted this
+template — a governance control that does not work as documented, a defect in
+the automation scripts, or leaked sensitive material — it is communicated
+outward, not just fixed:
+
+1. **GitHub Security Advisory** for anything security-relevant (the
+   repository's *Security* → *Advisories* page is the canonical channel).
+2. **CHANGELOG.md entry** naming the defect and the corrective change, so the
+   record survives in-repo.
+3. **README or affected-document correction** in the same change, when the
+   incident is a documentation-vs-reality gap.
+
+There is no user registry and no push notification channel: watchers and
+adopters are expected to follow the repository. This is stated as a known
+limitation, not hidden.
+
 ## Scope notes
 
 - This repository is a **template**. It contains no deployed services, no
