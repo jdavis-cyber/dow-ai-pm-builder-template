@@ -16,7 +16,7 @@ factory-level input to them.
 |---|-----------|---------------|---------------------|
 | 1 | Terms of service and license compatibility | Provider terms permit the intended use; output ownership is clear | Factory outputs become project artifacts; ambiguous output rights poison the evidence chain |
 | 2 | Data-use commitments | Whether prompts/outputs are used for provider training; retention windows; opt-out mechanics | Project text is operator-supplied context; it must not silently become supplier training data |
-| 3 | Model-version change notice | Provider publishes model versions and deprecation/change notices | Factory behavior can shift under an unchanged config; version pinning or at least change awareness is required (see `factory-risk-register.md` FR-04) |
+| 3 | Model documentation and change notice | Provider publishes model/system cards, version identifiers, and deprecation/change notices | Factory behavior can shift under an unchanged config (register FR-17); documented capabilities and change awareness — or version pinning — are required |
 | 4 | Availability and status transparency | Public status page; documented rate limits | Dispatch halts are an operational risk; the provider-neutral design is the fallback, not a substitute for knowing supplier health |
 | 5 | Security posture documentation | Published security/compliance documentation appropriate to the operator's context | The supplier is inside the factory's trust boundary during a run |
 | 6 | Capability fit for governed execution | Follows structured instructions, respects stop conditions, usable through a scriptable CLI/API adapter | The dispatcher requires an adapter that can be halted and audited; a runtime that can't be scripted can't be governed here |

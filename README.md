@@ -88,7 +88,7 @@ FACTORY_ADAPTER_COMMAND='codex exec --stdin' \
 ./automation/factory.sh
 ```
 
-Other adapters can wrap Claude Code, Gemini CLI, OpenCode, Hermes, a local model runner, or an enterprise agent runtime. The invariant is:
+Other adapters can wrap Claude Code, Gemini CLI, OpenCode, Hermes, a local model runner, or an enterprise agent runtime. Before wiring any model runtime into `FACTORY_ADAPTER_COMMAND`, assess it against [`docs/governance-frameworks/model-supplier-criteria.md`](docs/governance-frameworks/model-supplier-criteria.md). The invariant is:
 
 ```text
 Runtime is replaceable. Governance is not.
