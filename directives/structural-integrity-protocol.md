@@ -1,7 +1,7 @@
 # Structural Integrity & Sequential Governance Protocol
 
-**Protocol Version**: 2.0 (The "Traffic Cop" Revision)
-**Date**: 2026-02-16
+**Protocol Version**: 2.1 (Interview order deferred to the Sprint Zero playbook, DEF-015)
+**Date**: 2026-07-10 (v2.0: 2026-02-16)
 **Author**: Jerome Davis
 **Enforced By**: Scrum Master (Phase Authority), Program Analyst (Compliance Author)
 
@@ -66,16 +66,14 @@ The Scrum Master is forbidden from presenting a phase for "Human Review" if any 
 
 To prevent "Military Hallucinations" (incorrect assumptions about theme/intent), the project MUST begin with the **Specialist Interview Line**:
 
-1. **PM/PO Interview (Sequential)**:
-    * UI/UX Designer first (Feel/Soul).
-    * Architect/DB second (Bones/Memory).
-    * QA/Security third (Safety/Edges).
+1. **PM/PO Interviews (Sequential)**:
+    * Interviews follow the canonical order and dependency chain in `orchestration/sprint-zero-playbook.md`: Business Analyst first, then Systems Engineer, Database Engineer, DevOps, and UI/UX Designer per their listed prerequisites, then Frontend and Backend Developers, then QA. The playbook is the single source of truth for interview order; this directive does not restate it.
 2. **Synthesis**:
-    * BAs synthesize the interviews into a **Robust PRD**.
-    * Program Analyst synthesizes the BAs' PRD into the **Mission Risk Profile**.
+    * Interview outputs populate the **System Specification Document** section by section, per the playbook.
+    * Program Analyst synthesizes the validated specification into the **Mission Risk Profile**.
 3. **Planning Review**:
-    * Scrum Master + BAs present the Sprint Plan (derived from PRD).
-    * **STOP POINT**: No coding or scaffold-building happens until the PM signs off on the PRD and Sprint Plan.
+    * Scrum Master + BAs present the Sprint Plan (derived from the validated specification).
+    * **STOP POINT**: No coding or scaffold-building happens until the PM signs off on the specification and Sprint Plan.
 
 ---
 

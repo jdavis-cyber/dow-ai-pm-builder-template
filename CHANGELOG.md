@@ -37,6 +37,9 @@ verified-SHA stamp per the standing rule from the 2026-07-10 cohesion audit.
 ### Changed
 - Automation script count is 14 (`factory_metrics.py` added); README metric
   updated from the 13 stated at v4.1.0.
+- `structural-integrity-protocol.md` §4 corrected: interview order now defers
+  to `orchestration/sprint-zero-playbook.md` (the operative sequence, BA first)
+  instead of restating a stale UI/UX-first order (DEF-015).
 
 ## [4.1.0] — 2026-07-10
 
