@@ -6,6 +6,9 @@
   <img src="https://img.shields.io/badge/Governance-CPMAI%20%2F%20ISO%2042001%20%2F%20NIST%20AI%20RMF-6f42c1?style=for-the-badge" alt="Governance">
   <img src="https://img.shields.io/badge/DoD%20overlays-CMMC%20%2F%20FedRAMP%20%2F%20ATO-0A66C2?style=for-the-badge" alt="DoD overlays">
   <img src="https://img.shields.io/badge/Approach-Governance--as--Code-111?style=for-the-badge" alt="Governance as Code">
+  <br>
+  <a href="https://github.com/jdavis-cyber/dow-ai-pm-builder-template/actions/workflows/validate.yml"><img src="https://github.com/jdavis-cyber/dow-ai-pm-builder-template/actions/workflows/validate.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/License-MIT-green" alt="License: MIT">
 </p>
 
 > ### What this demonstrates
@@ -23,6 +26,8 @@
 | Ownership mapping | **156-entry** specialization → accountable-owner map (every package has an accountable owner) |
 | Governance directives | **7 governance directives** + **29 artifact templates** + **14 automation scripts** (validate, smoke-test, init, runtime-validate, gatekeeper, governed factory, metrics) |
 | Default posture | Generated projects start **Draft / Not Approved** until phase-gate evidence exists |
+| Verification | **5 validators + golden-path smoke test + 24 regression tests**, run in CI on every push |
+| Assurance layer | **6 self-assessment artifacts** — control matrix, SoA, risk register, objectives + metrics, supplier criteria, AI policy — all validator-guarded |
 | Framework coverage | CPMAI · ISO/IEC 42001 · NIST AI RMF · ISO/IEC 27001 (+ conditional CMMC / FedRAMP / HIPAA / SOC 2) |
 
 ## Operating model
@@ -105,11 +110,28 @@ The factory's mechanisms are clause-mapped to ISO/IEC 42001 and NIST AI RMF — 
 
 **Known limitations (stated on purpose):** pre-dispatch action inference is keyword-based over task text — the post-dispatch git audit is the backstop for misclassified tasks; the write audit is detective, not preventive (an adapter command runs with the operator's own privileges); and evidence checks verify artifact existence, not artifact quality — that remains the phase gate's job.
 
-## Fresh clone validation
+## Audit this factory
+
+The factory documents and verifies itself. Six assurance artifacts in [`docs/governance-frameworks/`](docs/governance-frameworks/) answer the questions an assessor asks, each with evidence pointers and a stated known-gaps section:
+
+| Artifact | The question it answers |
+|---|---|
+| [Factory control matrix](docs/governance-frameworks/factory-control-matrix.md) | Which mechanism implements which ISO/IEC 42001 clause and NIST AI RMF category, and how do I verify it? |
+| [Factory SoA](docs/governance-frameworks/factory-soa.md) | What is the explicit disposition of **every** Annex A control (A.2–A.10) and **every** AI RMF category — met, partial, or not applicable, and why? |
+| [Factory risk register](docs/governance-frameworks/factory-risk-register.md) | What can go wrong operating this factory (17 risks, incl. prompt injection, adapter compromise, evidence gaming), and what treats each? |
+| [Factory objectives](docs/governance-frameworks/factory-objectives.md) | What measurable targets govern operation, with thresholds and owners? `automation/factory_metrics.py` aggregates the run evidence |
+| [Model-supplier criteria](docs/governance-frameworks/model-supplier-criteria.md) | What must an operator assess before wiring any LLM runtime into the adapter? |
+| [Factory AI policy](docs/governance-frameworks/factory-ai-policy.md) | What rules govern the factory's own use of AI, and when are they reviewed? |
+
+Every artifact carries a "verified against commit" stamp and is re-verified at each version bump; deleting one — or stripping its honesty language — fails the build.
+
+**Verify from a fresh clone (about 90 seconds):**
 
 ```bash
-python3 automation/validate_template.py
-python3 automation/smoke_test_template.py
+python3 automation/validate_template.py    # whole-template integrity: roster, ownership, provider sync, doc guards
+python3 automation/smoke_test_template.py  # golden path: a project instantiates with the fail-closed authority store
+python3 -m pytest tests/                   # 24 regression tests: gatekeeper semantics, detective stops, metrics
+python3 automation/factory_metrics.py      # run-evidence aggregation (honest zero state on a pristine clone)
 ```
 
 ## Instantiate a project
