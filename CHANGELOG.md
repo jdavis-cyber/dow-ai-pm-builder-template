@@ -6,6 +6,12 @@ follows SemVer aligned to the template's major revisions.
 
 ## [Unreleased]
 
+### Requirement remediation — 2026-10-01
+- SR-04: locked specs reject bounded unresolved `Gap` markers while preserving ordinary gap prose.
+- SR-08: every post-dispatch violation halt points to the override register and explicitly grants no authority.
+- SR-16: failed adapters retain a run result and all detective checks. A nonzero adapter exit keeps its code and primary failure outcome; simultaneous detective findings remain in the record. Successful adapters retain first-violation outcome and exit 3.
+- Added requirement acceptance and regression cases using isolated deterministic fixtures. Human discovery, real-project evidence, multiplatform and live-runtime qualification remain outside these execution results.
+
 ### Repository maintenance cleanup
 - Removed mandatory presence/exact-prose checks for six duplicate assurance
   references and the crosswalk's gap-label wording from `validate_template.py`.
