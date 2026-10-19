@@ -1,163 +1,46 @@
 # DoW AI PM Builder Template
 
-**A provider-agnostic template that instantiates a *governed* AI software factory — 15 accountable agents, phase-gated, with DoD-grade compliance scaffolding baked in.**
+**Bring AI into the way your team delivers.**
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Governance-CPMAI%20%2F%20ISO%2042001%20%2F%20NIST%20AI%20RMF-6f42c1?style=for-the-badge" alt="Governance">
-  <img src="https://img.shields.io/badge/DoD%20overlays-CMMC%20%2F%20FedRAMP%20%2F%20ATO-0A66C2?style=for-the-badge" alt="DoD overlays">
-  <img src="https://img.shields.io/badge/Approach-Governance--as--Code-111?style=for-the-badge" alt="Governance as Code">
-  <br>
-  <a href="https://github.com/jdavis-cyber/dow-ai-pm-builder-template/actions/workflows/validate.yml"><img src="https://github.com/jdavis-cyber/dow-ai-pm-builder-template/actions/workflows/validate.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/License-MIT-green" alt="License: MIT">
-</p>
+AI can help a team turn a customer need into working software. The work still needs a shared direction, clear responsibilities and a sound basis for deciding when it is ready.
 
-> ### What this demonstrates
-> This is a **governance-as-code blueprint for building AI software the way regulated and DoD environments require it.** Instead of bolting compliance on at the end, the template ships a 15-agent governed scrum team where a **Security & Compliance Officer sits in every phase gate**, projects start in *Draft / Not Approved* until evidence is populated, and framework mappings are explicitly fenced ("do not infer product compliance or fabricate mappings"). It's the operating model behind my thesis: **build the systems, govern the systems, defend the evidence** — turned into a reusable, validatable factory.
->
-> **Bridges:** DoD/federal program execution · AI governance (CPMAI / ISO 42001 / NIST AI RMF) · security/compliance/audit · agentic GenAI orchestration · governance-as-code.
-> **More:** [secondorderstrategy.com](https://secondorderstrategy.com) · author: Jerome Davis
+DoW provides a reusable foundation for that delivery process. Discovery, task definitions, AI assistance, verification and decision records live together in the project repository. Governance becomes part of doing the work: defining it, handing it off, checking it and deciding what comes next.
 
-## By the numbers
+[Explore the delivery model](KICKOFF.md) · [Try the template](INSTALL.md) · [Inspect the implementation](automation/governed_factory.py)
 
-| Signal | Value |
-| --- | --- |
-| Governed team | **15 accountable agents** (mandatory roster) — Security & Compliance Officer in every gate |
-| Specialization library | **156 capability packages** — 136 vendored (VoltAgent, 10 domains) + 20 governed execution-depth wrappers |
-| Ownership mapping | **156-entry** specialization → accountable-owner map (every package has an accountable owner) |
-| Governance directives | **7 governance directives** + **29 artifact templates** + **14 automation scripts** (validate, smoke-test, init, runtime-validate, gatekeeper, governed factory, metrics) |
-| Default posture | Generated projects start **Draft / Not Approved** until phase-gate evidence exists |
-| Verification | **5 validators + golden-path smoke test + 24 regression tests**, run in CI on every push |
-| Assurance layer | **6 self-assessment artifacts** — control matrix, SoA, risk register, objectives + metrics, supplier criteria, AI policy — all validator-guarded |
-| Framework coverage | CPMAI · ISO/IEC 42001 · NIST AI RMF · ISO/IEC 27001 (+ conditional CMMC / FedRAMP / HIPAA / SOC 2) |
+## From customer need to coordinated work
 
-## Operating model
+**Define the outcome.** Sprint Zero prompts help a team establish the problem, intended users, constraints and acceptance criteria before implementation starts. The system specification gives that work a common reference.
 
-The template creates a complete project package in a single repository: application source, governance records, decision logic, verification evidence, handoff materials, agent identities, runtime packages, and orchestration logic — all living together with clear folder boundaries. Work flows through phase gates; nothing advances to implementation until Sprint Zero discovery and gate evidence are populated.
+**Make each task actionable.** Task records name an accountable role, required inputs, dependencies, acceptance criteria, verification method and handoff target. The role packages supply instructions for AI-assisted work across requirements, design, engineering, security and verification.
 
-```mermaid
-flowchart TB
-    Kick[KICKOFF phrase] --> SZ[Sprint Zero / Phase 0<br/>discovery interview]
-    SZ --> Gate{Phase Gate}
-    Gate -->|evidence required| SCO[[Security &amp; Compliance Officer<br/>in every gate]]
+**Carry the evidence forward.** Handoff records capture outputs, verification performed and unresolved gaps. Decision templates give reviewers a place to assess readiness, record conditions and explain a go/no-go recommendation.
 
-    subgraph Team [15 Accountable Agents · governed scrum team]
-        direction LR
-        Think[Thinkers ×4<br/>BA · UX · Arch]
-        Build[Builders<br/>FE · BE · DB · DevOps]
-        Verify[Verifiers<br/>QA · Test · Docs]
-    end
+The aim is a delivery record that a developer can act on, a reviewer can inspect and a program lead can use to make an informed decision.
 
-    Gate --> Team
-    Team --> Lib[156 specialization packages<br/>136 vendored + 20 wrappers · all owner-mapped]
-    SCO --> Frame[Framework overlays<br/>CPMAI · ISO 42001 · NIST AI RMF · 27001<br/>+ conditional CMMC / FedRAMP / ATO]
-    Team --> Out[Generated project<br/>Draft / Not Approved → evidence → approved]
+## Potential uses
 
-    style SCO fill:#0A66C2,stroke:#06408a,color:#fff
-    style Frame fill:#6f42c1,stroke:#4b2a86,color:#fff
-    style Out fill:#1a7f37,stroke:#0b5023,color:#fff
-```
+Suppose a customer needs a feature that shows the status of a service request. A team could use the template to define the user need, divide the feature into owned tasks, use AI to assist with implementation, and carry test evidence and open issues into review.
 
-## Factory team
+The feature, the reasons behind it and the conditions for accepting it would share a project structure.
 
-- **15 accountable agents** are permanent and mandatory in the factory handoff model (rosters in `.agent/AGENT-ROSTER.md` and `.agent/souls/`).
-- **Security & Compliance Officer is always installed** and participates in every phase gate.
-- **156 specialization packages** — 136 vendored under `subagents/global/voltagent/` (10 domain categories) plus 20 governed execution-depth wrappers at `subagents/global/*.toml` — all mapped to accountable owners in `subagents/specialization-ownership-map.json`. They are adapted from the MIT-licensed [VoltAgent awesome-claude-code-subagents](https://github.com/VoltAgent/awesome-claude-code-subagents) collection — attribution and upstream license in `THIRD_PARTY_LICENSES.md`.
-- **Root-level packages** in `subagents/global/*.toml` are 14 accountable-agent identity packages (this repo's own work, generated from `.agent/souls/`) plus 20 VoltAgent-derived execution-depth wrappers with governance metadata added — boundary detailed in `subagents/SPECIALIZATION-LIBRARY.md`.
+## How the engineering supports the process
 
-See `.agent/AGENT-ROSTER.md` and `subagents/SPECIALIZATION-LIBRARY.md`.
+Generated projects start **Draft / Not Approved**. The dispatcher selects one eligible task against dependencies and recorded authority. Assisted mode prints its task packet; a configured shell adapter can pass that work to the team's chosen runtime.
 
-## Framework applicability
+After a successful shell-adapter return, checks examine task status, referenced evidence and certain unauthorized file changes. The repository also includes validators, regression tests and a smoke test for project generation.
 
-| Framework | Treatment |
-|---|---|
-| CPMAI | Baseline lifecycle backbone for the factory |
-| ISO/IEC 42001 | Baseline AIMS management-system target for factory behavior |
-| NIST AI RMF | Baseline risk-function overlay |
-| ISO/IEC 27001 | Crosswalk candidate when source clauses are supplied/confirmed |
-| ISO/IEC 27701 | Reference Needed — Not Authoritatively Mapped |
-| CMMC / FedRAMP / HIPAA / SOC 2 | Conditional product overlays only |
+The 15 role packages define responsibilities and instructions; the runner does not launch 15 independent agents. Teams retain responsibility for approvals, evidence quality and release decisions.
 
-**Do not infer product compliance or fabricate mappings.** This guardrail is intentional: the template scaffolds the *discipline and evidence trail*, not a compliance claim.
+## Explore or try it
 
-## Governed factory runner
+- **Understand the workflow:** [Sprint Zero](orchestration/sprint-zero-playbook.md), [task schema](orchestration/task-schema.md) and [handoff record](directives/templates/agent-handoff-record.md).
+- **Evaluate locally:** follow [INSTALL.md](INSTALL.md) for setup and validation commands, then generate a project in an unused directory. Generation writes files and creates an initial Git commit.
+- **Choose how AI participates:** begin with assisted task packets; review the [adapter configuration](factory.config.example.json) before connecting a model runtime.
+- **Inspect the assurance model:** [control matrix](docs/governance-frameworks/factory-control-matrix.md), [risk register](docs/governance-frameworks/factory-risk-register.md) and [go/no-go template](directives/templates/go-no-go-recommendation.md).
 
-The factory runner is **provider-neutral**. Governance lives in repo-local automation; model execution is supplied by an adapter.
+## Evaluation boundaries
 
-```bash
-# Safe default: print the next legal governed task packet.
-./automation/factory.sh
+DoW is an evaluation template for adapting AI-assisted delivery to a team's environment. Shell adapters run with the operator's permissions. Validation checks aid human review; they do not replace security controls, judgment about evidence quality or deployment decisions. Framework mappings do not confer certification. See [SECURITY.md](SECURITY.md) and the [control matrix](docs/governance-frameworks/factory-control-matrix.md) for scope, mechanisms and limitations.
 
-# Autonomous adapter pattern: pipe the task packet to your chosen agent CLI.
-FACTORY_ADAPTER=shell \
-FACTORY_ADAPTER_COMMAND='codex exec --stdin' \
-./automation/factory.sh
-```
-
-Other adapters can wrap Claude Code, Gemini CLI, OpenCode, Hermes, a local model runner, or an enterprise agent runtime. Before wiring any model runtime into `FACTORY_ADAPTER_COMMAND`, assess it against [`docs/governance-frameworks/model-supplier-criteria.md`](docs/governance-frameworks/model-supplier-criteria.md). The invariant is:
-
-```text
-Runtime is replaceable. Governance is not.
-```
-
-Core controls:
-
-- `automation/governed_factory.py` selects the next legal task from `orchestration/tasks.md`.
-- `automation/gatekeeper.py` enforces `.governance/gate_state.json` authority boundaries.
-- `automation/run_factory.py` remains as a backward-compatible assisted wrapper.
-- `factory.config.example.json` documents adapter configuration and stop conditions.
-
-The factory's mechanisms are clause-mapped to ISO/IEC 42001 and NIST AI RMF — with evidence pointers and per-row verification commands — in [`docs/governance-frameworks/factory-control-matrix.md`](docs/governance-frameworks/factory-control-matrix.md). Every autonomous dispatch leaves the factory's own compliance record in `docs/verification/factory-runs/` — the task packet (what was authorized, under which gate state) and a run result (which detective checks ran, pass or violation). The dispatcher stops on human input, phase-gate readiness, authority boundaries, and validation failures before dispatch — and, on autonomous (shell-adapter) runs, applies **fail-closed detective stops after every dispatch**: unauthorized protected-source writes (git-audited against `.governance/gate_state.json`), missing required evidence, or a task left open each halt the loop with a violation report. Authority state ships fail-closed (all authorizations `false`); grants and violations are recorded in `.governance/security-compliance/override-register.md`.
-
-**Known limitations (stated on purpose):** pre-dispatch action inference is keyword-based over task text — the post-dispatch git audit is the backstop for misclassified tasks; the write audit is detective, not preventive (an adapter command runs with the operator's own privileges); and evidence checks verify artifact existence, not artifact quality — that remains the phase gate's job.
-
-## Audit this factory
-
-The factory documents and verifies itself. Six assurance artifacts in [`docs/governance-frameworks/`](docs/governance-frameworks/) answer the questions an assessor asks, each with evidence pointers and a stated known-gaps section:
-
-| Artifact | The question it answers |
-|---|---|
-| [Factory control matrix](docs/governance-frameworks/factory-control-matrix.md) | Which mechanism implements which ISO/IEC 42001 clause and NIST AI RMF category, and how do I verify it? |
-| [Factory SoA](docs/governance-frameworks/factory-soa.md) | What is the explicit disposition of **every** Annex A control (A.2–A.10) and **every** AI RMF category — met, partial, or not applicable, and why? |
-| [Factory risk register](docs/governance-frameworks/factory-risk-register.md) | What can go wrong operating this factory (17 risks, incl. prompt injection, adapter compromise, evidence gaming), and what treats each? |
-| [Factory objectives](docs/governance-frameworks/factory-objectives.md) | What measurable targets govern operation, with thresholds and owners? `automation/factory_metrics.py` aggregates the run evidence |
-| [Model-supplier criteria](docs/governance-frameworks/model-supplier-criteria.md) | What must an operator assess before wiring any LLM runtime into the adapter? |
-| [Factory AI policy](docs/governance-frameworks/factory-ai-policy.md) | What rules govern the factory's own use of AI, and when are they reviewed? |
-
-Every artifact carries a "verified against commit" stamp and is re-verified at each version bump; deleting one — or stripping its honesty language — fails the build.
-
-**Verify from a fresh clone (about 90 seconds):**
-
-```bash
-python3 automation/validate_template.py    # whole-template integrity: roster, ownership, provider sync, doc guards
-python3 automation/smoke_test_template.py  # golden path: a project instantiates with the fail-closed authority store
-python3 -m pytest tests/                   # 24 regression tests: gatekeeper semantics, detective stops, metrics
-python3 automation/factory_metrics.py      # run-evidence aggregation (honest zero state on a pristine clone)
-```
-
-## Instantiate a project
-
-```bash
-python3 automation/init_project.py my-project /tmp
-cd /tmp/my-project
-python3 automation/validate_runtime.py .codex/agents/runtime-manifest.json
-```
-
-For agent/operator kickoff, use the canonical phrase in `KICKOFF.md`:
-
-```text
-Start a new project from the DoW AI PM Builder Template and begin Sprint Zero.
-```
-
-The factory should ask only for the minimum missing workspace detail, then let the Sprint Zero / Phase 0 interview collect mission, objectives, inputs, links, constraints, and authority boundaries.
-
-Generated projects begin in **Draft / Not Approved** status. Sprint Zero discovery and phase gates must populate evidence before implementation proceeds.
-
-## Runtime output
-
-`.codex/agents/` is generated runtime output from `automation/install_subagents.py` and is ignored by git by default. The source of truth remains `subagents/` plus `.agent/souls/`.
-
-## About the author
-
-Built by **Jerome Davis** — a governance operator bridging DoD/federal program execution, security/compliance/audit, ISO 42001/27001 + NIST AI RMF, and hands-on agentic GenAI. This template is part of a portfolio demonstrating governance-as-code from agent runtime to auditor evidence.
-
-🔗 **[secondorderstrategy.com](https://secondorderstrategy.com)** · companion projects (private during hardening; available on request): Lliam-GOV — governed AI agent · Priora — AI lifecycle governance platform
+Built by [Jerome Davis / Second Order Strategy](https://secondorderstrategy.com). [Contribute](CONTRIBUTING.md) · [MIT license](LICENSE) · [VoltAgent attribution](THIRD_PARTY_LICENSES.md).
