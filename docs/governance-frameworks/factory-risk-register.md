@@ -1,5 +1,13 @@
 # Factory Risk Register — DoW AI PM Builder Template
 
+> **Optional reference, not a repository maintenance gate.** This document
+> preserves the earlier factory self-assessment and an example adoption model.
+> Its roles, review cadences, framework mappings and verification stamps do not
+> create recurring paperwork requirements for maintaining this template.
+> An adopter may choose an applicable policy separately; CI does not require
+> this file or exact phrases from it. Runtime authority and security checks
+> remain unchanged. See [repository maintenance](repository-maintenance.md).
+
 **Scope and honesty statement (read first).** This register records risks of
 operating the factory *itself* — the template's multi-agent orchestration,
 governance automation, and supplier model runtimes. It is a **repo-level
@@ -11,8 +19,8 @@ HIPAA and similar overlays) are conditional per
 `directives/factory-governance-scope.md` and are deliberately absent here.
 
 Scoring: Likelihood (L) × Impact (I), each 1–3. 1–2 Low · 3–4 Medium · ≥6 High.
-Review cadence: re-verified at every factory version bump and at least
-annually, per `docs/governance-frameworks/factory-ai-policy.md`.
+Review cadence: chosen by an adopter if this optional register is used;
+no version-bump or annual repository approval is required.
 
 | ID | Risk | Category | L | I | Score | Level | Treatment / operating mechanism | Evidence |
 |----|------|----------|---|---|-------|-------|--------------------------------|----------|
@@ -26,7 +34,7 @@ annually, per `docs/governance-frameworks/factory-ai-policy.md`.
 | FR-08 | Upstream spec ambiguity — unresolved TBDs cascade into the 15-agent workflow as widespread output errors | Operational | 2 | 2 | 4 | Medium | Lock 0 spec linter blocks ambiguous specs; Sprint Zero discovery interview resolves context before build | `automation/validate_spec.py`, `KICKOFF.md`, `directives/director-interview-protocol.md` |
 | FR-09 | Premature externally-facing release — output leaves Draft state without authorization | Reputational | 1 | 3 | 3 | Medium | Fail-closed authority store: deployment, external writes, and control closure ship denied and require explicit human grant | `.governance/gate_state.json`, `automation/gatekeeper.py`, `tests/` (authority tests) |
 | FR-10 | Compliance-obligation misidentification — the factory (or its docs) claims a framework that does not apply, or misses one that does | Regulatory | 2 | 2 | 4 | Medium | Two-track scope doctrine (baselines vs conditional overlays); claims-integrity fence keeps unmapped frameworks labeled "Reference Needed" | `directives/factory-governance-scope.md`, `directives/templates/standards-crosswalk-matrix.md` |
-| FR-11 | Documentation drift — factory-describing documents fall behind the factory's actual mechanisms and counts | Governance | 2 | 2 | 4 | Medium | Standing rule: documentation re-verified at every version bump with a recorded verified-SHA; counts regenerated from commands, never inherited; CHANGELOG discipline | `CHANGELOG.md`, cohesion-audit record (2026-07-10), this file's verification stamp |
+| FR-11 | Documentation drift — factory-describing documents fall behind the factory's actual mechanisms and counts | Governance | 2 | 2 | 4 | Medium | Check claims when relying on this optional reference; regenerate counts from commands and record material corrections | `CHANGELOG.md`, cohesion-audit record (2026-07-10), this file's verification stamp |
 | FR-12 | Pre-dispatch misclassification — keyword-based action inference mislabels a task's authority requirements | Technical | 2 | 2 | 4 | Medium | Known limitation stated in README; post-dispatch git audit detects unauthorized protected-source writes regardless of classification | `README.md` (Known limitations), `automation/governed_factory.py` (`post_dispatch_checks`), `tests/test_governance_gates.py` |
 | FR-13 | Supply-chain exposure — vendored specialization packages or CI dependencies change or carry defects upstream | Supplier | 1 | 2 | 2 | Low | Full attribution and license notice; every vendored package owner-mapped; Dependabot alerts + security updates on the repo; supplier criteria govern runtime providers | `THIRD_PARTY_LICENSES.md`, `subagents/specialization-ownership-map.json`, `docs/governance-frameworks/model-supplier-criteria.md` |
 | FR-14 | Adapter-command compromise — `FACTORY_ADAPTER_COMMAND` executes whatever the operator configures; a malicious or compromised adapter runs with the operator's own privileges | Cybersecurity | 1 | 3 | 3 | Medium | Template ships **no default adapter**; the operator-owned trust boundary is stated in SECURITY.md; post-dispatch git audit detects unauthorized protected-source writes even from a hostile adapter | `SECURITY.md` (scope notes), `automation/governed_factory.py` |
@@ -45,6 +53,5 @@ annually, per `docs/governance-frameworks/factory-ai-policy.md`.
 - Likelihood/impact scores are the maintainer's engineering judgment, not
   actuarial data; adopters should re-score against their own context.
 
-*Maintained by: Human Director. Update this register in the same change that
-adds, removes, or weakens any mechanism it cites. Verified against commit
-`8991e57` (2026-07-10); re-verify at every version bump.*
+*Historical self-assessment. Verified against commit `8991e57`
+(2026-07-10), retained as a historical baseline, not a recurring approval.*

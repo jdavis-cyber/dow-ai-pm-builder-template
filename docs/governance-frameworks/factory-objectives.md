@@ -1,5 +1,13 @@
 # Factory Objectives — Measurable Targets for the Factory's Own Operation
 
+> **Optional reference, not a repository maintenance gate.** This document
+> preserves the earlier factory self-assessment and an example adoption model.
+> Its roles, review cadences, framework mappings and verification stamps do not
+> create recurring paperwork requirements for maintaining this template.
+> An adopter may choose an applicable policy separately; CI does not require
+> this file or exact phrases from it. Runtime authority and security checks
+> remain unchanged. See [repository maintenance](repository-maintenance.md).
+
 **Scope and honesty statement (read first).** These are objectives for
 operating the factory *itself* — not product KPIs for anything the factory
 builds, and not a certification claim. This is a **repo-level
@@ -66,18 +74,12 @@ action) · **Measurement method** · **Frequency** · **Owner**.
 - **Frequency:** per run; misclassification review per release.
 - **Owner:** Human Director.
 
-## FO-5 — Documentation verified against the factory it describes
+## FO-5 — Accurate reference documentation
 
-- **Metric:** % of factory-describing governance documents carrying a
-  verified-SHA stamp no older than the last version bump.
-- **Target:** 100% at every version bump.
-- **Threshold:** any stale document at a version bump → re-verification pass
-  before the release notes are finalized (standing rule from the 2026-07-10
-  cohesion audit; see `factory-risk-register.md` FR-11).
-- **Measurement method:** inspect the verification stamp line in each
-  `docs/governance-frameworks/*.md` artifact against `CHANGELOG.md`.
-- **Frequency:** every version bump.
-- **Owner:** Human Director.
+These optional references should distinguish measured behavior, historical
+observations and unverified claims. Check relevant claims when using them in
+an adoption decision. No verified-SHA freshness target or recurring review
+is required to maintain, build or test this repository.
 
 ## Known gaps (stated on purpose)
 
@@ -89,4 +91,4 @@ action) · **Measurement method** · **Frequency** · **Owner**.
   adopter, clause 9.3).
 
 *Maintained by: Human Director. Verified against commit `8991e57`
-(2026-07-10); re-verify at every version bump.*
+(2026-07-10), retained as a historical baseline, not a recurring approval.*

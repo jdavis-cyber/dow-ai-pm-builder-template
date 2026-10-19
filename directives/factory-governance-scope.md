@@ -20,6 +20,14 @@ CMMC, FedRAMP, HIPAA, SOC 2, and similar frameworks are product/engagement overl
 
 Generated projects must retain roster, runtime manifest, task assignments, handoffs, phase-gate decisions, verification records, evidence index, standards applicability record, crosswalk status matrix, risk/corrective-action registers, override records, and template provenance.
 
-## Clause-Level Mapping
+## Optional reference mappings
 
-The mechanism-by-mechanism mapping of factory controls to ISO/IEC 42001 clauses/Annex A controls and NIST AI RMF functions — with evidence pointers and verification commands — lives in `docs/governance-frameworks/factory-control-matrix.md`. That matrix must be updated in the same change that adds, removes, or weakens any mechanism it cites.
+`docs/governance-frameworks/factory-control-matrix.md` and its companion
+self-assessments are optional adoption references. Their presence, exact
+wording and review dates are not prerequisites for ordinary template
+maintenance or a passing build. See
+[repository maintenance](../docs/governance-frameworks/repository-maintenance.md).
+
+The generated project's actual gate state, authority checks and evidence
+contracts remain separate and unchanged. This clarification does not grant
+implementation, external-write or deployment authority to a generated project.

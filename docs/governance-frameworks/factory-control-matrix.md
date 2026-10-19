@@ -1,5 +1,13 @@
 # Factory Control Matrix — ISO/IEC 42001 & NIST AI RMF
 
+> **Optional reference, not a repository maintenance gate.** This document
+> preserves the earlier factory self-assessment and an example adoption model.
+> Its roles, review cadences, framework mappings and verification stamps do not
+> create recurring paperwork requirements for maintaining this template.
+> An adopter may choose an applicable policy separately; CI does not require
+> this file or exact phrases from it. Runtime authority and security checks
+> remain unchanged. See [repository maintenance](repository-maintenance.md).
+
 **Scope and honesty statement (read first).** This matrix maps the factory's
 *own* operating mechanisms — not the generated product's — to ISO/IEC
 42001:2023 clauses/Annex A controls and NIST AI RMF 1.0 (NIST AI 100-1)
@@ -15,7 +23,9 @@ product/engagement overlays per `directives/factory-governance-scope.md` and
 are deliberately absent here.
 
 Verification commands referenced below can be run by any auditor from a fresh
-clone; CI (`.github/workflows/validate.yml`) runs them on every change.
+clone. CI (`.github/workflows/validate.yml`) runs structural validation,
+generation smoke tests and regression tests; document presence or wording is
+not proof that a control operates.
 
 | # | Factory mechanism | What it does | ISO/IEC 42001 | NIST AI RMF | Evidence | How to verify |
 |---|---|---|---|---|---|---|
@@ -31,7 +41,7 @@ clone; CI (`.github/workflows/validate.yml`) runs them on every change.
 | 10 | Evidence index + traceability chain | Task → evidence → verification → gate decision is walkable end to end | 7.5 Documented information (7.5.1–7.5.3) | GOVERN 1 | `docs/verification/evidence-index.md`, `.governance/Cross_Cutting/Evidence_Index/`, `.governance/security-compliance/evidence-traceability.md` | Follow any task's `Evidence Required` paths from `orchestration/tasks.md` |
 | 11 | Whole-template validation + CI | The control set itself is executable and re-verified on every change; verdicts are machine-state-independent | A.6.2.4 AI system verification and validation | MEASURE 1 (appropriate methods and metrics applied); MEASURE 4 (feedback on measurement efficacy) | `automation/validate_template.py`, `automation/smoke_test_template.py`, `tests/`, `.github/workflows/validate.yml`, CI run history | `python3 automation/validate_template.py && python3 automation/smoke_test_template.py && python3 -m pytest tests/` |
 | 12 | Third-party provenance and attribution | Vendored content is identified, licensed, attributed, and owner-mapped — supply chain is visible | A.10 Third-party and customer relationships | GOVERN 6; MANAGE 3 (third-party risks managed) | `THIRD_PARTY_LICENSES.md`, `subagents/SPECIALIZATION-LIBRARY.md` (boundary section) | Compare vendored file headers/upstream links against the notice |
-| 13 | Claims-integrity fence | Unmapped frameworks stay labeled "Reference Needed"; fabricating compliance mappings is prohibited | 7.5.3 Control of documented information | GOVERN 4 | `directives/templates/standards-crosswalk-matrix.md`, `README.md` framework table, this file's scope statement | `validate_template.py` (ISO 27701 gap-label check) |
+| 13 | Claims-integrity fence | Unmapped frameworks stay labeled "Reference Needed"; fabricating compliance mappings is prohibited | 7.5.3 Control of documented information | GOVERN 4 | `directives/templates/standards-crosswalk-matrix.md`, `README.md` evaluation boundaries, this file's scope statement | Optional human review of applicability and source evidence; no exact-prose CI gate |
 | 14 | Versioned change record + tamper-evident history | Every control change is attributable and dated; the governance system's own evolution is auditable | 7.5.2 Creating and updating documented information | GOVERN 1 | `CHANGELOG.md` (SemVer), git history, signed pin in the parent portfolio monorepo | `git log -- automation/ directives/ .governance/` |
 
 ## Known gaps (stated on purpose)
@@ -49,5 +59,5 @@ clone; CI (`.github/workflows/validate.yml`) runs them on every change.
   factory-level mechanism; they are intentionally unmapped rather than
   stretched.
 
-*Maintained by: Human Director. Update this matrix in the same change that
-adds, removes, or weakens any mechanism it cites.*
+*Reference maintenance: when using this matrix to support a claim, check that
+claim against the relevant code and evidence. No routine approval is required.*

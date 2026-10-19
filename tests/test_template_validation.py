@@ -38,4 +38,30 @@ class TemplateValidationTests(unittest.TestCase):
         self.assertIn('authority boundaries', txt)
     def test_golden_path_smoke(self):
         r=run(sys.executable,'automation/smoke_test_template.py'); self.assertEqual(r.returncode,0,r.stdout+r.stderr)
+
+    def test_optional_assurance_documents_do_not_gate_template_integrity(self):
+        """An adopter can omit reference paperwork without breaking tooling."""
+        with tempfile.TemporaryDirectory() as d:
+            copy = pathlib.Path(d) / 'template'
+            shutil.copytree(ROOT, copy, ignore=shutil.ignore_patterns('.git', '.codex', '.claude', '__pycache__'))
+            for name in ['factory-control-matrix.md', 'factory-soa.md',
+                         'factory-risk-register.md', 'factory-objectives.md',
+                         'model-supplier-criteria.md', 'factory-ai-policy.md']:
+                (copy / 'docs/governance-frameworks' / name).unlink()
+            (copy / 'directives/templates/standards-crosswalk-matrix.md').write_text(
+                '# Standards applicability\n\nNo framework selected for this test project.\n')
+            r = run(sys.executable, str(copy / 'automation/validate_template.py'), cwd=copy)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+    def test_missing_authority_control_still_fails_template_validation(self):
+        """Optional paperwork must not make a missing runtime safeguard pass."""
+        with tempfile.TemporaryDirectory() as d:
+            copy = pathlib.Path(d) / 'template'
+            shutil.copytree(ROOT, copy, ignore=shutil.ignore_patterns('.git', '.codex', '.claude', '__pycache__'))
+            gatekeeper = copy / 'automation/gatekeeper.py'
+            gatekeeper.write_text(gatekeeper.read_text().replace(
+                'deployment_authorized', 'deployment_control_removed_for_test'))
+            r = run(sys.executable, str(copy / 'automation/validate_template.py'), cwd=copy)
+            self.assertNotEqual(r.returncode, 0)
+            self.assertIn('gatekeeper missing authority token deployment_authorized', r.stdout)
 if __name__=='__main__': unittest.main()
