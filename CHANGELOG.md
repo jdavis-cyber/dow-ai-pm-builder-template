@@ -6,9 +6,22 @@ follows SemVer aligned to the template's major revisions.
 
 ## [Unreleased]
 
+### Repository maintenance cleanup
+- Removed mandatory presence/exact-prose checks for six duplicate assurance
+  references and the crosswalk's gap-label wording from `validate_template.py`.
+- Marked those references optional and removed recurring repository review
+  obligations. Existing links and historical assessment material are retained.
+- Retained `whole-template`, runtime/roster/spec/task validation, project
+  generation, security checks, gatekeeper behavior and metrics.
+- Added regressions proving optional paperwork can be omitted while missing
+  authority controls still fail validation.
+
+### Earlier assurance additions (historical scope)
+
 Factory assurance layer (AI-547…AI-551): the reverse sweep to the control
 matrix, plus the assurance artifacts it depends on. Each carries a
-verified-SHA stamp per the standing rule from the 2026-07-10 cohesion audit.
+verified-SHA stamp from the 2026-07-10 assessment; the maintenance cleanup
+above removes that recurring rule.
 
 ### Added
 - `docs/governance-frameworks/factory-soa.md` — Statement of Applicability:

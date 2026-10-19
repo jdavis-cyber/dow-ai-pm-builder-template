@@ -1,5 +1,13 @@
 # Factory Statement of Applicability — ISO/IEC 42001 Annex A & NIST AI RMF
 
+> **Optional reference, not a repository maintenance gate.** This document
+> preserves the earlier factory self-assessment and an example adoption model.
+> Its roles, review cadences, framework mappings and verification stamps do not
+> create recurring paperwork requirements for maintaining this template.
+> An adopter may choose an applicable policy separately; CI does not require
+> this file or exact phrases from it. Runtime authority and security checks
+> remain unchanged. See [repository maintenance](repository-maintenance.md).
+
 **Scope and honesty statement (read first).** This is the reverse sweep to the
 forward control matrix (`factory-control-matrix.md`): every ISO/IEC 42001:2023
 Annex A control (A.2–A.10) and every NIST AI RMF 1.0 category receives an
@@ -17,6 +25,7 @@ absent per `directives/factory-governance-scope.md`.
 
 **Status legend:** ✅ Met (mechanism exists and is verifiable) · ◐ Partial
 (mechanism exists but incomplete at template scope; rationale given) ·
+**Gap** (no operating mechanism at template scope; rationale given) ·
 **N/A** (not applicable; justification given). Every ◐ row carries an
 accepted-gap rationale or a tracking reference — nothing is left implicit.
 
@@ -52,7 +61,7 @@ accepted-gap rationale or a tracking reference — nothing is left implicit.
 |---------|-------|------------|--------|--------------------------|
 | A.2.2 | AI policy | Yes | ✅ | `factory-ai-policy.md` — policy for the factory's own AI use |
 | A.2.3 | Alignment with other organizational policies | Yes | ✅ | `factory-ai-policy.md` §Alignment — defers to SECURITY.md, scope directive, licenses, and the adopter's policies |
-| A.2.4 | Review of the AI policy | Yes | ✅ | `factory-ai-policy.md` §Review cadence — every version bump and at least annually, staleness detectable via the verification stamp |
+| A.2.4 | Review of the AI policy | Yes | **Gap** | `factory-ai-policy.md` provides an optional example, with no operating factory policy-review cadence. An adopter choosing to apply this control must establish and evidence its own review mechanism; CI does not verify it. No recurring repository-maintenance approval is required. |
 
 ### A.3 Internal organization
 
@@ -157,9 +166,11 @@ accepted-gap rationale or a tracking reference — nothing is left implicit.
 
 Every non-✅ disposition above is one of:
 
-1. **Adopter-attached** (A.4.6, A.5.4, A.5.5, A.8.5, A.10.4): requires an
+1. **Adopter-attached** (A.2.4, A.4.6, A.5.4, A.5.5, A.8.5, A.10.4): requires an
    operating organization, an engagement, or real affected users. The factory
    ships the operational layer; the adopter's management system completes it.
+   A.2.4 has no operating policy-review mechanism in the template; the optional
+   example is not evidence that this control is met.
 2. **Operationally-gated** (MAP 3, MEASURE 2, MANAGE 2): requires accumulated
    run data or product-level usage that a pristine template cannot have.
    `factory_metrics.py` is the accumulation mechanism.
@@ -169,6 +180,5 @@ Every non-✅ disposition above is one of:
 
 No Annex A control and no RMF category is silently omitted.
 
-*Maintained by: Human Director. Update this SoA in the same change that adds,
-removes, or weakens any mechanism it cites. Verified against commit `8991e57`
-(2026-07-10); re-verify at every version bump.*
+*Historical self-assessment. Verified against commit `8991e57`
+(2026-07-10), retained as a historical baseline, not a recurring approval.*

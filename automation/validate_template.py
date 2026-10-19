@@ -63,26 +63,8 @@ def main():
         shutil.rmtree(tmp_runtime, ignore_errors=True)
     ok = run([sys.executable,'automation/validate_spec.py','--mode','template','orchestration/system-spec-template.md']) and ok
     ok = run([sys.executable,'automation/validate_tasks.py','orchestration/task-board-template.md']) and ok
-    if 'Reference Needed' not in (ROOT/'directives/templates/standards-crosswalk-matrix.md').read_text(): print('ERROR ISO 27701 not gap-labeled'); ok=False
-    fcm=ROOT/'docs/governance-frameworks/factory-control-matrix.md'
-    if not fcm.exists(): print('ERROR missing factory control matrix'); ok=False
-    else:
-        fm=fcm.read_text()
-        for needle in ['ISO/IEC 42001','NIST AI RMF','not a certification claim','Known gaps']:
-            if needle not in fm: print('ERROR factory control matrix missing: '+needle); ok=False
-    assurance={
-        'docs/governance-frameworks/factory-soa.md':['ISO/IEC 42001','NIST AI RMF','not a certification claim','Known gaps','MAP 2','A.7','GOVERN 3','Verified against commit'],
-        'docs/governance-frameworks/factory-risk-register.md':['not a certification claim','Known gaps','FR-01','Verified against commit'],
-        'docs/governance-frameworks/factory-objectives.md':['not a certification claim','Known gaps','FO-1','Threshold','Verified against commit'],
-        'docs/governance-frameworks/model-supplier-criteria.md':['not a certification claim','Known gaps','provider-neutral','Verified against commit'],
-        'docs/governance-frameworks/factory-ai-policy.md':['not a certification claim','Known gaps','Review cadence','fail-closed','Verified against commit'],
-    }
-    for rel,needles in assurance.items():
-        p=ROOT/rel
-        if not p.exists(): print('ERROR missing assurance doc '+rel); ok=False; continue
-        txt=p.read_text()
-        for needle in needles:
-            if needle not in txt: print(f'ERROR {rel} missing: {needle}'); ok=False
+    # Framework crosswalks and duplicate assurance records are optional
+    # reference material, not executable template-integrity requirements.
     if not (ROOT/'automation/factory_metrics.py').exists(): print('ERROR missing factory_metrics.py'); ok=False
     if 'Incident communication' not in (ROOT/'SECURITY.md').read_text(): print('ERROR SECURITY.md missing incident-communication path'); ok=False
     print('whole-template validation passed' if ok else 'whole-template validation failed')

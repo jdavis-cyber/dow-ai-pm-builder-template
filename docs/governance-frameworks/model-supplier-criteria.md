@@ -1,9 +1,17 @@
 # Model-Supplier Criteria — Selecting and Reviewing Runtime Providers
 
+> **Optional reference, not a repository maintenance gate.** This document
+> preserves the earlier factory self-assessment and an example adoption model.
+> Its roles, review cadences, framework mappings and verification stamps do not
+> create recurring paperwork requirements for maintaining this template.
+> An adopter may choose an applicable policy separately; CI does not require
+> this file or exact phrases from it. Runtime authority and security checks
+> remain unchanged. See [repository maintenance](repository-maintenance.md).
+
 **Scope and honesty statement (read first).** The factory is provider-neutral:
 governance lives in this repository, and any LLM runtime (Claude, Codex,
 Gemini, or another shell adapter) executes tasks under it. This document
-states the criteria an operator applies when selecting or re-reviewing a
+offers criteria an operator can adapt when selecting or re-reviewing a
 model supplier for factory use. It is a **repo-level self-assessment**
 artifact, not a certification claim and not a supplier contract. Formal
 supplier management records (approvals, review evidence, contractual terms)
@@ -24,11 +32,14 @@ factory-level input to them.
 
 ## Review cadence and triggers
 
-- Re-review a supplier at every factory **version bump**, and immediately on:
-  a material model-version change, a terms-of-service change affecting data
-  use, or a supplier-caused dispatch failure recorded in a run result.
-- Record the review outcome in the adopting organization's supplier records;
-  at repo level, note material supplier changes in `CHANGELOG.md`.
+An adopter using these criteria chooses its review triggers based on actual
+provider changes and deployment needs. There is no mandatory supplier review
+at each template version bump. CI runs structural template validation,
+project-generation smoke testing and regression tests, including authority
+checks. Separately, Dependabot is configured for pip and GitHub Actions
+dependency updates. Neither mechanism reviews runtime-provider terms, model
+changes or supplier security posture; an adopter relying on these criteria
+must assess those matters separately.
 
 ## Bridge to organization-level supplier records
 
@@ -50,4 +61,4 @@ should trigger a supplier-record review there.
   document.
 
 *Maintained by: Human Director. Verified against commit `8991e57`
-(2026-07-10); re-verify at every version bump.*
+(2026-07-10), retained as a historical baseline, not a recurring approval.*

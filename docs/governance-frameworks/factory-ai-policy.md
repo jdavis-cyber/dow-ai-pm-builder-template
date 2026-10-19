@@ -1,12 +1,20 @@
 # Factory AI Policy — The Factory's Own Use of AI
 
-**Scope and honesty statement (read first).** This is the policy for how the
+> **Optional reference, not a repository maintenance gate.** This document
+> preserves the earlier factory self-assessment and an example adoption model.
+> Its roles, review cadences, framework mappings and verification stamps do not
+> create recurring paperwork requirements for maintaining this template.
+> An adopter may choose an applicable policy separately; CI does not require
+> this file or exact phrases from it. Runtime authority and security checks
+> remain unchanged. See [repository maintenance](repository-maintenance.md).
+
+**Scope and honesty statement (read first).** This is an example policy for how the
 factory *itself* uses AI: multi-agent LLM orchestration that produces project
 artifacts under repo-owned governance. It is a **repo-level self-assessment**
 artifact, not a certification claim. An adopting organization's AI policy
 (management-system level, with leadership approval and communication evidence)
-sits above this one; on adoption, this policy becomes the factory-specific
-annex beneath it, and any conflict resolves in favor of the adopter's policy.
+sits above any adopted example; copying this file does not adopt it or
+establish organizational approval.
 
 ## Policy statements
 
@@ -34,8 +42,7 @@ annex beneath it, and any conflict resolves in favor of the adopter's policy.
 7. **The factory documents itself honestly.** Known limitations are stated in
    README; risks in `factory-risk-register.md`; objectives and their
    measurement in `factory-objectives.md`; per-control dispositions in
-   `factory-soa.md`. Documentation is re-verified at every version bump
-   (verified-SHA rule).
+   `factory-soa.md`. These reference documents are optional; verify claims when relying on them.
 
 ## Alignment with other policies (A.2.3)
 
@@ -50,11 +57,9 @@ This policy operates alongside, and defers to where applicable:
 
 ## Review cadence and review log (A.2.4)
 
-This policy is reviewed **at every tagged release or quarterly, whichever
-comes first**, by the Human Director, for continuing suitability, adequacy,
-and effectiveness. Reviews that change policy substance are recorded in
-`CHANGELOG.md`; the review log below is updated even when no change is
-needed, so staleness is detectable.
+An adopter may define a review cadence when choosing to use this example.
+The historical entry below is retained for provenance; it does not impose
+quarterly or release-based sign-off on personal repository maintenance.
 
 | Review date | Reviewer | Trigger | Outcome |
 |-------------|----------|---------|---------|
@@ -70,4 +75,4 @@ needed, so staleness is detectable.
   operating model, and the detective controls make deviations visible.
 
 *Maintained by: Human Director. Verified against commit `8991e57`
-(2026-07-10); re-verify at every version bump.*
+(2026-07-10), retained as a historical baseline, not a recurring approval.*
