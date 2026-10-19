@@ -1,5 +1,9 @@
 # Repository maintenance scope
 
+This note describes maintenance of the source template. A copy is included in
+generated projects so their scope and navigation links remain self-contained;
+their project-specific gate and evidence requirements remain separate.
+
 Ordinary maintenance of this template uses code review, build and regression
 checks. It does not require adopting an organizational management system or
 maintaining duplicate assurance documents for the repository itself.

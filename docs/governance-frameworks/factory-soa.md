@@ -25,6 +25,7 @@ absent per `directives/factory-governance-scope.md`.
 
 **Status legend:** ✅ Met (mechanism exists and is verifiable) · ◐ Partial
 (mechanism exists but incomplete at template scope; rationale given) ·
+**Gap** (no operating mechanism at template scope; rationale given) ·
 **N/A** (not applicable; justification given). Every ◐ row carries an
 accepted-gap rationale or a tracking reference — nothing is left implicit.
 
@@ -60,7 +61,7 @@ accepted-gap rationale or a tracking reference — nothing is left implicit.
 |---------|-------|------------|--------|--------------------------|
 | A.2.2 | AI policy | Yes | ✅ | `factory-ai-policy.md` — policy for the factory's own AI use |
 | A.2.3 | Alignment with other organizational policies | Yes | ✅ | `factory-ai-policy.md` §Alignment — defers to SECURITY.md, scope directive, licenses, and the adopter's policies |
-| A.2.4 | Review of the AI policy | Yes | ✅ | `factory-ai-policy.md` §Review cadence — an optional adoption cadence; not a repository maintenance obligation |
+| A.2.4 | Review of the AI policy | Yes | **Gap** | `factory-ai-policy.md` provides an optional example, with no operating factory policy-review cadence. An adopter choosing to apply this control must establish and evidence its own review mechanism; CI does not verify it. No recurring repository-maintenance approval is required. |
 
 ### A.3 Internal organization
 
@@ -165,9 +166,11 @@ accepted-gap rationale or a tracking reference — nothing is left implicit.
 
 Every non-✅ disposition above is one of:
 
-1. **Adopter-attached** (A.4.6, A.5.4, A.5.5, A.8.5, A.10.4): requires an
+1. **Adopter-attached** (A.2.4, A.4.6, A.5.4, A.5.5, A.8.5, A.10.4): requires an
    operating organization, an engagement, or real affected users. The factory
    ships the operational layer; the adopter's management system completes it.
+   A.2.4 has no operating policy-review mechanism in the template; the optional
+   example is not evidence that this control is met.
 2. **Operationally-gated** (MAP 3, MEASURE 2, MANAGE 2): requires accumulated
    run data or product-level usage that a pristine template cannot have.
    `factory_metrics.py` is the accumulation mechanism.

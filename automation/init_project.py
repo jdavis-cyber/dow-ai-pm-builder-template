@@ -120,6 +120,7 @@ def main() -> None:
         "docs/templates/artifact-status-block.md",
         "docs/verification/evidence-index.md",
         "docs/governance-frameworks/framework-status.md",
+        "docs/governance-frameworks/repository-maintenance.md",
     ]:
         src = TEMPLATE_ROOT / rel
         dst = target / rel

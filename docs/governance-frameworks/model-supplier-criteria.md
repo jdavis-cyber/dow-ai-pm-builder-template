@@ -34,7 +34,12 @@ factory-level input to them.
 
 An adopter using these criteria chooses its review triggers based on actual
 provider changes and deployment needs. There is no mandatory supplier review
-at each template version bump. Real dependency and security checks remain in CI.
+at each template version bump. CI runs structural template validation,
+project-generation smoke testing and regression tests, including authority
+checks. Separately, Dependabot is configured for pip and GitHub Actions
+dependency updates. Neither mechanism reviews runtime-provider terms, model
+changes or supplier security posture; an adopter relying on these criteria
+must assess those matters separately.
 
 ## Bridge to organization-level supplier records
 
