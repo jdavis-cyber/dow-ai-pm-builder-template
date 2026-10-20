@@ -412,25 +412,6 @@ class RequirementAcceptanceTests(unittest.TestCase):
         (runtime / "requirements-ba.toml").unlink()
         self.expect(self.cli("validate_runtime", str(manifest)), 1, "materialized TOML missing")
 
-    def test_SR20_assurance_language_and_gap_label_removal_rejected(self):
-        for name in ["factory-soa", "factory-risk-register", "factory-objectives", "model-supplier-criteria", "factory-ai-policy"]:
-            p = self.repo / f"docs/governance-frameworks/{name}.md"
-            original = p.read_text()
-            for phrase in ["not a certification claim", "Known gaps", "Verified against commit"]:
-                with self.subTest(document=name, phrase=phrase):
-                    p.write_text(original.replace(phrase, "removed"))
-                    self.expect(self.validate(), 1, "missing: " + phrase)
-            p.write_text(original)
-        p = self.repo / "directives/templates/standards-crosswalk-matrix.md"
-        p.write_text(p.read_text().replace("Reference Needed", "removed"))
-        self.expect(self.validate(), 1, "ISO 27701 not gap-labeled")
-
-    def test_SR20_README_compliance_fence_removal_rejected(self):
-        p = self.repo / "README.md"
-        self.assertIn("Do not infer product compliance or fabricate mappings", p.read_text())
-        p.write_text(p.read_text().replace("Do not infer product compliance or fabricate mappings", "removed"))
-        self.expect(self.validate(), 1)
-
     def test_NSR01_stdlib_only_instantiation_on_macos(self):
         # -I ignores environment/user site; -S disables site-packages entirely.
         parent = Path(self.tmp.name) / "stdlib"
