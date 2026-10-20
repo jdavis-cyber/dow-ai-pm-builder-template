@@ -6,6 +6,13 @@ follows SemVer aligned to the template's major revisions.
 
 ## [Unreleased]
 
+### Security & Compliance Officer is mandatory everywhere (JER-24)
+- `security-compliance-officer.toml` moved from `subagents/dod-regulated/` to
+  `subagents/global/`; the activation matrix and classification rules now say
+  the SCO participates on every project and only the regulated overlays are
+  conditional. `validate_template.py` fails if the SCO is made conditional,
+  moved back to the overlay tier, or dropped from the roster.
+
 ### Plan-before-build (JER-25)
 - Optional task fields `Human Gate: yes|no` and `Plan: <path>`, plus statuses
   `Planned` and `Plan Approved`. A Human Gate task is first dispatched only to
