@@ -1,7 +1,6 @@
 """Regression tests for factory_metrics.py (objective FO-2/FO-3 aggregation).
 
-The metrics script is the measurement method named in
-docs/governance-frameworks/factory-objectives.md; these tests pin its
+The metrics script aggregates the factory's run results; these tests pin its
 contract: pristine-template state reports zero runs honestly, violation
 outcomes are counted, and unreadable records are surfaced instead of ignored.
 """

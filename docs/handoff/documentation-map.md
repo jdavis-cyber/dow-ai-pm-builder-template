@@ -12,7 +12,6 @@
 | `docs/product/` | Product definition | PRD, user stories, classification | Discovery/review surface |
 | `docs/architecture/` | Architecture records | ADRs, schemas, diagrams, threat model links | Discovery/review surface |
 | `docs/decisions/` | Decision records | ADRs and governance decision records | Append-only where practical |
-| `docs/governance-frameworks/` | Optional adoption references | Framework status, mappings and historical self-assessments | Not a repository maintenance or CI prerequisite; see [maintenance scope](../governance-frameworks/repository-maintenance.md) |
 | `docs/verification/` | Verification evidence | Command output, hashes, validation results | Append-only evidence surface |
 | `docs/handoff/` | Continuation package | Restart prompts and navigation | Human/agent navigation surface |
 | `orchestration/` | Agentic build logic | System spec, task board, sprint playbooks | Task status is not approval |

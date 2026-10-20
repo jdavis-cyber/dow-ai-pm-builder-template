@@ -49,7 +49,6 @@ WORK_SCAFFOLD = [
     "docs/decisions",
     "docs/handoff",
     "docs/verification",
-    "docs/governance-frameworks",
     ".governance/security-compliance",
     ".governance/Phase_Gates",
     ".governance/Cross_Cutting/Evidence_Index",
@@ -119,8 +118,6 @@ def main() -> None:
         "docs/handoff/repo-controls-checklist.md",
         "docs/templates/artifact-status-block.md",
         "docs/verification/evidence-index.md",
-        "docs/governance-frameworks/framework-status.md",
-        "docs/governance-frameworks/repository-maintenance.md",
     ]:
         src = TEMPLATE_ROOT / rel
         dst = target / rel

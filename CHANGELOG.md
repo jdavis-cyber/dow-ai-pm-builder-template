@@ -6,6 +6,15 @@ follows SemVer aligned to the template's major revisions.
 
 ## [Unreleased]
 
+### Framework mapping documents removed
+- Removed `docs/governance-frameworks/` (control matrix, statement of
+  applicability, factory risk register, objectives, model-supplier criteria,
+  example AI policy, framework status and the maintenance-scope note). The
+  repository holds no framework mappings or self-assessments; generated
+  projects no longer receive copies. README, the governance-scope directive,
+  the documentation map, the generator and the smoke test no longer point at
+  them. Earlier changelog entries are kept as history.
+
 ### Repository maintenance cleanup
 - Removed mandatory presence/exact-prose checks for six duplicate assurance
   references and the crosswalk's gap-label wording from `validate_template.py`.
