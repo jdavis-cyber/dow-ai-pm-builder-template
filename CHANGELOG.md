@@ -6,6 +6,16 @@ follows SemVer aligned to the template's major revisions.
 
 ## [Unreleased]
 
+### Assisted mode and generated projects (JER-46)
+- Assisted mode now gets the same detective checks: the dispatcher records the
+  tree and evidence state when it hands a task to a human, and on the next run
+  after the task leaves Ready it runs the write audit, evidence and status
+  checks and records a result (pass or violation).
+- Generated projects now receive `SECURITY.md`, so the validation commands
+  they are told to run (`validate_template.py`, `smoke_test_template.py`) pass there.
+- Tag a new template version after these fixes merge so projects instantiated
+  before them can be identified from `TEMPLATE_PROVENANCE.md`.
+
 ### Instruction-file integrity (JER-41)
 - Each vendored specialization package has a SHA-256 in
   `subagents/specialization-ownership-map.json`; `validate_template.py` and

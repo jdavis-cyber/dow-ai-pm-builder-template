@@ -757,7 +757,7 @@ def post_dispatch_checks(task: dict, state: dict, before,
     # Adapter-reported usage is self-attested; the dispatcher-enforced
     # max_iterations / max_wall_seconds / adapter timeout remain the hard bound.
     capped = [k for k, cap in (("tokens", limits["max_tokens"]), ("cost_usd", limits["max_cost_usd"])) if cap is not None]
-    if capped:
+    if capped and (run_info or {}).get("adapter") != "assisted":
         if usage is None or any(k not in usage for k in capped):
             result["checks"]["budget"] = "fail: adapter reported no usage"
             print("STOP: a spend ceiling is configured but the adapter reported no usage; human review required.")
@@ -782,6 +782,61 @@ def post_dispatch_checks(task: dict, state: dict, before,
     path = write_run_result(task, result)
     print(f"factory run result recorded: {path.relative_to(ROOT)}")
     return code
+
+
+PENDING_DIR_NAME = "pending-assisted"
+
+
+def _pending_dir() -> Path:
+    return LOG_DIR / PENDING_DIR_NAME
+
+
+def record_assisted_dispatch(task: dict, state: dict) -> Path:
+    """Remember what the tree looked like when a task went to a human, so the
+    same detective checks run when the human finishes it (JER-46)."""
+    path = _pending_dir() / f"{task['Task ID']}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({
+        "task_id": task["Task ID"],
+        "dispatched_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "gate_state": state,
+        "working_tree": working_tree_snapshot(),
+        "evidence_before": evidence_fingerprints(task),
+    }, indent=2) + "\n")
+    print(f"ASSISTED MODE: detective checks run when {task['Task ID']} leaves Ready; "
+          f"rerun the factory after completing it ({path.relative_to(ROOT)})")
+    return path
+
+
+def check_assisted_completions(tasks: list[dict]) -> tuple[int, set[str]]:
+    """Run post-dispatch checks for assisted tasks a human has since completed.
+
+    Returns (exit code, ids still pending). A violation halts like an
+    autonomous run; a task still open stays pending and is not re-recorded.
+    """
+    by_id = {t["Task ID"]: t for t in tasks}
+    still_pending: set[str] = set()
+    directory = _pending_dir()
+    if not directory.is_dir():
+        return 0, still_pending
+    for path in sorted(directory.glob("*.json")):
+        record = json.loads(path.read_text())
+        task = by_id.get(record.get("task_id"))
+        if task is None:
+            print(f"STOP: assisted task {record.get('task_id')} was removed from the board before its checks ran")
+            return 3, still_pending
+        if status_kind(task.get("Status", "")) == "open":
+            still_pending.add(task["Task ID"])
+            continue
+        print(f"ASSISTED MODE: checking completed task {task['Task ID']}")
+        code = post_dispatch_checks(task, record.get("gate_state") or {}, record.get("working_tree"),
+                                    evidence_before=record.get("evidence_before"),
+                                    run_info={"adapter": "assisted",
+                                              "dispatched_at_utc": record.get("dispatched_at_utc")})
+        path.unlink()
+        if code != 0:
+            return code, still_pending
+    return 0, still_pending
 
 
 def once(adapter: str) -> int:
@@ -812,12 +867,20 @@ def once(adapter: str) -> int:
             print("STOP: evidence trail broken: " + problem)
         return 2
     tasks = parse_tasks(TASKS_FILE.read_text())
+    code, pending = check_assisted_completions(tasks)
+    if code != 0:
+        return code
     task, reason = select_next_task(tasks)
     if not task:
         print(reason)
         return 0 if reason.startswith("STOP: no ready") else 2
     state = gatekeeper.load_state()
     packet = build_packet(task, state)
+    if adapter.lower().strip() == "assisted":
+        code = dispatch(packet, adapter)
+        if code == 0 and task["Task ID"] not in pending:
+            record_assisted_dispatch(task, state)
+        return code
     if adapter.lower().strip() == "shell":
         before = working_tree_snapshot()
         if before is not None:
