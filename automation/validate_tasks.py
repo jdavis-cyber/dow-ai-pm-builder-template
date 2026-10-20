@@ -28,6 +28,10 @@ def validate(path):
             if f'**{f}**' not in block:
                 print(f"ERROR: {title} missing task schema field {f}")
                 ok = False
+        id_match = re.search(r'\*\*Task ID\*\*:\s*([^\n]+)', block)
+        if id_match and not re.fullmatch(r'TASK-\d+', id_match.group(1).strip()):
+            print(f"ERROR: {title} Task ID must look like TASK-123")
+            ok = False
         auth_match = re.search(r'\*\*Requires Authority\*\*:\s*([^\n]+)', block)
         if auth_match and parse_authorities(auth_match.group(1)) is None:
             print(f"ERROR: {title} invalid Requires Authority {auth_match.group(1).strip()!r}; allowed: {', '.join(sorted(AUTHORITIES))}")
