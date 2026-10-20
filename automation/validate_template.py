@@ -65,6 +65,12 @@ def main():
     finally:
         shutil.rmtree(tmp_runtime, ignore_errors=True)
     ok = run([sys.executable,'automation/vendor_digests.py','check']) and ok
+    for p in sorted((ROOT/'subagents').rglob('*.toml')):
+        if p.suffix=='.toml':
+            for line in p.read_text(errors='ignore').splitlines():
+                if line.split('=',1)[0].strip() in {'model','model_reasoning_effort'} and '=' in line:
+                    print(f'ERROR {p.relative_to(ROOT)} pins {line.strip()}; the operator chooses the model per session'); ok=False
+                    break
     ok = run([sys.executable,'automation/validate_spec.py','--mode','template','orchestration/system-spec-template.md']) and ok
     ok = run([sys.executable,'automation/validate_tasks.py','orchestration/task-board-template.md']) and ok
     # Framework crosswalks and duplicate assurance records are optional

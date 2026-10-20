@@ -9,6 +9,8 @@ copies or substantial portions of that content (MIT license condition).
 - **What is vendored:** the 136 specialization/capability packages under
   `subagents/global/voltagent/` (10 domain directories), adapted from the
   upstream collections for use inside this template's governance model.
+  Local change: the upstream `model` and `model_reasoning_effort` pins are
+  removed so the operator chooses both per session.
 - **What is derived:** the 20 execution-depth wrapper packages at
   `subagents/global/*.toml` whose headers cite an upstream
   `Source:` — VoltAgent-derived content with governance metadata

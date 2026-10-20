@@ -6,6 +6,12 @@ follows SemVer aligned to the template's major revisions.
 
 ## [Unreleased]
 
+### Model chosen per session
+- Removed the hardcoded `model` (`gpt-5.4`, `gpt-5.3-codex-spark`) and
+  `model_reasoning_effort` pins from the 136 vendored VoltAgent packages; the
+  operator picks model and effort in the adapter command (see INSTALL.md).
+  Validation fails if any agent package pins either again.
+
 ### Seeded board reaches Gate 1 (JER-26)
 - The task board (template and the template's own `orchestration/tasks.md`)
   now seeds the full Sprint Zero → Gate 1 chain: the eight playbook

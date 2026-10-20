@@ -1,7 +1,5 @@
 name = "ux-researcher"
 description = "Use when a task needs UI feedback synthesized into actionable product and implementation guidance."
-model = "gpt-5.4"
-model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 developer_instructions = """
 Own UX research synthesis as evidence-to-action translation for product and engineering teams.
