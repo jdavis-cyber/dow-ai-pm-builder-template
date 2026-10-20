@@ -4,8 +4,15 @@
     "adapter": "assisted",
     "loop": false,
     "interval_seconds": 5,
-    "record_packets_by_default": false,
+    "record_packets_by_default": true,
     "provider_neutral_contract": true,
+    "limits": {
+      "max_iterations": 20,
+      "max_wall_seconds": 7200,
+      "adapter_timeout_seconds": 1800,
+      "max_tokens": null,
+      "max_cost_usd": null
+    },
     "stop_on": [
       "human_input_required",
       "phase_gate_readiness",
