@@ -32,6 +32,22 @@ def validate(path):
         if id_match and not re.fullmatch(r'TASK-\d+', id_match.group(1).strip()):
             print(f"ERROR: {title} Task ID must look like TASK-123")
             ok = False
+        gate_match = re.search(r'\*\*Human Gate\*\*:\s*([^\n]+)', block)
+        human_gate = gate_match.group(1).strip().lower() if gate_match else ''
+        if gate_match and human_gate not in {'yes', 'no'}:
+            print(f"ERROR: {title} Human Gate must be yes or no")
+            ok = False
+        plan_match = re.search(r'\*\*Plan\*\*:\s*([^\n]+)', block)
+        if human_gate == 'yes' and not (plan_match and '/' in plan_match.group(1)):
+            print(f"ERROR: {title} has Human Gate: yes but no Plan path")
+            ok = False
+        phase_match = re.search(r'\*\*Phase\*\*:\s*([^\n]+)', block)
+        impact_match = re.search(r'\*\*Gate Impact\*\*:\s*([^\n]+)', block)
+        impact = impact_match.group(1).strip().lower() if impact_match else ''
+        if (phase_match and re.search(r'\bphase\s+(?:iv|v|vi|4|5|6)\b', phase_match.group(1), re.I)
+                and impact not in {'', 'none', 'n/a'} and human_gate != 'yes'):
+            print(f"ERROR: {title} is a Phase IV-VI task with Gate Impact {impact!r}; it needs Human Gate: yes")
+            ok = False
         auth_match = re.search(r'\*\*Requires Authority\*\*:\s*([^\n]+)', block)
         if auth_match and parse_authorities(auth_match.group(1)) is None:
             print(f"ERROR: {title} invalid Requires Authority {auth_match.group(1).strip()!r}; allowed: {', '.join(sorted(AUTHORITIES))}")

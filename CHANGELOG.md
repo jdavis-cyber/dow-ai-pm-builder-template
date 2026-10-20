@@ -6,6 +6,20 @@ follows SemVer aligned to the template's major revisions.
 
 ## [Unreleased]
 
+### Plan-before-build (JER-25)
+- Optional task fields `Human Gate: yes|no` and `Plan: <path>`, plus statuses
+  `Planned` and `Plan Approved`. A Human Gate task is first dispatched only to
+  write its plan (no authority; the write audit flags anything else), then
+  waits in `Planned`.
+- The Director approves with `gatekeeper.py approve-plan TASK-ID <plan>`, which
+  records an operator-signed approval of that exact plan; `Plan Approved` tasks
+  dispatch only while that approval verifies.
+- `validate_tasks.py` requires a Plan for Human Gate tasks and Human Gate for
+  Phase IV–VI tasks whose Gate Impact isn't `none`.
+- New `directives/templates/implementation-plan.md`, Lock 1.5 in the
+  structural-integrity protocol, a Plan Approval Request touchpoint, and a
+  Scrum Master rule to route plan approvals to the Director.
+
 ### Assisted mode and generated projects (JER-46)
 - Assisted mode now gets the same detective checks: the dispatcher records the
   tree and evidence state when it hands a task to a human, and on the next run

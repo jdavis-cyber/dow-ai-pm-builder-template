@@ -13,6 +13,11 @@ A task may enter **In Progress** only when BOTH locks release:
    dependencies (as defined in the owning agent's SOUL) exist and are
    verified. Before any task leaves Sprint Zero, **Lock 0** applies:
    `automation/validate_spec.py` must pass on `orchestration/system_spec.md`.
+1.5. **Lock 1.5 — Plan approved.** For a task with `Human Gate: yes`, a
+   one-page plan (`directives/templates/implementation-plan.md`) exists at the
+   task's `Plan` path and the Human Director has approved that exact plan
+   (`automation/gatekeeper.py approve-plan`). The dispatcher will not send such
+   a task for implementation until the approval verifies.
 2. **Lock 2 — Governance clearance.** The current phase gate is approved and
    the gatekeeper authority state (`.governance/gate_state.json`) permits the
    category of work the task performs. Any state that grants authority must

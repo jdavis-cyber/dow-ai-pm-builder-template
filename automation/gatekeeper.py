@@ -121,6 +121,55 @@ def signature_error(state: dict) -> str:
     return ""
 
 
+def plan_approval_path(task_id: str) -> Path:
+    return ROOT / ".governance" / "plan-approvals" / f"{task_id}.json"
+
+
+def plan_approval_error(task_id: str, plan_path: str) -> str:
+    """Empty when the operator signed an approval of this exact plan."""
+    path = plan_approval_path(task_id)
+    try:
+        record = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return f"no operator plan approval for {task_id}; run `gatekeeper.py approve-plan {task_id} <plan>`"
+    plan_file = ROOT / plan_path
+    try:
+        digest = hashlib.sha256(plan_file.read_bytes()).hexdigest()
+    except OSError:
+        return f"plan {plan_path} for {task_id} is missing"
+    if record.get("task_id") != task_id or record.get("plan") != plan_path or record.get("plan_sha256") != digest:
+        return f"plan {plan_path} changed after it was approved, or the approval is for another task"
+    key, problem = _read_operator_key()
+    if key is None:
+        return "cannot verify plan approval: " + problem
+    sig = record.get(SIGNATURE_FIELD) or {}
+    expected = hmac.new(key, _signed_payload(record), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected, str(sig.get("value", ""))):
+        return f"plan approval for {task_id} is not signed by the operator"
+    return ""
+
+
+def approve_plan(task_id: str, plan_path: str) -> int:
+    """Operator command: approve the plan a Human Gate task wrote."""
+    key, problem = _read_operator_key()
+    if key is None:
+        print("REFUSAL: " + problem + "; run `gatekeeper.py init-operator-key` first")
+        return 2
+    plan_file = ROOT / plan_path
+    if not plan_file.is_file() or not plan_file.read_bytes().strip():
+        print(f"REFUSAL: plan {plan_path} is missing or empty")
+        return 2
+    record = sign_state({
+        "task_id": task_id,
+        "plan": plan_path,
+        "plan_sha256": hashlib.sha256(plan_file.read_bytes()).hexdigest(),
+    }, key)
+    plan_approval_path(task_id).parent.mkdir(parents=True, exist_ok=True)
+    plan_approval_path(task_id).write_text(json.dumps(record, indent=2) + "\n")
+    print(f"plan approved for {task_id}: {plan_path}; set the task status to Plan Approved")
+    return 0
+
+
 def load_state() -> dict:
     if not GATE_STATE.exists():
         return {
@@ -279,6 +328,9 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("verify-consistency")
     sub.add_parser("init-operator-key", help="operator: create the signing key outside the project")
     sub.add_parser("sign", help="operator: sign the reviewed gate state")
+    ap = sub.add_parser("approve-plan", help="operator: approve a Human Gate task's written plan")
+    ap.add_argument("task_id")
+    ap.add_argument("plan")
     chk = sub.add_parser("check-action")
     chk.add_argument("--action", required=True)
     chk.add_argument("--path", default="")
@@ -292,6 +344,8 @@ def main(argv: list[str] | None = None) -> int:
         return init_operator_key()
     if args.cmd == "sign":
         return sign()
+    if args.cmd == "approve-plan":
+        return approve_plan(args.task_id, args.plan)
     if args.cmd == "check-action":
         ok, msg = check_action(args.action, args.path)
         print(("ALLOW: " if ok else "DENY: ") + msg)

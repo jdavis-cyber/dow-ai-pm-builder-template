@@ -22,7 +22,8 @@ See `orchestration/task-schema.md`. Task status is not approval evidence.
 **Verification Command or Method**: Requirements BA self-check plus Scrum Master readiness review  
 **Handoff Target**: User Story BA; Scrum Master  
 **Gate Impact**: none  
-**Requires Authority**: none
+**Requires Authority**: none  
+**Human Gate**: no
 
 #### TASK-002: Security and compliance gate review scaffold
 **Task ID**: TASK-002  
@@ -36,4 +37,5 @@ See `orchestration/task-schema.md`. Task status is not approval evidence.
 **Verification Command or Method**: Compliance review against `directives/factory-governance-scope.md`  
 **Handoff Target**: Scrum Master; Program Analyst  
 **Gate Impact**: blocks Gate 1 until compliance review exists  
-**Requires Authority**: none
+**Requires Authority**: none  
+**Human Gate**: no
