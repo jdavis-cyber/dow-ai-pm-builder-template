@@ -717,6 +717,25 @@ class RequirementAcceptanceTests(unittest.TestCase):
         self.expect(self.assisted(), 3, "unauthorized writes")
         self.assertEqual(self.result()["checks"]["write_audit"]["violations"], ["src/app.py"])
 
+    def test_tampered_pending_baseline_is_refused(self):
+        self.board()
+        self.init_git()
+        self.expect(self.assisted(), 0)
+        pending = self.repo / "docs/verification/factory-runs/pending-assisted/TASK-901.json"
+        record = json.loads(pending.read_text())
+        record["gate_state"]["implementation_authorized"] = True
+        pending.write_text(json.dumps(record))
+        self.human_closes()
+        self.expect(self.assisted(), 3, "pending baseline for TASK-901 was changed")
+
+    def test_assisted_dispatch_stops_on_dirty_protected_tree(self):
+        self.board()
+        self.init_git()
+        (self.repo / "src").mkdir(exist_ok=True)
+        (self.repo / "src/wip.py").write_text("# uncommitted operator work\n")
+        self.expect(self.assisted(), 2, "dirty_unexpected_state")
+        self.assertFalse((self.repo / "docs/verification/factory-runs/pending-assisted").exists())
+
     def test_open_assisted_task_stays_pending(self):
         self.board()
         self.init_git()

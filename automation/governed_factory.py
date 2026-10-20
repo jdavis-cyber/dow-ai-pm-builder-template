@@ -787,8 +787,26 @@ def post_dispatch_checks(task: dict, state: dict, before,
 PENDING_DIR_NAME = "pending-assisted"
 
 
+def dirty_outside_scope(state: dict, snapshot=None) -> str:
+    """The dirty_unexpected_state stop message, or empty when the tree is clean enough."""
+    snapshot = working_tree_snapshot() if snapshot is None else snapshot
+    if snapshot is None:
+        return ""
+    dirty = sorted(p for p in snapshot if not gatekeeper.check_action("write", p, state)[0])
+    if not dirty:
+        return ""
+    return ("STOP: dirty_unexpected_state: uncommitted changes outside the agent's write scope: "
+            + ", ".join(dirty))
+
+
 def _pending_dir() -> Path:
     return LOG_DIR / PENDING_DIR_NAME
+
+
+def _pending_seal_path(task_id: str) -> Path:
+    """Operator-side digest of a pending baseline, kept with the chain anchor."""
+    anchor = chain_anchor_path()
+    return anchor.with_suffix("") / "pending" / f"{task_id}.sha256"
 
 
 def record_assisted_dispatch(task: dict, state: dict) -> Path:
@@ -796,13 +814,17 @@ def record_assisted_dispatch(task: dict, state: dict) -> Path:
     same detective checks run when the human finishes it (JER-46)."""
     path = _pending_dir() / f"{task['Task ID']}.json"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({
+    raw = json.dumps({
         "task_id": task["Task ID"],
         "dispatched_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "gate_state": state,
         "working_tree": working_tree_snapshot(),
         "evidence_before": evidence_fingerprints(task),
-    }, indent=2) + "\n")
+    }, indent=2) + "\n"
+    path.write_text(raw)
+    seal = _pending_seal_path(task["Task ID"])
+    seal.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    seal.write_text(hashlib.sha256(raw.encode()).hexdigest() + "\n")
     print(f"ASSISTED MODE: detective checks run when {task['Task ID']} leaves Ready; "
           f"rerun the factory after completing it ({path.relative_to(ROOT)})")
     return path
@@ -820,7 +842,17 @@ def check_assisted_completions(tasks: list[dict]) -> tuple[int, set[str]]:
     if not directory.is_dir():
         return 0, still_pending
     for path in sorted(directory.glob("*.json")):
-        record = json.loads(path.read_text())
+        raw = path.read_text()
+        seal = _pending_seal_path(path.stem)
+        try:
+            sealed = seal.read_text().strip()
+        except OSError:
+            sealed = None
+        if sealed != hashlib.sha256(raw.encode()).hexdigest():
+            print(f"STOP: the pending baseline for {path.stem} was changed or has no operator-side seal; "
+                  "its detective checks can't be trusted")
+            return 3, still_pending
+        record = json.loads(raw)
         task = by_id.get(record.get("task_id"))
         if task is None:
             print(f"STOP: assisted task {record.get('task_id')} was removed from the board before its checks ran")
@@ -833,7 +865,10 @@ def check_assisted_completions(tasks: list[dict]) -> tuple[int, set[str]]:
                                     evidence_before=record.get("evidence_before"),
                                     run_info={"adapter": "assisted",
                                               "dispatched_at_utc": record.get("dispatched_at_utc")})
+        # Like an autonomous run, a violation halts this invocation and is kept
+        # in the chained result record; the baseline is consumed either way.
         path.unlink()
+        seal.unlink(missing_ok=True)
         if code != 0:
             return code, still_pending
     return 0, still_pending
@@ -877,18 +912,21 @@ def once(adapter: str) -> int:
     state = gatekeeper.load_state()
     packet = build_packet(task, state)
     if adapter.lower().strip() == "assisted":
+        if task["Task ID"] not in pending:
+            problem = dirty_outside_scope(state)
+            if problem:
+                print(problem)
+                return 2
         code = dispatch(packet, adapter)
         if code == 0 and task["Task ID"] not in pending:
             record_assisted_dispatch(task, state)
         return code
     if adapter.lower().strip() == "shell":
         before = working_tree_snapshot()
-        if before is not None:
-            dirty = sorted(p for p in before if not gatekeeper.check_action("write", p, state)[0])
-            if dirty:
-                print("STOP: dirty_unexpected_state: uncommitted changes outside the agent's write scope: "
-                      + ", ".join(dirty))
-                return 2
+        problem = dirty_outside_scope(state, before)
+        if problem:
+            print(problem)
+            return 2
         evidence_before = evidence_fingerprints(task)
         run_info: dict = {}
         code = dispatch(packet, adapter, run_info)
