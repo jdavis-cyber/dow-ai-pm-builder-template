@@ -46,6 +46,18 @@ DEFAULT_LIMITS = {
     "max_cost_usd": None,
 }
 OUTPUT_TAIL_CHARS = 20000
+CHAIN_ANCHOR_ENV = "FACTORY_CHAIN_ANCHOR_DIR"
+# Credential shapes scrubbed from anything copied into a run record.
+SECRET_PATTERNS = (
+    re.compile(r"(?i)\b(bearer|token|authorization)(\s*[:=]\s*|\s+)[A-Za-z0-9._~+/=-]{12,}"),
+    re.compile(r"(?i)\b([A-Z0-9_]*(?:API_KEY|SECRET|TOKEN|PASSWORD|PASSWD|CREDENTIAL)[A-Z0-9_]*)=\S+"),
+    re.compile(r"\b(?:sk|pk|rk)-[A-Za-z0-9_-]{16,}"),
+    re.compile(r"\b(?:AKIA|ASIA)[A-Z0-9]{16}\b"),
+    re.compile(r"\bgh[pousr]_[A-Za-z0-9]{20,}\b"),
+    re.compile(r"\bxox[abprs]-[A-Za-z0-9-]{10,}"),
+    re.compile(r"\bAIza[0-9A-Za-z_-]{30,}"),
+    re.compile(r"(?<=://)[^/\s:@]+:[^/\s@]+(?=@)"),
+)
 ADAPTER_TIMEOUT_EXIT = 124
 
 ACCOUNTABLE = {
@@ -273,8 +285,15 @@ def write_packet(packet: dict) -> Path:
     return path
 
 
+def redact(text: str) -> str:
+    """Scrub credential-shaped strings before they reach a persisted record."""
+    for pattern in SECRET_PATTERNS:
+        text = pattern.sub("[REDACTED]", text)
+    return text
+
+
 def _tail(text: str) -> str:
-    return text[-OUTPUT_TAIL_CHARS:]
+    return redact(text[-OUTPUT_TAIL_CHARS:])
 
 
 def _run_adapter(command: str, prompt: str, env: dict, timeout: float) -> tuple[int, str, str, bool]:
@@ -327,7 +346,7 @@ def dispatch(packet: dict, adapter: str, run_info: dict | None = None) -> int:
         sys.stdout.write(out)
         sys.stderr.write(err)
         run_info.update({
-            "adapter_command": command,
+            "adapter_command": redact(command),
             "model_id": os.environ.get("FACTORY_MODEL_ID", "").strip() or "unreported",
             "provider_version": os.environ.get("FACTORY_PROVIDER_VERSION", "").strip() or "unreported",
             "adapter_stdout_tail": _tail(out),
@@ -427,6 +446,13 @@ def evidence_fingerprints(task: dict) -> dict[str, str | None]:
     return {p: _fingerprint(p) for p in evidence_paths(task)}
 
 
+def chain_anchor_path() -> Path:
+    """Operator-side copy of the chain head, outside the agent's write set."""
+    base = os.environ.get(CHAIN_ANCHOR_ENV, "").strip()
+    root = Path(base).expanduser() if base else Path.home() / ".config" / "dow-factory" / "chains"
+    return root / (hashlib.sha256(str(ROOT.resolve()).encode()).hexdigest()[:24] + ".json")
+
+
 def _chain_records() -> list[Path]:
     return sorted(LOG_DIR.glob("*-result.json")) if LOG_DIR.is_dir() else []
 
@@ -470,6 +496,19 @@ def verify_run_chain() -> list[str]:
                 problems.append(f"{CHAIN_HEAD}: latest result {head.get('latest_result')} is not the newest record (deleted?)")
             elif previous and head.get("latest_result_sha256") != previous[1]:
                 problems.append(f"{previous[0]}: content changed after it was recorded")
+    try:
+        anchor = json.loads(chain_anchor_path().read_text())
+    except FileNotFoundError:
+        anchor = None
+    except (OSError, json.JSONDecodeError):
+        problems.append(f"chain anchor {chain_anchor_path()} unreadable")
+        anchor = None
+    if anchor is not None:
+        latest = previous[0] if previous else None
+        latest_sha = previous[1] if previous else None
+        if (anchor.get("latest_result"), anchor.get("latest_result_sha256")) != (latest, latest_sha):
+            problems.append("run results do not match the operator-side chain anchor "
+                            f"(expected {anchor.get('latest_result')}); records were removed or replaced")
     return problems
 
 
@@ -514,11 +553,15 @@ def write_run_result(task: dict, result: dict) -> Path:
         path = LOG_DIR / f"{now_id()}-{task['Task ID']}-result.json"
     raw = (json.dumps(result, indent=2, ensure_ascii=False) + "\n").encode()
     path.write_bytes(raw)
-    (LOG_DIR / CHAIN_HEAD).parent.mkdir(exist_ok=True)
-    (LOG_DIR / CHAIN_HEAD).write_text(json.dumps({
+    head = json.dumps({
         "latest_result": path.name,
         "latest_result_sha256": hashlib.sha256(raw).hexdigest(),
-    }, indent=2) + "\n")
+    }, indent=2) + "\n"
+    (LOG_DIR / CHAIN_HEAD).parent.mkdir(exist_ok=True)
+    (LOG_DIR / CHAIN_HEAD).write_text(head)
+    anchor = chain_anchor_path()
+    anchor.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    anchor.write_text(head)
     return path
 
 
@@ -567,6 +610,11 @@ def post_dispatch_checks(task: dict, state: dict, before,
         if viol:
             print("STOP: unauthorized writes detected after dispatch: " + ", ".join(viol))
             violation("unauthorized writes")
+    trail = verify_run_chain()
+    if trail:
+        result["checks"]["evidence_trail"] = {"problems": trail}
+        print("STOP: earlier run results were changed or removed during dispatch: " + "; ".join(trail))
+        violation("evidence trail modified")
     declared = evidence_paths(task)
     if not declared:
         result["checks"]["evidence_declared"] = "fail: Evidence Required names no paths"
@@ -592,8 +640,11 @@ def post_dispatch_checks(task: dict, state: dict, before,
         violation("no status transition")
     usage = (run_info or {}).get("usage")
     limits = factory_limits(load_factory_config())
-    if limits["max_tokens"] is not None or limits["max_cost_usd"] is not None:
-        if usage is None:
+    # Adapter-reported usage is self-attested; the dispatcher-enforced
+    # max_iterations / max_wall_seconds / adapter timeout remain the hard bound.
+    capped = [k for k, cap in (("tokens", limits["max_tokens"]), ("cost_usd", limits["max_cost_usd"])) if cap is not None]
+    if capped:
+        if usage is None or any(k not in usage for k in capped):
             result["checks"]["budget"] = "fail: adapter reported no usage"
             print("STOP: a spend ceiling is configured but the adapter reported no usage; human review required.")
             violation("budget unverifiable")

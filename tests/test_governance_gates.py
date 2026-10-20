@@ -15,6 +15,9 @@ import sys
 import unittest
 
 AUTOMATION = pathlib.Path(__file__).resolve().parents[1] / "automation"
+# Keep run-chain anchors written by these tests out of the operator's home.
+import tempfile  # noqa: E402
+os.environ.setdefault("FACTORY_CHAIN_ANCHOR_DIR", tempfile.mkdtemp(prefix="dow-chain-anchor-"))
 sys.path.insert(0, str(AUTOMATION))
 
 import gatekeeper  # noqa: E402

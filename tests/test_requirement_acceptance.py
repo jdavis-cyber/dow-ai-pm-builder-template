@@ -31,6 +31,7 @@ class RequirementAcceptanceTests(unittest.TestCase):
         self.events = []
         # Synthetic identity scoped to child processes, no global git config.
         self.env = {k: v for k, v in os.environ.items() if not k.startswith("FACTORY_")}
+        self.env["FACTORY_CHAIN_ANCHOR_DIR"] = str(Path(self.tmp.name) / "chain-anchors")
         self.env.update(GIT_AUTHOR_NAME="Requirement Fixture", GIT_AUTHOR_EMAIL="fixture@example.invalid",
                         GIT_COMMITTER_NAME="Requirement Fixture", GIT_COMMITTER_EMAIL="fixture@example.invalid")
 
@@ -524,6 +525,38 @@ class RequirementAcceptanceTests(unittest.TestCase):
         self.expect(self.cli("governed_factory", "--adapter", "shell", extra={"FACTORY_ADAPTER_COMMAND": command}),
                     2, "dirty_unexpected_state")
         self.assertFalse(list((self.repo / "docs/verification/factory-runs").glob("*-result.json")))
+
+    def test_wiping_run_records_is_detected_by_operator_anchor(self):
+        self.board()
+        self.expect(self.adapter(self.evidence() + self.close_task()), 0)
+        shutil.rmtree(self.repo / "docs/verification/factory-runs")
+        self.expect(self.cli("governed_factory", "--adapter", "assisted"), 2, "operator-side chain anchor")
+
+    def test_adapter_editing_earlier_results_is_a_violation(self):
+        self.board()
+        self.expect(self.adapter(self.evidence() + self.close_task()), 0)
+        self.board(**{"Task ID": "TASK-902"})
+        p = self.repo / "orchestration/tasks.md"
+        p.write_text(p.read_text().replace("#### TASK-901", "#### TASK-902"))
+        tamper = "import glob\nf=sorted(glob.glob('docs/verification/factory-runs/*-result.json'))[0]\npathlib.Path(f).write_text('{}')\n"
+        evidence = "pathlib.Path('docs/verification/fixture.md').write_text('second run\\n')\n"
+        close = "p=pathlib.Path('orchestration/tasks.md'); p.write_text(p.read_text().replace('**Status**: Ready', '**Status**: Done'))\n"
+        self.expect(self.adapter(tamper + evidence + close), 3, "changed or removed during dispatch")
+
+    def test_secrets_are_redacted_from_recorded_output(self):
+        self.board()
+        leak = "print('Authorization: Bearer abcdefghijklmnop1234'); print('OPENAI_API_KEY=sk-live-abcdefghijklmnopqrstu')\n"
+        self.expect(self.adapter(self.evidence() + self.close_task() + leak), 0)
+        tail = self.result()["adapter_stdout_tail"]
+        self.assertNotIn("abcdefghijklmnop1234", tail)
+        self.assertNotIn("sk-live-abcdefghijklmnopqrstu", tail)
+        self.assertIn("[REDACTED]", tail)
+
+    def test_spend_ceiling_needs_the_capped_dimension(self):
+        self.board()
+        self.factory_config(limits={"max_cost_usd": 1.0})
+        usage = "pathlib.Path(os.environ['FACTORY_USAGE_FILE']).write_text(json.dumps({'tokens': 5}))\n"
+        self.expect(self.adapter(self.evidence() + self.close_task() + usage), 3, "reported no usage")
 
     def test_NSR01_stdlib_only_instantiation_on_macos(self):
         # -I ignores environment/user site; -S disables site-packages entirely.
