@@ -6,6 +6,20 @@ follows SemVer aligned to the template's major revisions.
 
 ## [Unreleased]
 
+### Structured authority and dispatch boundary (JER-42, JER-40)
+- Tasks declare `**Requires Authority**` (`none` or a list such as
+  `implementation, deploy`); the validator rejects bad values and the
+  dispatcher refuses a task without a valid one. Keyword matches can only add
+  checks, and negations or "planning only" no longer suppress a check or stop.
+- The adapter prompt fences task-board text as untrusted data and no longer
+  carries the authority state.
+- The adapter gets a minimal environment; credentials pass only when named in
+  `FACTORY_ADAPTER_ENV_PASSTHROUGH`.
+- `factory.dispatch` sets the content classification and the adapter's
+  approved ceiling; DoD-regulated projects and CUI-marked task text are CUI,
+  and dispatch above the ceiling is refused before anything is sent.
+- `--loop` requires a committed (reviewed) task board.
+
 ### Evidence integrity and bounded execution (JER-43, JER-38)
 - Evidence must be non-empty, a task must declare at least one evidence path,
   and a status change with no changed evidence is a violation.
