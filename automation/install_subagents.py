@@ -23,6 +23,12 @@ def entry(name, reason, mandatory=False):
     tier, p = source_for(name)
     if not p:
         raise SystemExit(f"missing runtime package for {name}")
+    recorded = json.loads((ROOT / "subagents" / "runtime-package-digests.json").read_text()) \
+        if (ROOT / "subagents" / "runtime-package-digests.json").exists() else {}
+    rel = p.relative_to(ROOT / "subagents").as_posix()
+    if recorded.get(rel) != sha256_file(p):
+        raise SystemExit(f"runtime package subagents/{rel} does not match its recorded sha256; "
+                         "review the change, then run automation/vendor_digests.py update")
     return {"name": name, "tier": tier, "reason": reason, "mandatory": bool(mandatory), "source": p.relative_to(ROOT).as_posix(), "source_soul": f".agent/souls/{name}.md", "sha256": sha256_file(p)}
 
 def main():

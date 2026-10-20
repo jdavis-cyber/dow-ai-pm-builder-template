@@ -654,6 +654,20 @@ class RequirementAcceptanceTests(unittest.TestCase):
         self.expect(self.cli("install_subagents", "subagents/install-config.json", str(self.repo / ".codex/agents")), 1,
                     "does not match its recorded sha256")
 
+    def test_modified_accountable_agent_package_is_refused(self):
+        pkg = self.repo / "subagents/global/requirements-ba.toml"
+        pkg.write_text(pkg.read_text() + "\n# synthetic instruction change\n")
+        self.expect(self.validate(), 1, "does not match its recorded sha256")
+        self.expect(self.cli("install_subagents", "subagents/install-config.json", str(self.repo / ".codex/agents")), 1,
+                    "runtime package subagents/global/requirements-ba.toml")
+
+    def test_runtime_bundle_without_manifest_blocks_dispatch(self):
+        runtime = self.repo / ".codex/agents"
+        self.expect(self.cli("install_subagents", "subagents/install-config.json", str(runtime)), 0)
+        (runtime / "runtime-manifest.json").unlink()
+        self.board()
+        self.expect(self.cli("governed_factory", "--adapter", "assisted"), 2, "no runtime-manifest.json")
+
     def test_edited_runtime_bundle_blocks_dispatch(self):
         runtime = self.repo / ".codex/agents"
         self.expect(self.cli("install_subagents", "subagents/install-config.json", str(runtime)), 0)
