@@ -61,6 +61,7 @@ def main():
         ok = run([sys.executable,'automation/validate_runtime.py',str(tmp_runtime/'runtime-manifest.json')]) and ok
     finally:
         shutil.rmtree(tmp_runtime, ignore_errors=True)
+    ok = run([sys.executable,'automation/vendor_digests.py','check']) and ok
     ok = run([sys.executable,'automation/validate_spec.py','--mode','template','orchestration/system-spec-template.md']) and ok
     ok = run([sys.executable,'automation/validate_tasks.py','orchestration/task-board-template.md']) and ok
     # Framework crosswalks and duplicate assurance records are optional

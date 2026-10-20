@@ -6,6 +6,14 @@ follows SemVer aligned to the template's major revisions.
 
 ## [Unreleased]
 
+### Instruction-file integrity (JER-41)
+- Each vendored specialization package has a SHA-256 in
+  `subagents/specialization-ownership-map.json`; `validate_template.py` and
+  `install_subagents.py` fail on a mismatch. After reviewing an intended
+  change, record it with `python3 automation/vendor_digests.py update`.
+- The runtime manifest records a digest for every materialized agent TOML;
+  `validate_runtime.py` and the dispatcher refuse a bundle edited after install.
+
 ### Structured authority and dispatch boundary (JER-42, JER-40)
 - Tasks declare `**Requires Authority**` (`none` or a list such as
   `implementation, deploy`); the validator rejects bad values and the

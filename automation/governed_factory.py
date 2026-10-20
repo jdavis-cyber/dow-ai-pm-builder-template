@@ -796,6 +796,13 @@ def once(adapter: str) -> int:
     consistency = gatekeeper.verify_consistency()
     if consistency != 0:
         return consistency
+    runtime_manifest = ROOT / ".codex" / "agents" / "runtime-manifest.json"
+    if runtime_manifest.exists():
+        import validate_runtime
+        if not validate_runtime.validate(runtime_manifest):
+            print("REFUSAL: the installed agent bundle does not match its recorded digests; "
+                  "reinstall with automation/install_subagents.py after reviewing the change")
+            return 2
     chain = verify_run_chain()
     if chain:
         for problem in chain:
