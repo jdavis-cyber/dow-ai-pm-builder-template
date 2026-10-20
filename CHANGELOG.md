@@ -6,6 +6,14 @@ follows SemVer aligned to the template's major revisions.
 
 ## [Unreleased]
 
+### Seeded board reaches Gate 1 (JER-26)
+- The task board (template and the template's own `orchestration/tasks.md`)
+  now seeds the full Sprint Zero → Gate 1 chain: the eight playbook
+  interviews, Lock 0 spec validation, classification capture, Mission Risk
+  Profile and Governance Scope Statement, the Security & Compliance Officer's
+  Gate 1 review, the Gate 1 readiness package and the Director's Gate 1
+  decision, where the dispatcher stops for the human.
+
 ### Security & Compliance Officer is mandatory everywhere (JER-24)
 - `security-compliance-officer.toml` moved from `subagents/dod-regulated/` to
   `subagents/global/`; the activation matrix and classification rules now say
