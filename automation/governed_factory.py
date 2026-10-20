@@ -49,8 +49,8 @@ OUTPUT_TAIL_CHARS = 20000
 CHAIN_ANCHOR_ENV = "FACTORY_CHAIN_ANCHOR_DIR"
 # Credential shapes scrubbed from anything copied into a run record.
 SECRET_PATTERNS = (
-    re.compile(r"(?i)\b(bearer|token|authorization)(\s*[:=]\s*|\s+)[A-Za-z0-9._~+/=-]{12,}"),
-    re.compile(r"(?i)\b([A-Z0-9_]*(?:API_KEY|SECRET|TOKEN|PASSWORD|PASSWD|CREDENTIAL)[A-Z0-9_]*)=\S+"),
+    re.compile(r"(?i)\b(bearer|token|authorization)[\"']?(\s*[:=]\s*|\s+)[\"']?[A-Za-z0-9._~+/=-]{12,}"),
+    re.compile(r"(?i)[\"']?\b[A-Za-z0-9_-]*(?:api[_-]?key|secret|token|password|passwd|credential)[A-Za-z0-9_-]*[\"']?\s*[:=]\s*[\"']?[^\s\"',}]{4,}"),
     re.compile(r"\b(?:sk|pk|rk)-[A-Za-z0-9_-]{16,}"),
     re.compile(r"\b(?:AKIA|ASIA)[A-Z0-9]{16}\b"),
     re.compile(r"\bgh[pousr]_[A-Za-z0-9]{20,}\b"),
@@ -286,7 +286,11 @@ def write_packet(packet: dict) -> Path:
 
 
 def redact(text: str) -> str:
-    """Scrub credential-shaped strings before they reach a persisted record."""
+    """Scrub credential-shaped strings before they reach a persisted record.
+
+    Best-effort defence in depth: it catches common key shapes and key=value /
+    JSON "key": "value" forms, not every possible secret.
+    """
     for pattern in SECRET_PATTERNS:
         text = pattern.sub("[REDACTED]", text)
     return text
@@ -503,6 +507,8 @@ def verify_run_chain() -> list[str]:
     except (OSError, json.JSONDecodeError):
         problems.append(f"chain anchor {chain_anchor_path()} unreadable")
         anchor = None
+    if anchor is None and chained:
+        problems.append(f"chain anchor {chain_anchor_path()} is missing although results are chained")
     if anchor is not None:
         latest = previous[0] if previous else None
         latest_sha = previous[1] if previous else None

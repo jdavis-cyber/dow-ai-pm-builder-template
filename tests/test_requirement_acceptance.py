@@ -532,6 +532,12 @@ class RequirementAcceptanceTests(unittest.TestCase):
         shutil.rmtree(self.repo / "docs/verification/factory-runs")
         self.expect(self.cli("governed_factory", "--adapter", "assisted"), 2, "operator-side chain anchor")
 
+    def test_missing_anchor_for_chained_results_is_detected(self):
+        self.board()
+        self.expect(self.adapter(self.evidence() + self.close_task()), 0)
+        shutil.rmtree(Path(self.env["FACTORY_CHAIN_ANCHOR_DIR"]))
+        self.expect(self.cli("governed_factory", "--adapter", "assisted"), 2, "chain anchor")
+
     def test_adapter_editing_earlier_results_is_a_violation(self):
         self.board()
         self.expect(self.adapter(self.evidence() + self.close_task()), 0)
@@ -545,11 +551,13 @@ class RequirementAcceptanceTests(unittest.TestCase):
 
     def test_secrets_are_redacted_from_recorded_output(self):
         self.board()
-        leak = "print('Authorization: Bearer abcdefghijklmnop1234'); print('OPENAI_API_KEY=sk-live-abcdefghijklmnopqrstu')\n"
+        leak = ("print('Authorization: Bearer abcdefghijklmnop1234'); print('OPENAI_API_KEY=sk-live-abcdefghijklmnopqrstu')\n"
+                "print(json.dumps({'api_key': 'plainsecretvalue99'}))\n")
         self.expect(self.adapter(self.evidence() + self.close_task() + leak), 0)
         tail = self.result()["adapter_stdout_tail"]
         self.assertNotIn("abcdefghijklmnop1234", tail)
         self.assertNotIn("sk-live-abcdefghijklmnopqrstu", tail)
+        self.assertNotIn("plainsecretvalue99", tail)
         self.assertIn("[REDACTED]", tail)
 
     def test_spend_ceiling_needs_the_capped_dimension(self):
