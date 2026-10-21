@@ -16,7 +16,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "753de040b6ccfd6d1ef9078a5d74184f05f2095d13da2b308f86b5c7fb70c59b"
+    "sha256": "f77f55a94a99a98a2ab3fd9e57c163dd08edb186277dc5252240ff7c84899e56"
   },
   "global/voltagent/01-core-development/backend-developer.toml": {
     "accountable_owner": "backend-developer",
@@ -35,7 +35,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "e80347b92612f6132a3591746a244bbf38d5002666e15d4972f302a1c963a781"
+    "sha256": "ce602a894a31c1910cce7c0f53625a78bcf98a8beb4c5d582aea16d3558ab431"
   },
   "global/voltagent/01-core-development/code-mapper.toml": {
     "accountable_owner": "backend-developer",
@@ -54,7 +54,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "620a2e88a628f086998682d7ae8e74c6173067e5679ee9ef2c4eb58b350e9ad2"
+    "sha256": "994da9bf0cc83da029ad5629a120b978e46d387117dd46e4a3945f80e44f1911"
   },
   "global/voltagent/01-core-development/electron-pro.toml": {
     "accountable_owner": "backend-developer",
@@ -73,7 +73,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "0118796eb4bb0d123258e241ae116be894a9d628d879142d1be9582674414fe5"
+    "sha256": "1201fcbc88500affdc824614ccb0dc5095fd8839816e934c35fc10a94c84dcb7"
   },
   "global/voltagent/01-core-development/frontend-developer.toml": {
     "accountable_owner": "backend-developer",
@@ -92,7 +92,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "9527010b530d43ec2a4b80e03fc5d96d199232da343ef23ae0f0b6a4790de519"
+    "sha256": "97d5763039d977bb8d7f6c8f2e4bb54aacd0beefac4c2ef89770eb8f060141fe"
   },
   "global/voltagent/01-core-development/fullstack-developer.toml": {
     "accountable_owner": "backend-developer",
@@ -111,7 +111,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "0d2ee22ca7a68c5ff8bafe5f07505df7ea78db2a26975be9f37d41821c3d34e6"
+    "sha256": "3270da8a9ce39597085e6ee6ab825895376fb407b6740b85da1c96c241356c4c"
   },
   "global/voltagent/01-core-development/graphql-architect.toml": {
     "accountable_owner": "backend-developer",
@@ -130,7 +130,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "2b1f8129dac63075431638bf27e29477314d6294c1c1186f4eb0b7ba6f2536d3"
+    "sha256": "55de87d2673776c35d43780a445edca3c2cf8a1eae84a8b43c45b38f25e8d22c"
   },
   "global/voltagent/01-core-development/microservices-architect.toml": {
     "accountable_owner": "backend-developer",
@@ -149,7 +149,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "de25ec4901ec72da11e9344ee6da6c3d2ddb47d47a7c8ec9a16b59f8699f3899"
+    "sha256": "dc194e22631791419deb8cc45842510bc83a8f4570d2e9e7e17449b491ca7c3c"
   },
   "global/voltagent/01-core-development/mobile-developer.toml": {
     "accountable_owner": "backend-developer",
@@ -168,7 +168,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "1a08b718d87e2d16f0c01b85896fd803778916797f87280a6ea6adbc4d1bdad7"
+    "sha256": "3803d9c356b20d6224abb31a8bca494a9853816674da8a56f9bb461080b33475"
   },
   "global/voltagent/01-core-development/ui-designer.toml": {
     "accountable_owner": "backend-developer",
@@ -187,7 +187,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "e71531cbdaeaea4c02fecec5bf0daf68f9e67be02eb56a6dca45250462cc19ac"
+    "sha256": "3c13104fb541906c0c33921af1d9d5e39c2290cbc8edd81b7e76cad93c92d6bf"
   },
   "global/voltagent/01-core-development/ui-fixer.toml": {
     "accountable_owner": "backend-developer",
@@ -206,7 +206,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "d53c48582c80c8f942392b3644b3b914f8415834f57c9d58e2a829543587cc05"
+    "sha256": "3a06ec1442a9cab405793084f56bebc161bbabac0271e0f7939c4ced00cbc9a1"
   },
   "global/voltagent/01-core-development/websocket-engineer.toml": {
     "accountable_owner": "backend-developer",
@@ -225,7 +225,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "a1dd3d425d2cb024dda951b6ae268ae93dec6f0b5cea1f0cf17ae33bbbc453f3"
+    "sha256": "0de6fb201779c3b713a670917e0d5d1beeaa5e9753f1c79bae1206a26e61fad4"
   },
   "global/voltagent/02-language-specialists/angular-architect.toml": {
     "accountable_owner": "backend-developer",
@@ -244,7 +244,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "10c472a7890136b948ef351f9289fe6156112a37aa69934425ef3478ffb7e325"
+    "sha256": "f2a59576a71f2fd8955b15d0414f65893249f5a10c3554cad7783de4a1789edb"
   },
   "global/voltagent/02-language-specialists/cpp-pro.toml": {
     "accountable_owner": "backend-developer",
@@ -263,7 +263,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "be64224cfe94e8c2380203afd1783e797ce3959e2c1d7d0501edb5de07a586e2"
+    "sha256": "973efa9ac612e46ee9d1489ecc3be5a3f95bfb02b69650ca8561ff28a5dfa335"
   },
   "global/voltagent/02-language-specialists/csharp-developer.toml": {
     "accountable_owner": "backend-developer",
@@ -282,7 +282,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "127e7404831993d6dda3fd09f83299fef4904ae58334b380d2e47ca6bcacf233"
+    "sha256": "2fe84e3651433a999439b21445a90e519b2940ef70f867f46a0e8584d015e804"
   },
   "global/voltagent/02-language-specialists/django-developer.toml": {
     "accountable_owner": "backend-developer",
@@ -301,7 +301,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "31ea0541e27dfc5d82cd33b4eec1add98e5a092a9a3922779186e559a6748380"
+    "sha256": "d1ba75e006c8483e6d4d0f025a6a8a3e1224a9bda28e93013f3e7c3b1659086e"
   },
   "global/voltagent/02-language-specialists/dotnet-core-expert.toml": {
     "accountable_owner": "backend-developer",
@@ -320,7 +320,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "902bee8c82bc0260f267cc85a2c2e21f4c08ee0f86473484d8a84ded01863729"
+    "sha256": "71a0e46d15e34aa4c64e5aca04c8e368a4ff43b17043db93c757532b703570c1"
   },
   "global/voltagent/02-language-specialists/dotnet-framework-4.8-expert.toml": {
     "accountable_owner": "backend-developer",
@@ -339,7 +339,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "eb52b52ec8d8e50910c8740dfd69a28fd5cfd37cfcc8a0d2bc9832cc57699803"
+    "sha256": "553c616f85d378a1cedc9b2c2d1a1eec9212adc907d8414dc9ea8500ded35bdb"
   },
   "global/voltagent/02-language-specialists/elixir-expert.toml": {
     "accountable_owner": "backend-developer",
@@ -358,7 +358,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "4f5d08d9abaa3b638170e58263fc7a8ba26e1e0d119e03857650d5e51de13fa7"
+    "sha256": "9e7dfca4005492794b84651bdaeec0b9687fe9c64309a69e6e20bacf8637aa24"
   },
   "global/voltagent/02-language-specialists/erlang-expert.toml": {
     "accountable_owner": "backend-developer",
@@ -377,7 +377,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "c8ea7920f3915ec5e08418ce485e7f300316b2eccc7d01e9e1dab7e27d9f8312"
+    "sha256": "1907aa777ffa36868f03c64d4dd0666026e0a3c6315bba316e08dc4b6bfefb25"
   },
   "global/voltagent/02-language-specialists/flutter-expert.toml": {
     "accountable_owner": "backend-developer",
@@ -396,7 +396,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "44de2e6ff256d8bd1170c9df952e44da6fbbbea0ff31a05a0274a90cae2d3a63"
+    "sha256": "2d6d93472f753b1ba6b2cb4fca240300a04ec5b5574dcd85080e4e579c3cb7aa"
   },
   "global/voltagent/02-language-specialists/golang-pro.toml": {
     "accountable_owner": "backend-developer",
@@ -415,7 +415,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "bc65497055b18a12f64be33f02275b8bbf90847c0a79cf88db0c460154118fc0"
+    "sha256": "73de05cfb2a8dcb64a2101685c4c6cb982f1bf3cbdf11e66177b06a23fd8406b"
   },
   "global/voltagent/02-language-specialists/java-architect.toml": {
     "accountable_owner": "backend-developer",
@@ -434,7 +434,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "e4e0a34e3d340f300c657eea1d1de530083489252356606812846eaac0dcf2f0"
+    "sha256": "2eba18e90fd96ba8442e28416dc67c1d1961736b7aea2e6021713fcf186ff603"
   },
   "global/voltagent/02-language-specialists/javascript-pro.toml": {
     "accountable_owner": "backend-developer",
@@ -453,7 +453,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "885306074c0d5a7958ff77932db42eed75faf40f7d0c014bd41b4b5b4a4756a2"
+    "sha256": "5ce876bd2c46df60abaad62078291afcb2959c1512b82f02a1513009a06759f4"
   },
   "global/voltagent/02-language-specialists/kotlin-specialist.toml": {
     "accountable_owner": "backend-developer",
@@ -472,7 +472,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "54a6a8dd91fc296bd02a4abbe6fed154e00b41effea739a9b4de20e427d584a5"
+    "sha256": "05605ddbe8dd453efc48c8a3e872131683c12b1577cd00ab91d46acb5744ae71"
   },
   "global/voltagent/02-language-specialists/laravel-specialist.toml": {
     "accountable_owner": "backend-developer",
@@ -491,7 +491,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "ac4d986ba69e10294220dde92b231c7feab6eebc5f2ae1f8a9fd26cef458f81d"
+    "sha256": "6f82353ce8819bd0380deb0865d4f9bfa659353ae3260892c4adb20012182fb4"
   },
   "global/voltagent/02-language-specialists/nextjs-developer.toml": {
     "accountable_owner": "backend-developer",
@@ -510,7 +510,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "d48c67fdd916dadf57797a6d3b70d0d229f4d8c4be2dd0532dfc67350e6ac3a8"
+    "sha256": "f52249cd498bad3e8caf6b5b79783758e582d19570324acaac3c40a9c27ab781"
   },
   "global/voltagent/02-language-specialists/php-pro.toml": {
     "accountable_owner": "backend-developer",
@@ -529,7 +529,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "1b1739b1742c223afd109e345119e08ec46df155d30d38d6a96a4912dcf2f684"
+    "sha256": "2324782781c6df901b1a4050d377db08f40027efddb41490b30a874385367591"
   },
   "global/voltagent/02-language-specialists/powershell-5.1-expert.toml": {
     "accountable_owner": "backend-developer",
@@ -548,7 +548,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "cc4c0fc03f152edbbca25809937f571b7db2adb4ad90323a224b862004dfa40e"
+    "sha256": "387702d6533b637f8687b2972568ef620036fc1af802e45a31c9ae7a8d6a4825"
   },
   "global/voltagent/02-language-specialists/powershell-7-expert.toml": {
     "accountable_owner": "backend-developer",
@@ -567,7 +567,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "89e1c1e2baa8eede35fd149103df61ddcc8cdcec0b6f1ff00be49c033ced7f35"
+    "sha256": "7b9a5685e2b4f0b9338c87b12f607de8e79c05c3b7a9e6e817449f9d0beb4fb9"
   },
   "global/voltagent/02-language-specialists/python-pro.toml": {
     "accountable_owner": "backend-developer",
@@ -586,7 +586,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "15cd17d8cbacd081d21fd820037f8a51a58d2bb81df6badacc945eff0cc7f76e"
+    "sha256": "8f8d3bf7bfb77e9b613b7aa9ad959bac2ec29eee0faed1b667e5b32e1ee92485"
   },
   "global/voltagent/02-language-specialists/rails-expert.toml": {
     "accountable_owner": "backend-developer",
@@ -605,7 +605,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "feb4570097aababc510589a31b47b233d44a23267c893b9be4dc31cb53c4d7bf"
+    "sha256": "b0fe56dbe10f99875551902d0356c503335e147733349912803b03c37fdc3393"
   },
   "global/voltagent/02-language-specialists/react-specialist.toml": {
     "accountable_owner": "backend-developer",
@@ -624,7 +624,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "37a68b5a4b79422cde33a4f7e012d75a1bb42b7d2d055d4d2d2d069461d7afa3"
+    "sha256": "92a2f8a5b0d9ce73ef76409bccbcc9a3b3c8c8d2999847861d91aea00866f93c"
   },
   "global/voltagent/02-language-specialists/rust-engineer.toml": {
     "accountable_owner": "backend-developer",
@@ -643,7 +643,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "fe8c47547b71c811677684174fe55fc047a9402725672881b56d59140a76b2b8"
+    "sha256": "388a5379aab142042fa7167dd7b43fddbf2d621c896156a4edb077346936a5b4"
   },
   "global/voltagent/02-language-specialists/spring-boot-engineer.toml": {
     "accountable_owner": "backend-developer",
@@ -662,7 +662,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "8752700158a279a70cda68cbefdd489df41ee7abe17d2465e545f1aa3c6d2c82"
+    "sha256": "3e97dc95795eb9cf981436b599e6d5596c6c1531130c9b9764d81b7a08ef4c23"
   },
   "global/voltagent/02-language-specialists/sql-pro.toml": {
     "accountable_owner": "backend-developer",
@@ -681,7 +681,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "afa97eae4ea8cf59513a75c4cdc97f0a237a824395271df2b3a44ae484b47934"
+    "sha256": "4417e13cc696e52ca0c67ab0202034557cd10ab6efc0332b27de2d120e63917f"
   },
   "global/voltagent/02-language-specialists/swift-expert.toml": {
     "accountable_owner": "backend-developer",
@@ -700,7 +700,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "0a4af72427655aef966242d10d13e56aa01e0c93a8bc743e59f63bd9ca7ba74f"
+    "sha256": "cc74d1bc5ae964bdcaf92908d5ae9020f016af3c199ac9b18b36593c69f9172e"
   },
   "global/voltagent/02-language-specialists/typescript-pro.toml": {
     "accountable_owner": "backend-developer",
@@ -719,7 +719,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "34c2a5cdd4d8113cd60f67f62261dec4bad03ce8f917b192b4c547a3c8b3b9d6"
+    "sha256": "a699754aeee90254da0f98b00e5b98beeacffe8579626bef18ab25ddbb124b9c"
   },
   "global/voltagent/02-language-specialists/vue-expert.toml": {
     "accountable_owner": "backend-developer",
@@ -738,7 +738,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "2a05838e0d70e1266b6adbc93cf15c48f72eb5ded12fd1e862c0e160011f2fb4"
+    "sha256": "0c33075330def59e36991c4a63aa059ba4c3ee419499e73c673c33684fef4812"
   },
   "global/voltagent/03-infrastructure/azure-infra-engineer.toml": {
     "accountable_owner": "pipeline-devops",
@@ -757,7 +757,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "48d27ee822f0906cd150fd4db594b80ad42a3ccd4b406b72d017c82f0472ccdb"
+    "sha256": "caf38c3f652de8bee978ba2831c8335801f451038137a99bb0de84560d72ab01"
   },
   "global/voltagent/03-infrastructure/cloud-architect.toml": {
     "accountable_owner": "pipeline-devops",
@@ -776,7 +776,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "0427276d79dcc9fad7f36c8f1fe5fb48c584566e49a4093c457d44ef612e7ed6"
+    "sha256": "a505cde7e32035d580684a85a5f1c580bb604206ec13e4f5a3caaf5cea543dfd"
   },
   "global/voltagent/03-infrastructure/database-administrator.toml": {
     "accountable_owner": "pipeline-devops",
@@ -795,7 +795,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "e86387f3e0e026cdbcbbcd6a64d4398c3214f3de4f2e852f401b67375ac1b27d"
+    "sha256": "c777fc67d5d47537a158bc925824712c708a335de502147aa02f36f6a56a16f6"
   },
   "global/voltagent/03-infrastructure/deployment-engineer.toml": {
     "accountable_owner": "pipeline-devops",
@@ -814,7 +814,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "fd13d6354be065b6a306d9ebabaab12900c9dbdce736d726ada3b8f0be139405"
+    "sha256": "68409a183ab45846264afdde25ed7097b7bdb94908973122cd8921b1c6c1d6b9"
   },
   "global/voltagent/03-infrastructure/devops-engineer.toml": {
     "accountable_owner": "pipeline-devops",
@@ -833,7 +833,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "8bb90ab841598434a6c23b51f66bb72cd55175c1eadba93acf6cf9cac65d83cb"
+    "sha256": "3fd7fef875c37e9faf148d9251174f1e7f0590e413b08687aeedc2432955e637"
   },
   "global/voltagent/03-infrastructure/devops-incident-responder.toml": {
     "accountable_owner": "pipeline-devops",
@@ -852,7 +852,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "f45c1eddde4764c94c06d86d0e62431fa615f1fcb767373d796fb2b7987a1fe0"
+    "sha256": "9b68dfe9a1e44e6d095a450704fefd446099f5721383a470c8f568138ddacad7"
   },
   "global/voltagent/03-infrastructure/docker-expert.toml": {
     "accountable_owner": "pipeline-devops",
@@ -871,7 +871,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "e6df231e7e4a51d3e401b6097d86eb4b8cc87c08b851c31bce213fb0ea3a0412"
+    "sha256": "ef7c0f2812f21cb48cbfd70467f28394b66b5d0f881641dec1a1410d940a8383"
   },
   "global/voltagent/03-infrastructure/incident-responder.toml": {
     "accountable_owner": "pipeline-devops",
@@ -890,7 +890,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "c37daf3682f3e7c84c085d9c7ef911fb9f73a8f991ff335078d369ce34e0dc28"
+    "sha256": "511540fa2fdb6bc5f98515b87e03a0b2e9298b2bc1d952fd6707c2877788f45b"
   },
   "global/voltagent/03-infrastructure/kubernetes-specialist.toml": {
     "accountable_owner": "pipeline-devops",
@@ -909,7 +909,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "51e1586cfa3815df580fde2adc3d0ed29c919fe1280d5460271e6e3d3d588dcb"
+    "sha256": "a6da9ea10f76b096fbce1acc1093825367a3da0de8037603b7e584ec5b19f47a"
   },
   "global/voltagent/03-infrastructure/network-engineer.toml": {
     "accountable_owner": "pipeline-devops",
@@ -928,7 +928,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "469311febb26d484379d8d99946de7eb2615a7168bb0596b037af59ef3f04c0a"
+    "sha256": "bb1ade39e6999b8d746aed10001bb851562446027307f84f8dcedf7c173c4e57"
   },
   "global/voltagent/03-infrastructure/platform-engineer.toml": {
     "accountable_owner": "pipeline-devops",
@@ -947,7 +947,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "aa173f12344e845d91ab6dd834f62873b4afb076a7eb2f5807cb4e2352bdeb36"
+    "sha256": "38e1ce89bf02c7e062f0272bca6e13597c44b549e9c554a36796fb14aa139fa1"
   },
   "global/voltagent/03-infrastructure/security-engineer.toml": {
     "accountable_owner": "pipeline-devops",
@@ -966,7 +966,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "9dc66ce5f7df2a21c74a9cbf785eaabfa7a8c5920b2e7814725da749757d8947"
+    "sha256": "25e99aea5702e1502f89fd2e6e4313974220a39e1ef5a4f819cc14db6d6c4eaf"
   },
   "global/voltagent/03-infrastructure/sre-engineer.toml": {
     "accountable_owner": "pipeline-devops",
@@ -985,7 +985,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "32427baee5b09d6d448739f313ad6ce22b1ee36e41723c18fad562e5ceda1525"
+    "sha256": "16ef357eb7111d567db7cc7ddd98a9cb490298904f8dfd3ed855041ca4ecb6b7"
   },
   "global/voltagent/03-infrastructure/terraform-engineer.toml": {
     "accountable_owner": "pipeline-devops",
@@ -1004,7 +1004,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "57723d981a4cc3a533f3fdf1e64624a3232468abdfa1d1d25159ed69470a33fe"
+    "sha256": "632b2c180afd2707af350641b10a3b5efb9bd5be9bf5cc0547ff9125baf4baec"
   },
   "global/voltagent/03-infrastructure/terragrunt-expert.toml": {
     "accountable_owner": "pipeline-devops",
@@ -1023,7 +1023,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "c44a8f2b771c71ee6babbd0dccd5202d5ba152d2cbda430036865f03e0841aed"
+    "sha256": "21f4fb924042760a734417a36d35ef386d0e880a89164ac81eedc88ed118f708"
   },
   "global/voltagent/03-infrastructure/windows-infra-admin.toml": {
     "accountable_owner": "pipeline-devops",
@@ -1042,7 +1042,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "097975d505ed700f2911ca1d2960e8db2e4ddd5a7598b1914c903bf6a0d01321"
+    "sha256": "94535dd6dac01439db1d5f87c77070992f77ece7c582c6c9b5565ccb023bfd07"
   },
   "global/voltagent/04-quality-security/accessibility-tester.toml": {
     "accountable_owner": "security-compliance-officer",
@@ -1061,7 +1061,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "54d52df6767d6b6f15479364176d683f6125e57134322b3f78a376652c75980f"
+    "sha256": "56b3b035a711645ed85a1c5330101eaa9e49bf37f581b9c4173ad0ea1a5a58d7"
   },
   "global/voltagent/04-quality-security/ad-security-reviewer.toml": {
     "accountable_owner": "security-compliance-officer",
@@ -1080,7 +1080,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "a3e9d5849c8377fc03c77cca99f93ad3dc5dbb8184a3186519fd7928fa702e01"
+    "sha256": "dd30da5831470e4ec01d9b6a9ec7f6da329ed0e91731ee61068411d8c31524e8"
   },
   "global/voltagent/04-quality-security/architect-reviewer.toml": {
     "accountable_owner": "security-compliance-officer",
@@ -1099,7 +1099,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "e2505342b3d0418ed59c00632a4e694f460a0d064369f14878121866f43812dd"
+    "sha256": "3419c4781570d207d9fac15b5def3b598bc551bfc1be2a4ce477c0377eb6fa60"
   },
   "global/voltagent/04-quality-security/browser-debugger.toml": {
     "accountable_owner": "security-compliance-officer",
@@ -1118,7 +1118,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "f0b986f7b718d01b9cb71edc2670d3d4f8ebfc05275ed9d9460be6a9a6d84218"
+    "sha256": "1441fcb65f6647b3dc6cb8feefcd12fc0e2031f942fca201f459fcf5b32e76ff"
   },
   "global/voltagent/04-quality-security/chaos-engineer.toml": {
     "accountable_owner": "security-compliance-officer",
@@ -1137,7 +1137,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "d2e117d45d15a0b0243a03dba11b7430fc142d7151c48272a3267c9797957047"
+    "sha256": "af0147542474b37c87d94150252be3b5750807d185ac6d5033117ae302ae75ac"
   },
   "global/voltagent/04-quality-security/code-reviewer.toml": {
     "accountable_owner": "security-compliance-officer",
@@ -1156,7 +1156,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "22fc7cf352046dc3e9149d088d52ab73c7111ba3944ea4427343403d612b3648"
+    "sha256": "5b7aa0ec872f9e6c27d10bf3be79cc529455f02d4cb0cf5fd0c2ab769a238cad"
   },
   "global/voltagent/04-quality-security/compliance-auditor.toml": {
     "accountable_owner": "security-compliance-officer",
@@ -1175,7 +1175,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "f4def31cb3fab54036b8d4b365e38637379e5f7191b3caa01ba9e50d92dba809"
+    "sha256": "5f4772de924dcb1a27a4b975ee9b19cec53dc48051e62ea9759f46d0b977d9de"
   },
   "global/voltagent/04-quality-security/debugger.toml": {
     "accountable_owner": "security-compliance-officer",
@@ -1194,7 +1194,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "c00f048b5ce83be0e5b7c63939b267b61a37ca09a57ee74e8b341df8f2860f88"
+    "sha256": "b215151ca921255704c18815d1ae4d3e88bed190743da454f3543cf3f1921313"
   },
   "global/voltagent/04-quality-security/error-detective.toml": {
     "accountable_owner": "security-compliance-officer",
@@ -1213,7 +1213,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "6c21db43d935a45ff71190ebe91f3d94188726d572997d87cd951b0d50bf133e"
+    "sha256": "7c7a7bde4dd7c8eb85f4f34803d7076cefe34a2d4470fc4f0febe9bb908a86a2"
   },
   "global/voltagent/04-quality-security/penetration-tester.toml": {
     "accountable_owner": "security-compliance-officer",
@@ -1232,7 +1232,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "5abdc5c37099e23370b396387d8bd02333317e04e087ab5fc69f73898e636326"
+    "sha256": "e62f9381e8ad195a670ba1baee549d960cdeb7294d6febfa95d1bc53a58787bc"
   },
   "global/voltagent/04-quality-security/performance-engineer.toml": {
     "accountable_owner": "security-compliance-officer",
@@ -1251,7 +1251,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "0f78120f42b39f8b872eb1fbeeabb399e4c1b82e47b58c7e15178dfcf4f433fc"
+    "sha256": "33577d2889e16c702677dcd2a2668ae464c98a0fee20836b1463407665273675"
   },
   "global/voltagent/04-quality-security/powershell-security-hardening.toml": {
     "accountable_owner": "security-compliance-officer",
@@ -1270,7 +1270,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "f82d0251c596f6b7732ab8ce1c8676b803b9cce6e47400ea8bbef9d7dadf4bc9"
+    "sha256": "e43463a2a4339ed71dabb343ddb49cc8a9702b73a57bab8b6b9ac732da25f33c"
   },
   "global/voltagent/04-quality-security/qa-expert.toml": {
     "accountable_owner": "security-compliance-officer",
@@ -1289,7 +1289,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "4cccb92ef18cbabe17b04495bd89a8258de6b3a1af705b3b88aa65f94e8dd916"
+    "sha256": "0371935f65a920dee19270819a9334bc7fa040b7403e1e1cb115c0f3b89f76b2"
   },
   "global/voltagent/04-quality-security/reviewer.toml": {
     "accountable_owner": "security-compliance-officer",
@@ -1308,7 +1308,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "d215bcbb90158209617713f57d4d4b5752f0065563ad1e61b72ea58df18776d1"
+    "sha256": "b3f020e2682f68a55395de64c249b2c0284844d0cce08cb7da6366bc9ff103d0"
   },
   "global/voltagent/04-quality-security/security-auditor.toml": {
     "accountable_owner": "security-compliance-officer",
@@ -1327,7 +1327,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "42c5889265a61de205a4bd622e4c736d9d05cdceb09502326bd7da4a1ab0aa71"
+    "sha256": "6c75f851b60f522ff27027332b17158365aa4f8ee2809e163393c5bcedd6a9e8"
   },
   "global/voltagent/04-quality-security/test-automator.toml": {
     "accountable_owner": "security-compliance-officer",
@@ -1346,7 +1346,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "a21903ed3b50361917030cd01b86efdd5cbfb24358bec5dedacfdd11f3f8ab55"
+    "sha256": "db5d9e449c912a3e1cc2834f20a4abce08da3d5a1243a61d91d6e08d3ec8d3d1"
   },
   "global/voltagent/05-data-ai/ai-engineer.toml": {
     "accountable_owner": "architecture-se",
@@ -1365,7 +1365,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "d30feb996d887fa9b126d9e342b4da157a2704c1b4f7fbcbe2e24fc5be4e4a66"
+    "sha256": "34614dbcfbba891f0cf14a67801e757a53bf84fbc0a6d851d60be4545127a344"
   },
   "global/voltagent/05-data-ai/data-analyst.toml": {
     "accountable_owner": "architecture-se",
@@ -1384,7 +1384,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "e96533d77f52dc972f2b9242c6f98618af15d603c4004d55aa5b623ebaaa68e7"
+    "sha256": "48cf6a920f787adecf90572e18f3cf42a4ece8cedf54ae66c757f87540bb7c64"
   },
   "global/voltagent/05-data-ai/data-engineer.toml": {
     "accountable_owner": "architecture-se",
@@ -1403,7 +1403,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "27c0b33da2fd9f8e77c3aa2c4c2d008ffead08fd3e1ef29eb4afb28e6afbf8c0"
+    "sha256": "b726edb535b5e6ac0fa50ef9871860308b96f4505b415ad28ce7830c5a36a2ae"
   },
   "global/voltagent/05-data-ai/data-scientist.toml": {
     "accountable_owner": "architecture-se",
@@ -1422,7 +1422,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "ceba8501918192a6d1fe9999fb76396f7ed0f7f83c1e797e75ad96a3011e378b"
+    "sha256": "c03f47c3041c9785a4c51407712fe3668d25a87d274a1a2eaa84211e9c128afc"
   },
   "global/voltagent/05-data-ai/database-optimizer.toml": {
     "accountable_owner": "architecture-se",
@@ -1441,7 +1441,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "6f2ed9002517b3d24a21100d2028354b8ff3bb149f93e97bfa1116f72bb6e97a"
+    "sha256": "45d6be419bc14d8c40f923c8fe71c75ac1c441105e02ea548bae337809eee42e"
   },
   "global/voltagent/05-data-ai/llm-architect.toml": {
     "accountable_owner": "architecture-se",
@@ -1460,7 +1460,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "bf0ba0d4b42611121fd057163f7bef0ab3a9cb92f847769602ec2099905cf91b"
+    "sha256": "7c8a5248c8fc0bed83f64d34761528c062bbe63124b5691677b00b75fee8ef54"
   },
   "global/voltagent/05-data-ai/machine-learning-engineer.toml": {
     "accountable_owner": "architecture-se",
@@ -1479,7 +1479,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "d81bcfbb43bf34ea4de4e12fd649f883b82f2f4e02d029bedec3f2e4e3f8fbd5"
+    "sha256": "c9832d0fe84844decb0e0bae5ca40e1ad07172143ec2460426044d2e69eecd37"
   },
   "global/voltagent/05-data-ai/ml-engineer.toml": {
     "accountable_owner": "architecture-se",
@@ -1498,7 +1498,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "41c4efa858b1bc1f6a456f7479778cff75ef9a0adde31a49310b8dfdf35457ba"
+    "sha256": "e084fc00c4a59c37caa8e59cffeeb9b80cc56b475009879f5a4b3fe289e0bfff"
   },
   "global/voltagent/05-data-ai/mlops-engineer.toml": {
     "accountable_owner": "architecture-se",
@@ -1517,7 +1517,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "9555e846b0be8d0356bcf5ef5cd2b2c24b9d997dea1a1f67a904e6dfac8a681f"
+    "sha256": "dc0743fba9b623adc0586fc49b311ce545380c7e108a806fdf4f631a28e576ed"
   },
   "global/voltagent/05-data-ai/nlp-engineer.toml": {
     "accountable_owner": "architecture-se",
@@ -1536,7 +1536,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "12d70c8d71163c786b8a7839162ad5a185790b03c788dde413dd4190fd965655"
+    "sha256": "9e0ff1f68ae78bb641e0a50bfefb2d3b2b025f6dcde5a95e8112d2a90567d2b1"
   },
   "global/voltagent/05-data-ai/postgres-pro.toml": {
     "accountable_owner": "architecture-se",
@@ -1555,7 +1555,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "10d6d7c509f9324eb46b5724b35253e228f96c838b382e12ab654a44f7d3f65a"
+    "sha256": "30d234483e53cb160b3ad4ad2abb7d144b6024cf1675094ed3ff695cd98b1531"
   },
   "global/voltagent/05-data-ai/prompt-engineer.toml": {
     "accountable_owner": "architecture-se",
@@ -1574,7 +1574,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "8c23c3c79d11bb6e7d53a48f1ff2c366f3ca9a068992a3b3a0168785968b168a"
+    "sha256": "e94f0e54863a55302430b8cb1cc36c5462ae1e8a17992ebdc3650482b9a2c1f1"
   },
   "global/voltagent/06-developer-experience/build-engineer.toml": {
     "accountable_owner": "documentation-se",
@@ -1593,7 +1593,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "c92933e262023a019c97df742a77fac7071b7ab9154257921a073fde01ff655c"
+    "sha256": "72232b8a40709257daacbdc825c836e891a661dd62d02315f2d64f2925f5f63e"
   },
   "global/voltagent/06-developer-experience/cli-developer.toml": {
     "accountable_owner": "documentation-se",
@@ -1612,7 +1612,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "afe1ac4443c828e374f3307497a1cca0c05f2f0715f6594c2064f6ed42424b0a"
+    "sha256": "1d548a31f2cfe5412906f85b45cefed428cee48a9d72d52468a878c1e01e994c"
   },
   "global/voltagent/06-developer-experience/dependency-manager.toml": {
     "accountable_owner": "documentation-se",
@@ -1631,7 +1631,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "b8665ee9b3938e1892d95898336aba18b428f8c6e50e33b1f41c8b01e1ad5832"
+    "sha256": "521c70089b5e2cc81ccba67d2353ce7fdb8e0d83b1d71283d651a2bdf2d3f0b6"
   },
   "global/voltagent/06-developer-experience/documentation-engineer.toml": {
     "accountable_owner": "documentation-se",
@@ -1650,7 +1650,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "82456132ae788a91c4c42383a04e7ac4e6035c3af12dc7155f1d1e9e9c9b9ac5"
+    "sha256": "24e925fc42625b69a1399d5b8da1d61de7e0d2205bf4b34741d18a4e55be53d3"
   },
   "global/voltagent/06-developer-experience/dx-optimizer.toml": {
     "accountable_owner": "documentation-se",
@@ -1669,7 +1669,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "292212f49e8880ac8cd111808201bc14b058590f774ff58c619751953a51862e"
+    "sha256": "fdf7b6a089b3c1fd5ecfdd624f2f7134f4cde2187123c5d9d681458dacda1acf"
   },
   "global/voltagent/06-developer-experience/git-workflow-manager.toml": {
     "accountable_owner": "documentation-se",
@@ -1688,7 +1688,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "852f4ada95467eac2df6d3ae2d47b4a039fdb0384b74cdb3066f6316e490b435"
+    "sha256": "1d9d918f7e6b6f95b9f08980cc93684594d570fec309a1ef69fdd1bc45de1144"
   },
   "global/voltagent/06-developer-experience/legacy-modernizer.toml": {
     "accountable_owner": "documentation-se",
@@ -1707,7 +1707,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "d81ffc97078431605d22e03bafd2b770d4aac9db957caa68d1f9053348fb6391"
+    "sha256": "8e6cce5628c3ba848c821fd1ce0c3e52c9d9470007f0257812fcf3cd07a32667"
   },
   "global/voltagent/06-developer-experience/mcp-developer.toml": {
     "accountable_owner": "documentation-se",
@@ -1726,7 +1726,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "a1138b7455bed2e684b0ef7b6f9404c493fc5119c3c61ec21760f45028017432"
+    "sha256": "35b6e99739f239c929c9914aaa6d6b58cb2d879a40ec7c71cd7905ef9a4ec946"
   },
   "global/voltagent/06-developer-experience/powershell-module-architect.toml": {
     "accountable_owner": "documentation-se",
@@ -1745,7 +1745,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "4d24e9127a668f43073ba5c4eb8d376f84be7f0e5bcceb2e1b5ca70f5df5d571"
+    "sha256": "261c5bbd20677c8e5f9966e543c8279b413eeac3a9a80c618c348fa06d7316f1"
   },
   "global/voltagent/06-developer-experience/powershell-ui-architect.toml": {
     "accountable_owner": "documentation-se",
@@ -1764,7 +1764,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "f3a69527a74a9715e47466d6cdc7fd883fe33859d546731d5018f8b25f7ddc58"
+    "sha256": "20988f39a991525c4e3ad94bd2a2e48a0be924d83708e2ad1d05b45708476c7c"
   },
   "global/voltagent/06-developer-experience/refactoring-specialist.toml": {
     "accountable_owner": "documentation-se",
@@ -1783,7 +1783,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "da11c15df5ecbaade007f2d7b0d63113dba5575da4c1d399771784e828826151"
+    "sha256": "7946c044542a31f99203399bde0e57b037e1f6e819ef126e66a87b7f46ac4467"
   },
   "global/voltagent/06-developer-experience/slack-expert.toml": {
     "accountable_owner": "documentation-se",
@@ -1802,7 +1802,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "619f9e06d253da123e62b909abdf7784072b77dc4307485231f3ce6aa67d6ae9"
+    "sha256": "727022ff5af254f0c5f198f344775303d8f89be090f9e319d8e5be9087562890"
   },
   "global/voltagent/06-developer-experience/tooling-engineer.toml": {
     "accountable_owner": "documentation-se",
@@ -1821,7 +1821,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "2833167f79689b7fa105fae7e917c593e1c4dabd1d087ad81be08e5760705754"
+    "sha256": "24fda550918ce3871f1ad97db04a11802e87aee0646c35603be77e159cee198d"
   },
   "global/voltagent/07-specialized-domains/api-documenter.toml": {
     "accountable_owner": "architecture-se",
@@ -1840,7 +1840,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "9d137528dabe4acf7b084222621eb675812546aadb744f4d66d21e908b0a22a6"
+    "sha256": "a8d16be8a5f266816b3a44bc0b9ee1efe541df5585d33af3d5f9ecd526d26325"
   },
   "global/voltagent/07-specialized-domains/blockchain-developer.toml": {
     "accountable_owner": "architecture-se",
@@ -1859,7 +1859,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "f8e6a824440889bc1e81f36d319efdea67a34c5dc34e0980203534c4fa8e007c"
+    "sha256": "d6c722bc497429972197337233966bda80751a6799ec8385c93976b121d2b206"
   },
   "global/voltagent/07-specialized-domains/embedded-systems.toml": {
     "accountable_owner": "architecture-se",
@@ -1878,7 +1878,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "8ffdb9732240849d706ec279be0b528d86652f317186d952617fdf684f49337e"
+    "sha256": "dcee6bf260e5b392bf1313a08815cba11b643e6029ee622f81cfb917619ddd83"
   },
   "global/voltagent/07-specialized-domains/fintech-engineer.toml": {
     "accountable_owner": "architecture-se",
@@ -1897,7 +1897,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "7f5226e4279e0235a29524375edf2623c945113fd4239cbeeb874eb2c2639f9f"
+    "sha256": "ae968de75c9d965f55e2a90d15a1be79086792efe202d3aee9465ab4ad3c0dd3"
   },
   "global/voltagent/07-specialized-domains/game-developer.toml": {
     "accountable_owner": "architecture-se",
@@ -1916,7 +1916,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "a6fc7fb2f68d0c0b6792d75de8e9630043d22521abae75866a60c4ed890a3192"
+    "sha256": "8c690a2b13d027a27f969ef8e12486cad98e0aca0fc2af54917244355b646f3e"
   },
   "global/voltagent/07-specialized-domains/iot-engineer.toml": {
     "accountable_owner": "architecture-se",
@@ -1935,7 +1935,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "875a7a957d27b5e9187d09591f789572d52e49607eeecdf28d24ee65f87425b2"
+    "sha256": "2e8e43e489b33e5b5485750e523a7450e7f8a2244ead604f7becbca88c0d708b"
   },
   "global/voltagent/07-specialized-domains/m365-admin.toml": {
     "accountable_owner": "architecture-se",
@@ -1954,7 +1954,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "fc2839e88c9fa5353a3aafdb8c99425f83b6fbda9cebe880251a4d3521c615b6"
+    "sha256": "c13d0ceb0a06adb45bea288baeb57fad48faba0b6148d88427a1a2d968e9310f"
   },
   "global/voltagent/07-specialized-domains/mobile-app-developer.toml": {
     "accountable_owner": "architecture-se",
@@ -1973,7 +1973,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "f2c6c0ab186bb0afdd60fbc356789d787f5d153c2d5c1575eb88b2ce6b1e0c91"
+    "sha256": "79e380b85be63e2495ed280bea38e9a8567cd08445c59f8c6aaf2c2d7db1a661"
   },
   "global/voltagent/07-specialized-domains/payment-integration.toml": {
     "accountable_owner": "architecture-se",
@@ -1992,7 +1992,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "07a82b48b49b1c1e9cc4b60afb9cfb320e370e1c50822b795ea047e7e8a93e36"
+    "sha256": "28f5332f0e57aaebe79389287e98b1f19470eea7a5739140dbb72f8aaa476c07"
   },
   "global/voltagent/07-specialized-domains/quant-analyst.toml": {
     "accountable_owner": "architecture-se",
@@ -2011,7 +2011,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "142fe7804d76b1660581f17321298d435366181e1624f1af061e801787755c01"
+    "sha256": "6c27c30996e075d022f17b034443fb3ce9bbd0e7ba977f64341ff9332e63cc3b"
   },
   "global/voltagent/07-specialized-domains/risk-manager.toml": {
     "accountable_owner": "architecture-se",
@@ -2030,7 +2030,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "3af983e3711546723bdce49af016b1ce67e9043bb3a360ffb69495c326e72ad6"
+    "sha256": "3eb03b4c72c9e3e5a683f34766e4a138b74e90bb7deba1e5f44a7380462d2bb3"
   },
   "global/voltagent/07-specialized-domains/seo-specialist.toml": {
     "accountable_owner": "architecture-se",
@@ -2049,7 +2049,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "5e70b0ab71d7be8d1b1282af165c619adb61571f477a1b2412be5a961307793c"
+    "sha256": "cb4ec03d2b2405b624f2d1274f5a0f46f0d38e3427b26e8da85f4e3e23b9dae1"
   },
   "global/voltagent/08-business-product/business-analyst.toml": {
     "accountable_owner": "requirements-ba",
@@ -2068,7 +2068,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "15b27be1b16859b0b1671e9a5896196076ede091cf4e6cbc51dda2fa8efe33df"
+    "sha256": "46ae426629972f926a7d033f2f4da120421cdf43e974e974e7210286d4f9cd3e"
   },
   "global/voltagent/08-business-product/content-marketer.toml": {
     "accountable_owner": "requirements-ba",
@@ -2087,7 +2087,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "282a92200b7321319ff028fba9924510d33d0cd3ec4f5be20fb49b5a1fe78f43"
+    "sha256": "e97bc958dce1d9696cc0b681cc91c127f26ea05b2227a70aeb34fc7040a066af"
   },
   "global/voltagent/08-business-product/customer-success-manager.toml": {
     "accountable_owner": "requirements-ba",
@@ -2106,7 +2106,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "97c6fbbd87147c9fbbf558806c03d3286c947095b14112aa545048aed16f2740"
+    "sha256": "414dd1f510aafd9401141a3b74975a1c49690a04ca25be92db7c24545af03799"
   },
   "global/voltagent/08-business-product/legal-advisor.toml": {
     "accountable_owner": "requirements-ba",
@@ -2125,7 +2125,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "4152a67c3accb779ae2a8a2fbf24dadd9f445eacfc0a8073c905f4a10a2420b4"
+    "sha256": "7369395a94befee3e6b5c33f403b8e8d50ce895e7b2035ad082b4485bdd237e4"
   },
   "global/voltagent/08-business-product/product-manager.toml": {
     "accountable_owner": "requirements-ba",
@@ -2144,7 +2144,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "f642af982be4a5b4a49900563ccb5fa659782593e591b80c83f5a97c3f29802f"
+    "sha256": "04f8dceb1b7a5fd7668bc93d38f77c5d3bfacf4ba31de1860c933eceeee49cbd"
   },
   "global/voltagent/08-business-product/project-manager.toml": {
     "accountable_owner": "requirements-ba",
@@ -2163,7 +2163,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "4b0298c9ad2afa4c6e3e9c7cc35957e9150b485c65fd55b28db77aa6047e50e3"
+    "sha256": "d525cf5441df897ff5eac082fc2ff48182e546931e781752474e4a77bb1aca9d"
   },
   "global/voltagent/08-business-product/sales-engineer.toml": {
     "accountable_owner": "requirements-ba",
@@ -2182,7 +2182,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "309cbbf13b5d68cd21d1dbcd8ff6ed245ff782fa1a65e6525dd470127b5086ac"
+    "sha256": "c4078f71de5193d7924b2726eafea6e1d804dfe51cd4ede119e9bd33d0e32f1c"
   },
   "global/voltagent/08-business-product/scrum-master.toml": {
     "accountable_owner": "requirements-ba",
@@ -2201,7 +2201,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "d3de20fedc3ccbe16db7e2d1bcb6c54c0cd94175fd41cccb4305548bf2122ca1"
+    "sha256": "b6e59e3bb615a7e712c7f8d449c61ced19a321f547e471d5cdb49bc6d1f19701"
   },
   "global/voltagent/08-business-product/technical-writer.toml": {
     "accountable_owner": "requirements-ba",
@@ -2220,7 +2220,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "8ea6c604173ccf1fca328e4bbf3a895fdda65f28f349bd39d46dd00bb1f19092"
+    "sha256": "05820908ddd0f5e80c9b97a8b24b56afb9c9ed0fa9302f90d74e69ff16b8f9bf"
   },
   "global/voltagent/08-business-product/ux-researcher.toml": {
     "accountable_owner": "requirements-ba",
@@ -2239,7 +2239,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "0820b1e9c0ba0fa001956b2c716b9c7bf01504173bd69020df0efd1f86a4bd3d"
+    "sha256": "6a7fe0411266461428fa89b9a1fe6b339b82d2407336f874e6f49d43f40ffa8c"
   },
   "global/voltagent/08-business-product/wordpress-master.toml": {
     "accountable_owner": "requirements-ba",
@@ -2258,7 +2258,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "c96b7c088f33109329fb222064a698b58f75b922141bd0686241f89a3a9b0ac9"
+    "sha256": "7ac1ce80d6833974e471b9567ee1fb80c7830d533425b347d4c25a50da88943a"
   },
   "global/voltagent/09-meta-orchestration/agent-installer.toml": {
     "accountable_owner": "scrum-master",
@@ -2277,7 +2277,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "e1a7b8c709791e973cd8be5d32c548d8f49c3ef655a492de56aedb894dc77d82"
+    "sha256": "30269a0103ecbbdbcd68a5a604b6d53f07f4cbb0f095392d03ea7ad5f676a4d1"
   },
   "global/voltagent/09-meta-orchestration/agent-organizer.toml": {
     "accountable_owner": "scrum-master",
@@ -2296,7 +2296,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "3bbd908a8a0664a9a57c8503151200a2855f8de9e1c3e98edc7d289fdfe269cf"
+    "sha256": "a303db569e682fa776829838155cf0eacace27f5bf87499756a20acb34542d3d"
   },
   "global/voltagent/09-meta-orchestration/context-manager.toml": {
     "accountable_owner": "scrum-master",
@@ -2315,7 +2315,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "58659d034b91ade65fe666c11b0a5f293b72beb1171e644e989900eabca3b487"
+    "sha256": "ebec17c5bf0ffdf0d38e198c696240c5b72397f54333031b0a4547c4164e4c85"
   },
   "global/voltagent/09-meta-orchestration/error-coordinator.toml": {
     "accountable_owner": "scrum-master",
@@ -2334,7 +2334,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "5efdf08ac6d378260398e6cce83ea6eb8a07c6b0ebb78571145bff4d9af3936c"
+    "sha256": "2eb5108e1f8180417c33a05ac1cb1a1a5083c05d210b50d13ca413b7d11184e7"
   },
   "global/voltagent/09-meta-orchestration/it-ops-orchestrator.toml": {
     "accountable_owner": "scrum-master",
@@ -2353,7 +2353,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "8ba79bb7033f027f999e4f27319cf34b717382fce7adaf599b61409ab32f8b4a"
+    "sha256": "cd00bd11077b43bbd75f951714dd52ee2ae7cbca94f3ad0ceef8bb14ed90e125"
   },
   "global/voltagent/09-meta-orchestration/knowledge-synthesizer.toml": {
     "accountable_owner": "scrum-master",
@@ -2372,7 +2372,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "a9107aeaa1dbee4c2073ef97ab249bea7b37cabaae5cc34bb595aae4ee482eae"
+    "sha256": "2c799bf22ee159bf2ec1af9271905686b54a14a37335cf0fc67e3f822bbf720d"
   },
   "global/voltagent/09-meta-orchestration/multi-agent-coordinator.toml": {
     "accountable_owner": "scrum-master",
@@ -2391,7 +2391,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "6f9519eb1d4011e10e27b79340d48b9223ac94bc7805aee53dbedae32f64f020"
+    "sha256": "75f0b0ed732911027d6a2371c81c8cb4b73cfc955f62fe8fe9b79ea392f0871d"
   },
   "global/voltagent/09-meta-orchestration/performance-monitor.toml": {
     "accountable_owner": "scrum-master",
@@ -2410,7 +2410,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "d9e9ad29ffc5decb59c526f833ff2d30965ed257d3176774a8ab7d5284be477f"
+    "sha256": "fbae125dee2cb4914fa54803cc6246baae74be7e8c34e793f00252427c9408ac"
   },
   "global/voltagent/09-meta-orchestration/task-distributor.toml": {
     "accountable_owner": "scrum-master",
@@ -2429,7 +2429,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "80bc3e011e2c213101f3610a058cebac1b31bce63bd4ebe2c6f64ddbf1449c9c"
+    "sha256": "d0f15f1f9a74e55b0cf0465f5bc538935cba831a061e4d5e2e742d8b0b54f1a0"
   },
   "global/voltagent/09-meta-orchestration/workflow-orchestrator.toml": {
     "accountable_owner": "scrum-master",
@@ -2448,7 +2448,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "ba4ff96f55d748d86564287476804ae7f85bcbae2ac43e2697a88b8197861ccd"
+    "sha256": "b0af5ce3068dc9d5138f19742c27b2aef5ea83d6c19aa98fcaf80684db839353"
   },
   "global/voltagent/10-research-analysis/competitive-analyst.toml": {
     "accountable_owner": "requirements-ba",
@@ -2467,7 +2467,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "952afa282994c1bc789b9e59abdf0692cfabd65816294abf4df0a7c8c0859765"
+    "sha256": "e05ae56ef817f7e3c5be064cd7ac145ba0623d915512224e0050f82cff492457"
   },
   "global/voltagent/10-research-analysis/data-researcher.toml": {
     "accountable_owner": "requirements-ba",
@@ -2486,7 +2486,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "b078baed064189d7f48671f2e246dcd1c6082fb1e2cf00ae3ab9c0e23a1b2e8f"
+    "sha256": "f439b47c5806724cb283aa2eca6954c9af8a2518608a47e4421991459339d618"
   },
   "global/voltagent/10-research-analysis/docs-researcher.toml": {
     "accountable_owner": "requirements-ba",
@@ -2505,7 +2505,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "3ca544e0b77bd88d44ab00c5beeedb50659a168f9b484c6c6d0fd2e938009f07"
+    "sha256": "5e53d364e5c120ab2a0166418ddd67bf598140a2c2b8c1a41c232db8030d24cc"
   },
   "global/voltagent/10-research-analysis/market-researcher.toml": {
     "accountable_owner": "requirements-ba",
@@ -2524,7 +2524,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "f70d53930ff1185231e6170675a5c1c667663b20ea381584edc157074b61eef3"
+    "sha256": "d8ea54c62d35a146d4e9b3cea33c7416d62be2b8c3c38cff33349b8c00795f0b"
   },
   "global/voltagent/10-research-analysis/research-analyst.toml": {
     "accountable_owner": "requirements-ba",
@@ -2543,7 +2543,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "c9438da69e17cf332d27ff8d8f12e78951cd15bf15e2692be01230c2a7b06f91"
+    "sha256": "be2fef33f87a2899c9c8ee12f91ffd6a340ee009a440f710dddb5f24864e2aaf"
   },
   "global/voltagent/10-research-analysis/search-specialist.toml": {
     "accountable_owner": "requirements-ba",
@@ -2562,7 +2562,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "0a0a4da4986ae880293aff96d392d776a81f2cee2418578fa8074ab54459ec8c"
+    "sha256": "bae3ca9be6376625715b3e995cb1d3ac1c7f8779c407e9ecc0471fe54c95afb7"
   },
   "global/voltagent/10-research-analysis/trend-analyst.toml": {
     "accountable_owner": "requirements-ba",
@@ -2581,7 +2581,7 @@
       "may not bypass phase gates",
       "may not approve its own compliance evidence"
     ],
-    "sha256": "85c17f119d74e5cf30a5ff093b9c8f5bdb123dde7e94836092b21aae50c4f328"
+    "sha256": "d293a6c648d27c8151bf84e0667bc55581cef24519efcf610378edaaf6e25240"
   },
   "global/accessibility-tester.toml": {
     "accountable_owner": "frontend-developer",

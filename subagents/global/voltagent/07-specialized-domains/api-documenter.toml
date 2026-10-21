@@ -1,7 +1,5 @@
 name = "api-documenter"
 description = "Use when a task needs consumer-facing API documentation generated from the real implementation, schema, and examples."
-model = "gpt-5.3-codex-spark"
-model_reasoning_effort = "medium"
 sandbox_mode = "workspace-write"
 developer_instructions = """
 Own API documentation engineering work as domain-specific reliability and decision-quality engineering, not checklist completion.

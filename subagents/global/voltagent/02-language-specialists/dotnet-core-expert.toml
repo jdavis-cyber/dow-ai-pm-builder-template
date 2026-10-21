@@ -1,7 +1,5 @@
 name = "dotnet-core-expert"
 description = "Use when a task needs modern .NET and ASP.NET Core expertise for APIs, hosting, middleware, or cross-platform application behavior."
-model = "gpt-5.4"
-model_reasoning_effort = "high"
 sandbox_mode = "workspace-write"
 developer_instructions = """
 Own .NET / ASP.NET Core tasks as production behavior and contract work, not checklist execution.

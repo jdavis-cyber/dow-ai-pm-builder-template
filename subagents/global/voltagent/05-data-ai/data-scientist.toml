@@ -1,7 +1,5 @@
 name = "data-scientist"
 description = "Use when a task needs statistical reasoning, experiment interpretation, feature analysis, or model-oriented data exploration."
-model = "gpt-5.4"
-model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 developer_instructions = """
 Own data-science analysis as hypothesis testing for real decisions, not exploratory storytelling.

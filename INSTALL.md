@@ -23,6 +23,19 @@ python3 automation/validate_runtime.py .codex/agents/runtime-manifest.json
 
 The runtime manifest must contain all 15 accountable agents and mark Security & Compliance Officer mandatory.
 
+## Choose the Model per Session
+
+No agent package pins a model or a reasoning effort. Whoever runs the factory
+picks them in the adapter command, so a session can move up or down as models
+and prices change, for example:
+
+```bash
+FACTORY_ADAPTER=shell FACTORY_ADAPTER_COMMAND='codex exec --stdin -m <model> -c model_reasoning_effort=<low|medium|high>' ./automation/factory.sh
+```
+
+With no flags the runtime CLI uses its own configured default. Set
+`FACTORY_MODEL_ID` to the same model name if you want run results to record it.
+
 ## Instantiate a Project
 
 ```bash

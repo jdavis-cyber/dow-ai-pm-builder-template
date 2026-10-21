@@ -123,4 +123,16 @@ class TemplateValidationTests(unittest.TestCase):
         for uses in re.findall(r'uses:\s*(\S+)', workflow):
             with self.subTest(action=uses):
                 self.assertRegex(uses, r'@[0-9a-f]{40}$')
+    def test_agent_packages_do_not_pin_a_model(self):
+        """The operator picks model and effort per session, not the packages."""
+        with tempfile.TemporaryDirectory() as d:
+            copy = pathlib.Path(d) / 'template'
+            shutil.copytree(ROOT, copy, ignore=shutil.ignore_patterns('.git', '.codex', '.claude', '__pycache__'))
+            r = run(sys.executable, str(copy / 'automation/validate_template.py'), cwd=copy)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            pkg = copy / 'subagents/global/requirements-ba.toml'
+            pkg.write_text('model = "gpt-old"\n' + pkg.read_text())
+            r = run(sys.executable, str(copy / 'automation/validate_template.py'), cwd=copy)
+            self.assertNotEqual(r.returncode, 0)
+            self.assertIn('pins model = "gpt-old"', r.stdout)
 if __name__=='__main__': unittest.main()
