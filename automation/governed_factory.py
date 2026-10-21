@@ -286,8 +286,14 @@ def write_run_result(task: dict, result: dict) -> Path:
     return path
 
 
-def post_dispatch_checks(task: dict, state: dict, before: set[str] | None) -> int:
-    """Fail-closed detective stops after an autonomous adapter run."""
+def post_dispatch_checks(task: dict, state: dict, before: set[str] | None,
+                         adapter_returncode: int = 0) -> int:
+    """Record every adapter outcome and all applicable detective checks.
+
+    A nonzero adapter exit retains its exit code and primary failure outcome.
+    Simultaneous detective violations are recorded without masking that failure.
+    For a successful adapter, the first detective violation retains exit code 3.
+    """
     result = {
         "record_type": "factory-run-result",
         "task_id": task["Task ID"],
@@ -295,8 +301,18 @@ def post_dispatch_checks(task: dict, state: dict, before: set[str] | None) -> in
         "gate_state_at_check": {k: state.get(k) for k in ["approval_state", "implementation_authorized", "deployment_authorized"]},
         "checks": {},
         "outcome": "pass",
+        "adapter_returncode": adapter_returncode,
+        "violations": [],
     }
     code = 0
+
+    def violation(kind: str) -> None:
+        nonlocal code
+        result["violations"].append(kind)
+        if code == 0:
+            result["outcome"] = "violation: " + kind
+        code = 3
+
     after = working_tree_changes()
     if before is None or after is None:
         print("WARNING: post-run write audit unavailable (git not usable here); detective control skipped")
@@ -306,24 +322,26 @@ def post_dispatch_checks(task: dict, state: dict, before: set[str] | None) -> in
         result["checks"]["write_audit"] = {"violations": viol} if viol else "pass"
         if viol:
             print("STOP: unauthorized protected-source writes detected after dispatch: " + ", ".join(viol))
-            print("Fail-closed halt. Revert or authorize via .governance/gate_state.json and record the event in .governance/security-compliance/override-register.md.")
-            result["outcome"] = "violation: unauthorized writes"
-            code = 3
-    if code == 0:
-        missing = missing_evidence(task)
-        result["checks"]["evidence_exists"] = {"missing": missing} if missing else "pass"
-        if missing:
-            print(f"STOP: required evidence missing after dispatch for {task['Task ID']}: " + ", ".join(missing))
-            result["outcome"] = "violation: missing evidence"
-            code = 3
-    if code == 0:
-        refreshed = {t["Task ID"]: t for t in parse_tasks(TASKS_FILE.read_text())}
-        still_open = status_kind(refreshed.get(task["Task ID"], {}).get("Status", "")) == "open"
-        result["checks"]["status_transitioned"] = "pass" if not still_open else "fail: task still open"
-        if still_open:
-            print(f"STOP: {task['Task ID']} is still open after dispatch; halting to prevent a redispatch loop. The adapter must update task status and evidence.")
-            result["outcome"] = "violation: no status transition"
-            code = 3
+            violation("unauthorized writes")
+    missing = missing_evidence(task)
+    result["checks"]["evidence_exists"] = {"missing": missing} if missing else "pass"
+    if missing:
+        print(f"STOP: required evidence missing after dispatch for {task['Task ID']}: " + ", ".join(missing))
+        violation("missing evidence")
+    refreshed = {t["Task ID"]: t for t in parse_tasks(TASKS_FILE.read_text())}
+    still_open = status_kind(refreshed.get(task["Task ID"], {}).get("Status", "")) == "open"
+    result["checks"]["status_transitioned"] = "pass" if not still_open else "fail: task still open"
+    if still_open:
+        print(f"STOP: {task['Task ID']} is still open after dispatch; halting to prevent a redispatch loop. The adapter must update task status and evidence.")
+        violation("no status transition")
+    if adapter_returncode != 0:
+        print(f"STOP: adapter failed with exit code {adapter_returncode}; detective checks and failure evidence retained.")
+        result["violations"].append("adapter failure")
+        result["outcome"] = "violation: adapter failure"
+        code = adapter_returncode
+    if code != 0:
+        print("Fail-closed halt. Any exception requires explicit human authorization recorded in "
+              ".governance/security-compliance/override-register.md; this message grants no override or authority.")
     path = write_run_result(task, result)
     print(f"factory run result recorded: {path.relative_to(ROOT)}")
     return code
@@ -346,9 +364,7 @@ def once(adapter: str) -> int:
     if adapter.lower().strip() == "shell":
         before = working_tree_changes()
         code = dispatch(packet, adapter)
-        if code != 0:
-            return code
-        return post_dispatch_checks(task, state, before)
+        return post_dispatch_checks(task, state, before, adapter_returncode=code)
     return dispatch(packet, adapter)
 
 

@@ -3,6 +3,8 @@ import argparse, pathlib, re, sys
 PLACEHOLDER_RE = re.compile(r'(?<![!])\[[^\]]+\](?!\()')
 REQUIRED_TEMPLATE_FIELDS = ['Project Name','Status','System Overview','Architecture Specification','Agent Work Packages']
 GAP_LABELS = ['Draft','Gap','Reference Needed','Not Authoritatively Mapped','Pending','N/A','Not Approved']
+# An explicit unresolved label, not ordinary prose such as "air gap" or "gap analysis".
+UNRESOLVED_GAP_RE = re.compile(r'(?<!\w)Gap(?:\s*[:—–-]|\s*\]|\s*\)|\s*$)')
 
 def validate(path, mode):
     p = pathlib.Path(path)
@@ -27,7 +29,7 @@ def validate(path, mode):
         for i, line in enumerate(txt.splitlines(), 1):
             if PLACEHOLDER_RE.search(line) or 'TBD' in line or 'TODO' in line:
                 errors.append(f"lock readiness line {i}: unresolved placeholder/TBD/TODO")
-            if any(label in line for label in ['Reference Needed','Not Authoritatively Mapped','Pending']):
+            if UNRESOLVED_GAP_RE.search(line) or any(label in line for label in ['Reference Needed','Not Authoritatively Mapped','Pending']):
                 errors.append(f"lock readiness line {i}: unresolved gap label remains")
     if errors:
         print(f"--- SPEC VALIDATION FAILED ({mode}) for {p} ---")
