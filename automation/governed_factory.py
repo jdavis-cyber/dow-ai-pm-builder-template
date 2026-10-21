@@ -14,6 +14,7 @@ import hashlib
 import json
 import os
 import re
+import signal
 import subprocess
 import sys
 import time
@@ -25,6 +26,39 @@ import gatekeeper
 ROOT = Path.cwd()
 TASKS_FILE = ROOT / "orchestration" / "tasks.md"
 LOG_DIR = ROOT / "docs" / "verification" / "factory-runs"
+CHAIN_HEAD = "chain/head.json"  # kept apart from the per-run records
+CONFIG_FILES = ("factory.config.json", "factory.config.example.json")
+# Every stop condition is mandatory: stop_on documents them and the dispatcher
+# refuses a config that drops one or names one it does not implement.
+MANDATORY_STOPS = (
+    "human_input_required",
+    "phase_gate_readiness",
+    "authority_boundary",
+    "validation_failure",
+    "dirty_unexpected_state",
+    "missing_evidence",
+)
+DEFAULT_LIMITS = {
+    "max_iterations": 20,
+    "max_wall_seconds": 7200,
+    "adapter_timeout_seconds": 1800,
+    "max_tokens": None,
+    "max_cost_usd": None,
+}
+OUTPUT_TAIL_CHARS = 20000
+CHAIN_ANCHOR_ENV = "FACTORY_CHAIN_ANCHOR_DIR"
+# Credential shapes scrubbed from anything copied into a run record.
+SECRET_PATTERNS = (
+    re.compile(r"(?i)\b(bearer|token|authorization)[\"']?(\s*[:=]\s*|\s+)[\"']?[A-Za-z0-9._~+/=-]{12,}"),
+    re.compile(r"(?i)[\"']?\b[A-Za-z0-9_-]*(?:api[_-]?key|secret|token|password|passwd|credential)[A-Za-z0-9_-]*[\"']?\s*[:=]\s*[\"']?[^\s\"',}]{4,}"),
+    re.compile(r"\b(?:sk|pk|rk)-[A-Za-z0-9_-]{16,}"),
+    re.compile(r"\b(?:AKIA|ASIA)[A-Z0-9]{16}\b"),
+    re.compile(r"\bgh[pousr]_[A-Za-z0-9]{20,}\b"),
+    re.compile(r"\bxox[abprs]-[A-Za-z0-9-]{10,}"),
+    re.compile(r"\bAIza[0-9A-Za-z_-]{30,}"),
+    re.compile(r"(?<=://)[^/\s:@]+:[^/\s@]+(?=@)"),
+)
+ADAPTER_TIMEOUT_EXIT = 124
 
 ACCOUNTABLE = {
     "Requirements BA",
@@ -68,6 +102,40 @@ HUMAN_STOP_PATTERNS = (
     "advances gate",
     "blocks gate",
 )
+
+
+def load_factory_config() -> dict:
+    """The ``factory`` section of the local config, else of the shipped example."""
+    for name in CONFIG_FILES:
+        path = ROOT / name
+        if path.is_file():
+            return (json.loads(path.read_text()).get("factory") or {})
+    return {}
+
+
+def factory_limits(cfg: dict) -> dict:
+    limits = dict(DEFAULT_LIMITS)
+    limits.update({k: v for k, v in (cfg.get("limits") or {}).items() if k in DEFAULT_LIMITS})
+    return limits
+
+
+def config_problems(cfg: dict) -> list[str]:
+    problems: list[str] = []
+    stop_on = cfg.get("stop_on", list(MANDATORY_STOPS))
+    if not isinstance(stop_on, list):
+        return ["factory.stop_on must be a list"]
+    for name in MANDATORY_STOPS:
+        if name not in stop_on:
+            problems.append(f"factory.stop_on cannot drop mandatory stop {name}")
+    for name in stop_on:
+        if name not in MANDATORY_STOPS:
+            problems.append(f"factory.stop_on names unknown stop {name}")
+    for key, value in factory_limits(cfg).items():
+        if value is None and key in {"max_tokens", "max_cost_usd"}:
+            continue
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0:
+            problems.append(f"factory.limits.{key} must be a positive number")
+    return problems
 
 
 def now_id() -> str:
@@ -217,10 +285,45 @@ def write_packet(packet: dict) -> Path:
     return path
 
 
-def dispatch(packet: dict, adapter: str) -> int:
+def redact(text: str) -> str:
+    """Scrub credential-shaped strings before they reach a persisted record.
+
+    Best-effort defence in depth: it catches common key shapes and key=value /
+    JSON "key": "value" forms, not every possible secret.
+    """
+    for pattern in SECRET_PATTERNS:
+        text = pattern.sub("[REDACTED]", text)
+    return text
+
+
+def _tail(text: str) -> str:
+    return redact(text[-OUTPUT_TAIL_CHARS:])
+
+
+def _run_adapter(command: str, prompt: str, env: dict, timeout: float) -> tuple[int, str, str, bool]:
+    """Run the adapter in its own process group so a timeout stops all of it."""
+    proc = subprocess.Popen(command, shell=True, cwd=ROOT, env=env, text=True,
+                            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, start_new_session=True)
+    try:
+        out, err = proc.communicate(prompt, timeout=timeout)
+        return proc.returncode, out, err, False
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except OSError:
+            proc.kill()
+        out, err = proc.communicate()
+        return ADAPTER_TIMEOUT_EXIT, out, err, True
+
+
+def dispatch(packet: dict, adapter: str, run_info: dict | None = None) -> int:
     adapter = adapter.lower().strip()
+    run_info = {} if run_info is None else run_info
+    cfg = load_factory_config()
     prompt = packet_to_prompt(packet)
-    record_packets = os.environ.get("FACTORY_RECORD_PACKETS", "false").lower() == "true"
+    default_record = "true" if cfg.get("record_packets_by_default", True) else "false"
+    record_packets = os.environ.get("FACTORY_RECORD_PACKETS", default_record).lower() == "true"
     packet_path = write_packet(packet) if record_packets else None
     if adapter == "assisted":
         print(prompt)
@@ -237,13 +340,44 @@ def dispatch(packet: dict, adapter: str) -> int:
             return 2
         if not packet_path:
             packet_path = write_packet(packet)
+        usage_path = packet_path.with_name(packet_path.stem + "-usage.json")
         env = os.environ.copy()
         env["FACTORY_TASK_PACKET"] = str(packet_path)
         env["FACTORY_TASK_PROMPT"] = prompt
-        result = subprocess.run(command, input=prompt, text=True, shell=True, cwd=ROOT, env=env)
-        return result.returncode
+        env["FACTORY_USAGE_FILE"] = str(usage_path)
+        timeout = factory_limits(cfg)["adapter_timeout_seconds"]
+        code, out, err, timed_out = _run_adapter(command, prompt, env, timeout)
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+        run_info.update({
+            "adapter_command": redact(command),
+            "model_id": os.environ.get("FACTORY_MODEL_ID", "").strip() or "unreported",
+            "provider_version": os.environ.get("FACTORY_PROVIDER_VERSION", "").strip() or "unreported",
+            "adapter_stdout_tail": _tail(out),
+            "adapter_stderr_tail": _tail(err),
+            "adapter_output_sha256": hashlib.sha256((out + "\0" + err).encode()).hexdigest(),
+            "adapter_timed_out": timed_out,
+            "usage": _read_usage(usage_path),
+        })
+        if timed_out:
+            print(f"STOP: adapter exceeded {timeout}s and was stopped")
+        return code
     print(f"REFUSAL: unknown adapter {adapter}; use assisted or shell")
     return 2
+
+
+def _read_usage(path: Path) -> dict | None:
+    """Usage the adapter reported in FACTORY_USAGE_FILE: {"tokens": n, "cost_usd": x}."""
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+    usage = {}
+    for key in ("tokens", "cost_usd"):
+        value = data.get(key)
+        if isinstance(value, (int, float)) and not isinstance(value, bool) and value >= 0:
+            usage[key] = value
+    return usage or None
 
 
 def _porcelain_paths(raw: bytes) -> set[str]:
@@ -299,7 +433,89 @@ def evidence_paths(task: dict) -> list[str]:
 
 
 def missing_evidence(task: dict) -> list[str]:
-    return [p for p in evidence_paths(task) if not (ROOT / p).exists()]
+    """Declared evidence that is absent or has no content."""
+    missing = []
+    for p in evidence_paths(task):
+        path = ROOT / p
+        try:
+            empty = path.is_file() and not path.read_bytes().strip()
+        except OSError:
+            empty = True
+        if not path.exists() or empty:
+            missing.append(p)
+    return missing
+
+
+def evidence_fingerprints(task: dict) -> dict[str, str | None]:
+    return {p: _fingerprint(p) for p in evidence_paths(task)}
+
+
+def chain_anchor_path() -> Path:
+    """Operator-side copy of the chain head, outside the agent's write set."""
+    base = os.environ.get(CHAIN_ANCHOR_ENV, "").strip()
+    root = Path(base).expanduser() if base else Path.home() / ".config" / "dow-factory" / "chains"
+    return root / (hashlib.sha256(str(ROOT.resolve()).encode()).hexdigest()[:24] + ".json")
+
+
+def _chain_records() -> list[Path]:
+    return sorted(LOG_DIR.glob("*-result.json")) if LOG_DIR.is_dir() else []
+
+
+def verify_run_chain() -> list[str]:
+    """Problems with the hash-chained run results; empty when intact.
+
+    Each chained result names the SHA-256 of the result before it, and the head
+    file names the latest. Deleting or editing any chained result breaks a link.
+    Results written before chaining existed are accepted only before the first
+    chained one.
+    """
+    problems: list[str] = []
+    previous: tuple[str, str] | None = None
+    chained = False
+    for path in _chain_records():
+        raw = path.read_bytes()
+        try:
+            record = json.loads(raw)
+        except json.JSONDecodeError:
+            problems.append(f"{path.name}: not valid JSON")
+            previous = (path.name, hashlib.sha256(raw).hexdigest())
+            continue
+        if "previous_result_sha256" in record:
+            expected = previous[1] if previous else None
+            if record["previous_result_sha256"] != expected:
+                problems.append(f"{path.name}: chain link does not match the preceding result")
+            chained = True
+        elif chained:
+            problems.append(f"{path.name}: unchained result after the chain started")
+        previous = (path.name, hashlib.sha256(raw).hexdigest())
+    head_path = LOG_DIR / CHAIN_HEAD
+    if chained or head_path.exists():
+        try:
+            head = json.loads(head_path.read_text())
+        except (OSError, json.JSONDecodeError):
+            problems.append(f"{CHAIN_HEAD} missing or unreadable")
+        else:
+            latest = previous[0] if previous else None
+            if head.get("latest_result") != latest:
+                problems.append(f"{CHAIN_HEAD}: latest result {head.get('latest_result')} is not the newest record (deleted?)")
+            elif previous and head.get("latest_result_sha256") != previous[1]:
+                problems.append(f"{previous[0]}: content changed after it was recorded")
+    try:
+        anchor = json.loads(chain_anchor_path().read_text())
+    except FileNotFoundError:
+        anchor = None
+    except (OSError, json.JSONDecodeError):
+        problems.append(f"chain anchor {chain_anchor_path()} unreadable")
+        anchor = None
+    if anchor is None and chained:
+        problems.append(f"chain anchor {chain_anchor_path()} is missing although results are chained")
+    if anchor is not None:
+        latest = previous[0] if previous else None
+        latest_sha = previous[1] if previous else None
+        if (anchor.get("latest_result"), anchor.get("latest_result_sha256")) != (latest, latest_sha):
+            problems.append("run results do not match the operator-side chain anchor "
+                            f"(expected {anchor.get('latest_result')}); records were removed or replaced")
+    return problems
 
 
 def adapter_changes(before, after) -> set[str]:
@@ -333,13 +549,36 @@ def write_run_result(task: dict, result: dict) -> Path:
     evidence trail, not from console output.
     """
     LOG_DIR.mkdir(parents=True, exist_ok=True)
+    prior = _chain_records()
+    result = dict(result)
+    result["previous_result_sha256"] = (
+        hashlib.sha256(prior[-1].read_bytes()).hexdigest() if prior else None)
     path = LOG_DIR / f"{now_id()}-{task['Task ID']}-result.json"
-    path.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n")
+    while path.exists() or (prior and path.name <= prior[-1].name):
+        time.sleep(1)
+        path = LOG_DIR / f"{now_id()}-{task['Task ID']}-result.json"
+    raw = (json.dumps(result, indent=2, ensure_ascii=False) + "\n").encode()
+    path.write_bytes(raw)
+    head = json.dumps({
+        "latest_result": path.name,
+        "latest_result_sha256": hashlib.sha256(raw).hexdigest(),
+    }, indent=2) + "\n"
+    (LOG_DIR / CHAIN_HEAD).parent.mkdir(exist_ok=True)
+    (LOG_DIR / CHAIN_HEAD).write_text(head)
+    anchor = chain_anchor_path()
+    anchor.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    anchor.write_text(head)
     return path
 
 
+# Usage reported by adapters across one dispatcher process (one --loop run).
+USAGE_TOTALS = {"tokens": 0, "cost_usd": 0.0}
+
+
 def post_dispatch_checks(task: dict, state: dict, before,
-                         adapter_returncode: int = 0) -> int:
+                         adapter_returncode: int = 0,
+                         evidence_before: dict | None = None,
+                         run_info: dict | None = None) -> int:
     """Record every adapter outcome and all applicable detective checks.
 
     A nonzero adapter exit retains its exit code and primary failure outcome.
@@ -356,6 +595,7 @@ def post_dispatch_checks(task: dict, state: dict, before,
         "adapter_returncode": adapter_returncode,
         "violations": [],
     }
+    result.update(run_info or {})
     code = 0
 
     def violation(kind: str) -> None:
@@ -376,17 +616,53 @@ def post_dispatch_checks(task: dict, state: dict, before,
         if viol:
             print("STOP: unauthorized writes detected after dispatch: " + ", ".join(viol))
             violation("unauthorized writes")
+    trail = verify_run_chain()
+    if trail:
+        result["checks"]["evidence_trail"] = {"problems": trail}
+        print("STOP: earlier run results were changed or removed during dispatch: " + "; ".join(trail))
+        violation("evidence trail modified")
+    declared = evidence_paths(task)
+    if not declared:
+        result["checks"]["evidence_declared"] = "fail: Evidence Required names no paths"
+        print(f"STOP: {task['Task ID']} declares no evidence paths; a run cannot pass against nothing.")
+        violation("no evidence declared")
     missing = missing_evidence(task)
     result["checks"]["evidence_exists"] = {"missing": missing} if missing else "pass"
     if missing:
-        print(f"STOP: required evidence missing after dispatch for {task['Task ID']}: " + ", ".join(missing))
+        print(f"STOP: required evidence missing or empty after dispatch for {task['Task ID']}: " + ", ".join(missing))
         violation("missing evidence")
+    result["evidence_sha256"] = {p: _fingerprint(p) for p in declared}
+    if evidence_before is not None and declared and not missing:
+        unchanged = all(evidence_before.get(p) == result["evidence_sha256"][p] for p in declared)
+        result["checks"]["evidence_changed"] = "fail: no evidence changed" if unchanged else "pass"
+        if unchanged:
+            print(f"STOP: {task['Task ID']} changed status but produced no new evidence.")
+            violation("evidence unchanged")
     refreshed = {t["Task ID"]: t for t in parse_tasks(TASKS_FILE.read_text())}
     still_open = status_kind(refreshed.get(task["Task ID"], {}).get("Status", "")) == "open"
     result["checks"]["status_transitioned"] = "pass" if not still_open else "fail: task still open"
     if still_open:
         print(f"STOP: {task['Task ID']} is still open after dispatch; halting to prevent a redispatch loop. The adapter must update task status and evidence.")
         violation("no status transition")
+    usage = (run_info or {}).get("usage")
+    limits = factory_limits(load_factory_config())
+    # Adapter-reported usage is self-attested; the dispatcher-enforced
+    # max_iterations / max_wall_seconds / adapter timeout remain the hard bound.
+    capped = [k for k, cap in (("tokens", limits["max_tokens"]), ("cost_usd", limits["max_cost_usd"])) if cap is not None]
+    if capped:
+        if usage is None or any(k not in usage for k in capped):
+            result["checks"]["budget"] = "fail: adapter reported no usage"
+            print("STOP: a spend ceiling is configured but the adapter reported no usage; human review required.")
+            violation("budget unverifiable")
+        else:
+            USAGE_TOTALS["tokens"] += usage.get("tokens", 0)
+            USAGE_TOTALS["cost_usd"] += usage.get("cost_usd", 0.0)
+            over = [k for k, cap in (("tokens", limits["max_tokens"]), ("cost_usd", limits["max_cost_usd"]))
+                    if cap is not None and USAGE_TOTALS[k] >= cap]
+            result["checks"]["budget"] = {"totals": dict(USAGE_TOTALS), "exceeded": over} if over else "pass"
+            if over:
+                print("STOP: spend ceiling reached (" + ", ".join(over) + "); human review required before more runs.")
+                violation("budget ceiling reached")
     if adapter_returncode != 0:
         print(f"STOP: adapter failed with exit code {adapter_returncode}; detective checks and failure evidence retained.")
         result["violations"].append("adapter failure")
@@ -404,9 +680,19 @@ def once(adapter: str) -> int:
     if not TASKS_FILE.exists():
         print(f"REFUSAL: missing task board {TASKS_FILE}")
         return 2
+    problems = config_problems(load_factory_config())
+    if problems:
+        for problem in problems:
+            print("REFUSAL: " + problem)
+        return 2
     consistency = gatekeeper.verify_consistency()
     if consistency != 0:
         return consistency
+    chain = verify_run_chain()
+    if chain:
+        for problem in chain:
+            print("STOP: evidence trail broken: " + problem)
+        return 2
     tasks = parse_tasks(TASKS_FILE.read_text())
     task, reason = select_next_task(tasks)
     if not task:
@@ -416,8 +702,17 @@ def once(adapter: str) -> int:
     packet = build_packet(task, state)
     if adapter.lower().strip() == "shell":
         before = working_tree_snapshot()
-        code = dispatch(packet, adapter)
-        return post_dispatch_checks(task, state, before, adapter_returncode=code)
+        if before is not None:
+            dirty = sorted(p for p in before if not gatekeeper.check_action("write", p, state)[0])
+            if dirty:
+                print("STOP: dirty_unexpected_state: uncommitted changes outside the agent's write scope: "
+                      + ", ".join(dirty))
+                return 2
+        evidence_before = evidence_fingerprints(task)
+        run_info: dict = {}
+        code = dispatch(packet, adapter, run_info)
+        return post_dispatch_checks(task, state, before, adapter_returncode=code,
+                                    evidence_before=evidence_before, run_info=run_info)
     return dispatch(packet, adapter)
 
 
@@ -426,11 +721,27 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--adapter", default=os.environ.get("FACTORY_ADAPTER", "assisted"), help="assisted or shell")
     parser.add_argument("--loop", action="store_true", help="continue until no ready task or a stop/refusal occurs")
     parser.add_argument("--interval", type=int, default=5)
+    parser.add_argument("--max-iterations", type=int, default=None,
+                        help="stop the loop after this many dispatches (default from factory config)")
+    parser.add_argument("--max-wall-seconds", type=int, default=None,
+                        help="stop the loop after this much wall-clock time (default from factory config)")
     args = parser.parse_args(argv)
+    limits = factory_limits(load_factory_config())
+    max_iterations = args.max_iterations or limits["max_iterations"]
+    max_wall = args.max_wall_seconds or limits["max_wall_seconds"]
+    started = time.monotonic()
+    iterations = 0
     while True:
         code = once(args.adapter)
+        iterations += 1
         if not args.loop or code != 0:
             return code
+        if iterations >= max_iterations:
+            print(f"STOP: loop reached {iterations} dispatches (max_iterations); human review required to continue")
+            return 4
+        if time.monotonic() - started >= max_wall:
+            print(f"STOP: loop ran {int(time.monotonic() - started)}s (max_wall_seconds); human review required to continue")
+            return 4
         time.sleep(args.interval)
 
 

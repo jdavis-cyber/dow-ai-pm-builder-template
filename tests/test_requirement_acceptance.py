@@ -31,6 +31,7 @@ class RequirementAcceptanceTests(unittest.TestCase):
         self.events = []
         # Synthetic identity scoped to child processes, no global git config.
         self.env = {k: v for k, v in os.environ.items() if not k.startswith("FACTORY_")}
+        self.env["FACTORY_CHAIN_ANCHOR_DIR"] = str(Path(self.tmp.name) / "chain-anchors")
         self.env.update(GIT_AUTHOR_NAME="Requirement Fixture", GIT_AUTHOR_EMAIL="fixture@example.invalid",
                         GIT_COMMITTER_NAME="Requirement Fixture", GIT_COMMITTER_EMAIL="fixture@example.invalid")
 
@@ -334,7 +335,8 @@ class RequirementAcceptanceTests(unittest.TestCase):
         self.assertEqual(result["adapter_returncode"], 7)
         self.assertEqual(result["outcome"], "violation: adapter failure")
         self.assertEqual(result["violations"], ["adapter failure"])
-        self.assertEqual(result["checks"], {"write_audit": "pass", "evidence_exists": "pass", "status_transitioned": "pass"})
+        self.assertEqual(result["checks"], {"write_audit": "pass", "evidence_exists": "pass", "evidence_changed": "pass",
+                                            "status_transitioned": "pass"})
         metrics = self.cli("factory_metrics")
         self.expect(metrics, 0)
         summary = json.loads(metrics.stdout)
@@ -417,6 +419,152 @@ class RequirementAcceptanceTests(unittest.TestCase):
         manifest.write_text(json.dumps(base))
         (runtime / "requirements-ba.toml").unlink()
         self.expect(self.cli("validate_runtime", str(manifest)), 1, "materialized TOML missing")
+
+    # ---- JER-43 evidence integrity / JER-38 bounded execution -------------
+
+    def factory_config(self, **factory):
+        path = self.repo / "factory.config.json"
+        cfg = json.loads((self.repo / "factory.config.example.json").read_text())
+        limits = factory.pop("limits", {})
+        cfg["factory"].update(factory)
+        cfg["factory"]["limits"].update(limits)
+        path.write_text(json.dumps(cfg))
+
+    def test_empty_evidence_file_is_missing(self):
+        self.board()
+        self.expect(self.adapter("pathlib.Path('docs/verification/fixture.md').write_text('  \\n')\n" + self.close_task()), 3)
+        self.assertEqual(self.result()["outcome"], "violation: missing evidence")
+
+    def test_task_without_evidence_paths_cannot_pass(self):
+        self.board(**{"Evidence Required": "a short note"})
+        self.expect(self.adapter(self.close_task()), 3, "declares no evidence paths")
+        result = self.result()
+        self.assertEqual(result["outcome"], "violation: no evidence declared")
+
+    def test_status_flip_without_new_evidence_is_a_violation(self):
+        self.board()
+        (self.repo / "docs/verification/fixture.md").write_text("old evidence\n")
+        self.expect(self.adapter(self.close_task()), 3, "produced no new evidence")
+        result = self.result()
+        self.assertEqual(result["violations"], ["evidence unchanged"])
+        self.assertEqual(result["checks"]["evidence_changed"], "fail: no evidence changed")
+
+    def test_result_records_evidence_hash_output_and_attribution(self):
+        self.board()
+        body = self.evidence() + self.close_task() + "print('adapter says hello'); print('warned', file=sys.stderr)\n"
+        self.expect(self.adapter(body), 0)
+        result = self.result()
+        digest = hashlib.sha256((self.repo / "docs/verification/fixture.md").read_bytes()).hexdigest()
+        self.assertEqual(result["evidence_sha256"], {"docs/verification/fixture.md": digest})
+        self.assertIn("adapter says hello", result["adapter_stdout_tail"])
+        self.assertIn("warned", result["adapter_stderr_tail"])
+        self.assertIn("adapter.py", result["adapter_command"])
+        self.assertEqual(result["model_id"], "unreported")
+        self.assertIsNone(result["previous_result_sha256"])
+
+    def test_result_chain_detects_edit_and_deletion(self):
+        self.board()
+        self.expect(self.adapter(self.evidence() + self.close_task()), 0)
+        runs = self.repo / "docs/verification/factory-runs"
+        first = next(runs.glob("*-result.json"))
+        self.expect(self.cli("governed_factory", "--adapter", "assisted"), 0)
+        first.write_text(first.read_text().replace('"pass"', '"tampered"', 1))
+        self.expect(self.cli("governed_factory", "--adapter", "assisted"), 2, "evidence trail broken")
+        first.unlink()
+        self.expect(self.cli("governed_factory", "--adapter", "assisted"), 2, "evidence trail broken")
+
+    def test_adapter_timeout_stops_the_run(self):
+        self.board()
+        self.factory_config(limits={"adapter_timeout_seconds": 2})
+        started = datetime.now(timezone.utc)
+        self.expect(self.adapter("import time; time.sleep(30)\n"), 124, "adapter exceeded 2s")
+        self.assertLess((datetime.now(timezone.utc) - started).total_seconds(), 25)
+        result = self.result()
+        self.assertTrue(result["adapter_timed_out"])
+        self.assertEqual(result["outcome"], "violation: adapter failure")
+
+    def test_stop_on_cannot_drop_or_invent_stops(self):
+        self.board()
+        stops = json.loads((self.repo / "factory.config.example.json").read_text())["factory"]["stop_on"]
+        self.factory_config(stop_on=[s for s in stops if s != "missing_evidence"])
+        self.expect(self.cli("governed_factory", "--adapter", "assisted"), 2, "cannot drop mandatory stop missing_evidence")
+        self.factory_config(stop_on=stops + ["never"])
+        self.expect(self.cli("governed_factory", "--adapter", "assisted"), 2, "unknown stop never")
+
+    def test_loop_stops_at_max_iterations(self):
+        self.board()
+        (self.repo / "adapter.py").write_text("import pathlib, sys\nsys.stdin.read()\n" + self.evidence() + self.close_task())
+        self.init_git()
+        command = shlex.join([sys.executable, "adapter.py"])
+        result = self.cli("governed_factory", "--adapter", "shell", "--loop", "--max-iterations", "1",
+                          extra={"FACTORY_ADAPTER_COMMAND": command})
+        self.expect(result, 4, "max_iterations")
+
+    def test_spend_ceiling_requires_reported_usage_and_stops_when_reached(self):
+        self.board()
+        self.factory_config(limits={"max_tokens": 1000})
+        self.expect(self.adapter(self.evidence() + self.close_task()), 3, "reported no usage")
+        self.assertEqual(self.result()["outcome"], "violation: budget unverifiable")
+
+    def test_spend_ceiling_reached(self):
+        self.board()
+        self.factory_config(limits={"max_tokens": 1000})
+        usage = "pathlib.Path(os.environ['FACTORY_USAGE_FILE']).write_text(json.dumps({'tokens': 5000}))\n"
+        self.expect(self.adapter(self.evidence() + self.close_task() + usage), 3, "spend ceiling reached")
+        result = self.result()
+        self.assertEqual(result["usage"], {"tokens": 5000})
+        self.assertEqual(result["checks"]["budget"]["exceeded"], ["tokens"])
+
+    def test_dirty_protected_tree_stops_before_dispatch(self):
+        self.board()
+        (self.repo / "adapter.py").write_text(self.close_task())
+        self.init_git()
+        (self.repo / "src").mkdir(exist_ok=True)
+        (self.repo / "src/wip.py").write_text("# operator work in progress\n")
+        command = shlex.join([sys.executable, "adapter.py"])
+        self.expect(self.cli("governed_factory", "--adapter", "shell", extra={"FACTORY_ADAPTER_COMMAND": command}),
+                    2, "dirty_unexpected_state")
+        self.assertFalse(list((self.repo / "docs/verification/factory-runs").glob("*-result.json")))
+
+    def test_wiping_run_records_is_detected_by_operator_anchor(self):
+        self.board()
+        self.expect(self.adapter(self.evidence() + self.close_task()), 0)
+        shutil.rmtree(self.repo / "docs/verification/factory-runs")
+        self.expect(self.cli("governed_factory", "--adapter", "assisted"), 2, "operator-side chain anchor")
+
+    def test_missing_anchor_for_chained_results_is_detected(self):
+        self.board()
+        self.expect(self.adapter(self.evidence() + self.close_task()), 0)
+        shutil.rmtree(Path(self.env["FACTORY_CHAIN_ANCHOR_DIR"]))
+        self.expect(self.cli("governed_factory", "--adapter", "assisted"), 2, "chain anchor")
+
+    def test_adapter_editing_earlier_results_is_a_violation(self):
+        self.board()
+        self.expect(self.adapter(self.evidence() + self.close_task()), 0)
+        self.board(**{"Task ID": "TASK-902"})
+        p = self.repo / "orchestration/tasks.md"
+        p.write_text(p.read_text().replace("#### TASK-901", "#### TASK-902"))
+        tamper = "import glob\nf=sorted(glob.glob('docs/verification/factory-runs/*-result.json'))[0]\npathlib.Path(f).write_text('{}')\n"
+        evidence = "pathlib.Path('docs/verification/fixture.md').write_text('second run\\n')\n"
+        close = "p=pathlib.Path('orchestration/tasks.md'); p.write_text(p.read_text().replace('**Status**: Ready', '**Status**: Done'))\n"
+        self.expect(self.adapter(tamper + evidence + close), 3, "changed or removed during dispatch")
+
+    def test_secrets_are_redacted_from_recorded_output(self):
+        self.board()
+        leak = ("print('Authorization: Bearer abcdefghijklmnop1234'); print('OPENAI_API_KEY=sk-live-abcdefghijklmnopqrstu')\n"
+                "print(json.dumps({'api_key': 'plainsecretvalue99'}))\n")
+        self.expect(self.adapter(self.evidence() + self.close_task() + leak), 0)
+        tail = self.result()["adapter_stdout_tail"]
+        self.assertNotIn("abcdefghijklmnop1234", tail)
+        self.assertNotIn("sk-live-abcdefghijklmnopqrstu", tail)
+        self.assertNotIn("plainsecretvalue99", tail)
+        self.assertIn("[REDACTED]", tail)
+
+    def test_spend_ceiling_needs_the_capped_dimension(self):
+        self.board()
+        self.factory_config(limits={"max_cost_usd": 1.0})
+        usage = "pathlib.Path(os.environ['FACTORY_USAGE_FILE']).write_text(json.dumps({'tokens': 5}))\n"
+        self.expect(self.adapter(self.evidence() + self.close_task() + usage), 3, "reported no usage")
 
     def test_NSR01_stdlib_only_instantiation_on_macos(self):
         # -I ignores environment/user site; -S disables site-packages entirely.

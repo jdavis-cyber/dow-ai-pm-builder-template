@@ -6,6 +6,21 @@ follows SemVer aligned to the template's major revisions.
 
 ## [Unreleased]
 
+### Evidence integrity and bounded execution (JER-43, JER-38)
+- Evidence must be non-empty, a task must declare at least one evidence path,
+  and a status change with no changed evidence is a violation.
+- Run results record evidence SHA-256s, the adapter command, model id and
+  provider version (`FACTORY_MODEL_ID`, `FACTORY_PROVIDER_VERSION`), and the
+  tail of the adapter's stdout/stderr. Results are hash-chained
+  (`docs/verification/factory-runs/chain/head.json`); a broken chain stops dispatch.
+- Task packets are recorded by default.
+- `factory.limits` bounds the loop (`max_iterations`, `max_wall_seconds`), each
+  adapter run (`adapter_timeout_seconds`) and optional spend
+  (`max_tokens`, `max_cost_usd`, reported by the adapter via `FACTORY_USAGE_FILE`).
+- `stop_on` is enforced: a config that drops a stop or names an unknown one is
+  refused, and `dirty_unexpected_state` stops dispatch when uncommitted changes
+  sit outside the agent's write scope.
+
 ### Authority store and write audit (JER-39, JER-37)
 - `.governance/` is no longer agent-writable: the gatekeeper denies writes there
   whatever the authorization state, and the post-dispatch audit flags any change.
