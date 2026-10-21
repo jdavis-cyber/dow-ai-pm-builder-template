@@ -86,4 +86,41 @@ class TemplateValidationTests(unittest.TestCase):
             r = run(sys.executable, str(copy / 'automation/validate_template.py'), cwd=copy)
             self.assertNotEqual(r.returncode, 0)
             self.assertIn('gatekeeper missing authority token deployment_authorized', r.stdout)
+    def _clean_clone(self, d):
+        """A fresh repository holding the template's files, as a clean clone would."""
+        clone = pathlib.Path(d) / 'clone'
+        shutil.copytree(ROOT, clone, ignore=shutil.ignore_patterns('.git', '.codex', '.claude', '__pycache__', '.pytest_cache'))
+        env = ['-c', 'user.name=fixture', '-c', 'user.email=fixture@example.invalid']
+        for args in (['init', '-q'], ['add', '-A'], [*env, 'commit', '-qm', 'fixture']):
+            r = run('git', *args, cwd=clone)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        return clone
+
+    def test_untracked_files_do_not_change_validation(self):
+        """A workstation's untracked files must not make it disagree with a clean clone."""
+        with tempfile.TemporaryDirectory() as d:
+            clone = self._clean_clone(d)
+            (clone / 'scratch-notes.md').write_text('complete AI development team - ' + '14\n')
+            (clone / '.agent/souls/local-experiment.md').write_text('# untracked local soul\n')
+            r = run(sys.executable, 'automation/validate_template.py', cwd=clone)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+    def test_tracked_stale_text_still_fails_validation(self):
+        with tempfile.TemporaryDirectory() as d:
+            clone = self._clean_clone(d)
+            (clone / 'scratch-notes.md').write_text('complete AI development team - ' + '14\n')
+            r = run('git', 'add', 'scratch-notes.md', cwd=clone)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            r = run(sys.executable, 'automation/validate_template.py', cwd=clone)
+            self.assertNotEqual(r.returncode, 0)
+            self.assertIn('stale string', r.stdout)
+
+    def test_ci_installs_hash_pinned_test_runner(self):
+        workflow = (ROOT / '.github/workflows/validate.yml').read_text()
+        self.assertIn('--require-hashes -r requirements-ci.txt', workflow)
+        self.assertNotRegex(workflow, r'pip install pytest\b')
+        self.assertRegex((ROOT / 'requirements-ci.txt').read_text(), r'(?m)^pytest==\S+ \\$')
+        for uses in re.findall(r'uses:\s*(\S+)', workflow):
+            with self.subTest(action=uses):
+                self.assertRegex(uses, r'@[0-9a-f]{40}$')
 if __name__=='__main__': unittest.main()

@@ -2,13 +2,30 @@
 import json, pathlib, subprocess, sys, tempfile, shutil
 ROOT=pathlib.Path(__file__).resolve().parent.parent
 ACCOUNTABLE=["requirements-ba","user-story-ba","ui-ux-designer","architecture-se","database-engineer","backend-developer","frontend-developer","pipeline-devops","performance-devops","qa-engineer","automation-test-engineer","scrum-master","program-analyst","documentation-se","security-compliance-officer"]
+TEXT_SUFFIXES={'.md','.py','.json','.toml','.yml','.yaml','.sh'}
+SKIP_DIRS={'.git','graphify-out','.claude','.codex','node_modules','venv','env','.pytest_cache','htmlcov'}
+def template_files(rel='.'):
+    """Files that make up the template under ``rel``.
+
+    In a git checkout only tracked files count, so a workstation with untracked
+    local files validates exactly like a clean clone. Outside git (an exported
+    copy) every file is considered, minus local tool/cache directories.
+    """
+    base=(ROOT/rel).resolve()
+    top=subprocess.run(['git','rev-parse','--show-toplevel'],cwd=ROOT,capture_output=True,text=True)
+    if top.returncode==0 and pathlib.Path(top.stdout.strip()).resolve()==ROOT.resolve():
+        listed=subprocess.run(['git','ls-files','-z','--',str(base)],cwd=ROOT,capture_output=True,check=True)
+        paths=[ROOT/f for f in listed.stdout.decode().split('\0') if f]
+    else:
+        paths=[p for p in base.glob('**/*') if not (SKIP_DIRS & set(p.relative_to(ROOT).parts))]
+    return sorted(p for p in paths if p.is_file())
 def run(cmd):
     r=subprocess.run(cmd,cwd=ROOT,capture_output=True,text=True)
     if r.returncode!=0: print(r.stdout+r.stderr)
     return r.returncode==0
 def main():
     ok=True
-    souls=sorted(p.stem for p in (ROOT/'.agent/souls').glob('*.md'))
+    souls=sorted(p.stem for p in template_files('.agent/souls') if p.suffix=='.md' and p.parent==ROOT/'.agent/souls')
     if souls!=sorted(ACCOUNTABLE): print('ERROR: SOUL roster mismatch', souls); ok=False
     roster=(ROOT/'.agent/AGENT-ROSTER.md').read_text()
     for n in ACCOUNTABLE:
@@ -17,7 +34,7 @@ def main():
     if cfg.get('accountable_agents')!=ACCOUNTABLE: print('ERROR: install-config accountable_agents mismatch'); ok=False
     if 'security-compliance-officer' not in cfg.get('mandatory_agents',[]): print('ERROR: security not mandatory'); ok=False
     own=json.loads((ROOT/'subagents/specialization-ownership-map.json').read_text())
-    tomls=sorted(str(p.relative_to(ROOT/'subagents')).replace('\\','/') for p in (ROOT/'subagents/global/voltagent').glob('**/*.toml'))
+    tomls=sorted(str(p.relative_to(ROOT/'subagents')).replace('\\','/') for p in template_files('subagents/global/voltagent') if p.suffix=='.toml')
     missing=[t for t in tomls if t not in own]
     if missing: print('ERROR: ownership missing '+str(missing[:5])); ok=False
     for f in ['CLAUDE.md','CODEX.md','GEMINI.md']:
@@ -49,9 +66,8 @@ def main():
     provider_bodies={f:(ROOT/f).read_text().split('\n',1)[1] for f in ['CLAUDE.md','CODEX.md','GEMINI.md']}
     if len(set(provider_bodies.values()))!=1: print('ERROR provider files out of sync (CLAUDE.md/CODEX.md/GEMINI.md must be identical below the title line)'); ok=False
     stale=['14 specialized' + ' agents','complete AI development team - ' + '14','Template Version ' + '3.0']
-    SKIP_DIRS={'.git','graphify-out','.claude','.codex','node_modules','venv','env','.pytest_cache','htmlcov'}
-    for p in ROOT.glob('**/*'):
-        if p.is_file() and not (SKIP_DIRS & set(p.parts)) and p.suffix in {'.md','.py','.json','.toml','.yml','.yaml','.sh'}:
+    for p in template_files():
+        if p.suffix in TEXT_SUFFIXES:
             txt=p.read_text(errors='ignore')
             for s in stale:
                 if s in txt and p.name!='validate_template.py': print(f'ERROR stale string {s} in {p.relative_to(ROOT)}'); ok=False
