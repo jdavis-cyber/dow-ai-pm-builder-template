@@ -9,7 +9,11 @@ any other model runtime. It answers one question for the factory dispatcher:
 from __future__ import annotations
 
 import argparse
+import hashlib
+import hmac
 import json
+import os
+import secrets
 import sys
 from pathlib import Path
 
@@ -23,9 +27,14 @@ PROTECTED_SOURCE_PREFIXES = (
     "infrastructure/",
     "execution/",
 )
+# Authority records are written by the human operator only. No agent action may
+# write them, whatever the current authorization state, and the post-dispatch
+# audit flags any adapter change here.
+AUTHORITY_PREFIXES = (
+    ".governance/",
+)
 PLANNING_PREFIXES = (
     "docs/",
-    ".governance/",
     "orchestration/",
     "directives/",
     "requirements/",
@@ -34,6 +43,82 @@ PLANNING_PREFIXES = (
     "README.md",
     "KICKOFF.md",
 )
+AUTHORITY_FLAGS = (
+    "implementation_authorized",
+    "source_admission_authorized",
+    "external_tracker_writes_authorized",
+    "deployment_authorized",
+    "real_data_or_api_authorized",
+    "cdrl_submission_authorized",
+    "risk_acceptance_authorized",
+    "control_closure_authorized",
+)
+SIGNATURE_FIELD = "operator_signature"
+OPERATOR_KEY_ENV = "FACTORY_OPERATOR_KEY_FILE"
+
+
+def operator_key_path() -> Path:
+    """Where the operator's signing key lives. It must be outside the project."""
+    override = os.environ.get(OPERATOR_KEY_ENV, "").strip()
+    if override:
+        return Path(override).expanduser()
+    return Path.home() / ".config" / "dow-factory" / "operator.key"
+
+
+def _inside_project(path: Path) -> bool:
+    try:
+        path.resolve().relative_to(ROOT.resolve())
+        return True
+    except ValueError:
+        return False
+
+
+def _read_operator_key() -> tuple[bytes | None, str]:
+    path = operator_key_path()
+    if _inside_project(path):
+        return None, f"operator key {path} is inside the project; it must live outside the agent's write set"
+    try:
+        key = path.read_bytes().strip()
+    except OSError:
+        return None, f"operator key {path} is unavailable"
+    if len(key) < 32:
+        return None, f"operator key {path} is too short"
+    return key, ""
+
+
+def _signed_payload(state: dict) -> bytes:
+    body = {k: v for k, v in state.items() if k != SIGNATURE_FIELD}
+    return json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+
+
+def sign_state(state: dict, key: bytes) -> dict:
+    signed = {k: v for k, v in state.items() if k != SIGNATURE_FIELD}
+    signed[SIGNATURE_FIELD] = {
+        "alg": "hmac-sha256",
+        "value": hmac.new(key, _signed_payload(signed), hashlib.sha256).hexdigest(),
+    }
+    return signed
+
+
+def grants_authority(state: dict) -> bool:
+    return str(state.get("approval_state", "")).lower() == "approved" or any(
+        bool(state.get(flag)) for flag in AUTHORITY_FLAGS)
+
+
+def signature_error(state: dict) -> str:
+    """Empty when the state grants nothing or carries a valid operator signature."""
+    if not grants_authority(state):
+        return ""
+    sig = state.get(SIGNATURE_FIELD)
+    if not isinstance(sig, dict) or sig.get("alg") != "hmac-sha256" or not sig.get("value"):
+        return "gate state grants authority without an operator signature; run `gatekeeper.py sign` as the operator"
+    key, problem = _read_operator_key()
+    if key is None:
+        return "cannot verify operator signature: " + problem
+    expected = hmac.new(key, _signed_payload(state), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected, str(sig.get("value"))):
+        return "operator signature does not match the gate state; the state was changed after signing"
+    return ""
 
 
 def load_state() -> dict:
@@ -66,13 +151,21 @@ def is_planning_path(path: str) -> bool:
     return any(rp == prefix.rstrip("/") or rp.startswith(prefix) for prefix in PLANNING_PREFIXES)
 
 
+def is_authority_path(path: str) -> bool:
+    rp = rel(path)
+    return any(rp == prefix.rstrip("/") or rp.startswith(prefix) for prefix in AUTHORITY_PREFIXES)
+
+
 def is_protected_source_path(path: str) -> bool:
     rp = rel(path)
     return any(rp == prefix.rstrip("/") or rp.startswith(prefix) for prefix in PROTECTED_SOURCE_PREFIXES)
 
 
 def check_action(action: str, path: str | None = None, state: dict | None = None) -> tuple[bool, str]:
-    state = state or load_state()
+    if state is None:
+        state = load_state()
+        if signature_error(state):
+            state = {}
     action = action.lower().strip()
     path = path or ""
 
@@ -80,6 +173,8 @@ def check_action(action: str, path: str | None = None, state: dict | None = None
         return True, "read/inspect/validate/plan actions are allowed"
 
     if action in {"write", "edit", "create"}:
+        if path and is_authority_path(path):
+            return False, f"write to governance authority record {rel(path)} blocked; only the operator changes authority"
         if path and is_protected_source_path(path):
             if state.get("implementation_authorized", False):
                 return True, f"implementation/source write allowed for {rel(path)}; implementation_authorized is true"
@@ -137,6 +232,9 @@ def verify_consistency() -> int:
     ]:
         if state.get(key) and not state.get("implementation_authorized", False) and key not in {"external_tracker_writes_authorized"}:
             errors.append(f"{key} is true while implementation_authorized is false; confirm this is intentional")
+    problem = signature_error(state)
+    if problem:
+        errors.append(problem)
     if errors:
         for e in errors:
             print("CONSISTENCY ERROR: " + e)
@@ -145,11 +243,42 @@ def verify_consistency() -> int:
     return 0
 
 
+def init_operator_key() -> int:
+    path = operator_key_path()
+    if _inside_project(path):
+        print(f"REFUSAL: operator key {path} must live outside the project")
+        return 2
+    if path.exists():
+        print(f"operator key already exists: {path}")
+        return 0
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, "w") as fh:
+        fh.write(secrets.token_hex(32) + "\n")
+    print(f"operator key created: {path}")
+    return 0
+
+
+def sign() -> int:
+    """Operator command: sign the current gate state after reviewing it."""
+    key, problem = _read_operator_key()
+    if key is None:
+        print("REFUSAL: " + problem + "; run `gatekeeper.py init-operator-key` first")
+        return 2
+    signed = sign_state(load_state(), key)
+    GATE_STATE.parent.mkdir(parents=True, exist_ok=True)
+    GATE_STATE.write_text(json.dumps(signed, indent=2, ensure_ascii=False) + "\n")
+    print(f"gate state signed: {GATE_STATE.relative_to(ROOT)}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Provider-neutral governance gatekeeper")
     sub = parser.add_subparsers(dest="cmd", required=True)
     sub.add_parser("status")
     sub.add_parser("verify-consistency")
+    sub.add_parser("init-operator-key", help="operator: create the signing key outside the project")
+    sub.add_parser("sign", help="operator: sign the reviewed gate state")
     chk = sub.add_parser("check-action")
     chk.add_argument("--action", required=True)
     chk.add_argument("--path", default="")
@@ -159,6 +288,10 @@ def main(argv: list[str] | None = None) -> int:
         return status()
     if args.cmd == "verify-consistency":
         return verify_consistency()
+    if args.cmd == "init-operator-key":
+        return init_operator_key()
+    if args.cmd == "sign":
+        return sign()
     if args.cmd == "check-action":
         ok, msg = check_action(args.action, args.path)
         print(("ALLOW: " if ok else "DENY: ") + msg)

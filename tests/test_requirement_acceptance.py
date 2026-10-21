@@ -41,7 +41,7 @@ class RequirementAcceptanceTests(unittest.TestCase):
             (out / "commands.json").write_text(json.dumps(self.events, indent=2))
             # Retain the inputs and deterministic outputs that establish case provenance.
             for pattern in [".governance/gate_state.json", "orchestration/tasks.md", "spec.md",
-                            "adapter.py", "capture.json", ".codex/agents/runtime-manifest.json",
+                            "adapter.py", "docs/verification/adapter-capture.json", ".codex/agents/runtime-manifest.json",
                             "docs/verification/factory-runs/*.json", "src/*.py", "new-project/TEMPLATE_PROVENANCE.md"]:
                 for src in self.repo.glob(pattern):
                     dst = out / "fixture" / src.relative_to(self.repo)
@@ -91,7 +91,7 @@ class RequirementAcceptanceTests(unittest.TestCase):
         code = "import json, os, pathlib, sys\n" + \
                "packet_path = pathlib.Path(os.environ['FACTORY_TASK_PACKET'])\n" + \
                "packet = json.loads(packet_path.read_text())\n" + \
-               "pathlib.Path('capture.json').write_text(json.dumps({'packet': str(packet_path), 'task_id': packet['task']['Task ID'], 'stdin': sys.stdin.read()}))\n" + body
+               "pathlib.Path('docs/verification/adapter-capture.json').write_text(json.dumps({'packet': str(packet_path), 'task_id': packet['task']['Task ID'], 'stdin': sys.stdin.read()}))\n" + body
         (self.repo / "adapter.py").write_text(code)
         self.init_git()
         command = shlex.join([sys.executable, "adapter.py"])
@@ -204,8 +204,11 @@ class RequirementAcceptanceTests(unittest.TestCase):
     def test_SR06_all_write_classes_enforced(self):
         for prefix in ["src", "services", "packages", "database", "infrastructure", "execution"]:
             self.expect(self.cli("gatekeeper", "check-action", "--action", "write", "--path", prefix + "/fixture.py"), 2, "DENY")
-        for prefix in ["docs", ".governance", "orchestration", "directives", "requirements", "memory"]:
+        for prefix in ["docs", "orchestration", "directives", "requirements", "memory"]:
             self.expect(self.cli("gatekeeper", "check-action", "--action", "write", "--path", prefix + "/fixture.md"), 0, "ALLOW")
+        # Authority records are operator-only, even for an authorized agent (JER-39).
+        self.expect(self.cli("gatekeeper", "check-action", "--action", "write", "--path", ".governance/gate_state.json"), 2, "DENY")
+        self.expect(self.cli("gatekeeper", "check-action", "--action", "write", "--path", ".governance/fixture.md"), 2, "DENY")
         self.expect(self.cli("gatekeeper", "check-action", "--action", "write", "--path", "unknown/fixture"), 2, "DENY")
 
     def test_SR07_inconsistent_state_blocks_dispatch(self):
@@ -253,7 +256,7 @@ class RequirementAcceptanceTests(unittest.TestCase):
     def test_SR11_SR12_SR16_shell_packet_contract_and_passing_result(self):
         self.board()
         self.expect(self.adapter(self.evidence() + self.close_task()), 0)
-        capture = json.loads((self.repo / "capture.json").read_text())
+        capture = json.loads((self.repo / "docs/verification/adapter-capture.json").read_text())
         self.assertEqual(capture["task_id"], "TASK-901")
         self.assertIn("NEXT GOVERNED FACTORY TASK: TASK-901", capture["stdin"])
         packet = json.loads(Path(capture["packet"]).read_text())
@@ -295,8 +298,11 @@ class RequirementAcceptanceTests(unittest.TestCase):
         self.board(**{"Status": "Done"})
         (self.repo / "docs/verification/fixture.md").write_text("synthetic")
         code = "import sys; sys.path.insert(0, 'automation'); import governed_factory as f; t=f.parse_tasks(f.TASKS_FILE.read_text())[0]; sys.exit(f.post_dispatch_checks(t, {}, None))"
-        self.expect(self.run_command(sys.executable, "-c", code), 0, "detective control skipped")
-        self.assertEqual(self.result()["checks"]["write_audit"], "skipped: git unavailable")
+        # A control that cannot run must not report success (JER-37).
+        self.expect(self.run_command(sys.executable, "-c", code), 3, "write audit unavailable")
+        result = self.result()
+        self.assertEqual(result["checks"]["write_audit"], "fail: git unavailable")
+        self.assertEqual(result["outcome"], "violation: write audit unavailable")
 
     def test_SR14_missing_evidence_halts_and_records(self):
         self.board()

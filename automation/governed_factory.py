@@ -10,6 +10,7 @@ runner, or assisted mode without changing governance rules.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -245,17 +246,51 @@ def dispatch(packet: dict, adapter: str) -> int:
     return 2
 
 
-def working_tree_changes() -> set[str] | None:
-    """Paths currently dirty per git. None when the audit is unavailable.
+def _porcelain_paths(raw: bytes) -> set[str]:
+    """Paths from ``git status --porcelain=v1 -z``.
 
-    Detective control: only NEW dirty paths (post-dispatch minus pre-dispatch)
-    are attributed to the adapter run, so pre-existing dirt in a path can mask
-    writes there. Run the factory from a clean tree for full coverage.
+    A rename or copy entry is ``XY new\0old\0``; both sides are returned so a
+    ``git mv`` into a protected tree is seen at its destination.
     """
-    r = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, cwd=ROOT)
+    fields = raw.decode("utf-8", "surrogateescape").split("\0")
+    paths: set[str] = set()
+    i = 0
+    while i < len(fields):
+        entry = fields[i]
+        i += 1
+        if len(entry) < 4:
+            continue
+        paths.add(entry[3:])
+        if entry[0] in "RC" or entry[1] in "RC":
+            if i < len(fields) and fields[i]:
+                paths.add(fields[i])
+            i += 1
+    return paths
+
+
+def working_tree_changes() -> set[str] | None:
+    """Paths currently dirty per git. None when the audit is unavailable."""
+    r = subprocess.run(["git", "status", "--porcelain=v1", "-z", "--untracked-files=all"],
+                       capture_output=True, cwd=ROOT)
     if r.returncode != 0:
         return None
-    return {line[3:].strip().strip('"') for line in r.stdout.splitlines() if line.strip()}
+    return _porcelain_paths(r.stdout)
+
+
+def _fingerprint(path: str) -> str | None:
+    try:
+        return hashlib.sha256((ROOT / path).read_bytes()).hexdigest()
+    except OSError:
+        return None
+
+
+def working_tree_snapshot() -> dict[str, str | None] | None:
+    """Dirty paths and their content digests, so pre-existing dirt can't mask
+    an adapter's later change to the same file. None when git is unusable."""
+    changes = working_tree_changes()
+    if changes is None:
+        return None
+    return {path: _fingerprint(path) for path in changes}
 
 
 def evidence_paths(task: dict) -> list[str]:
@@ -267,10 +302,27 @@ def missing_evidence(task: dict) -> list[str]:
     return [p for p in evidence_paths(task) if not (ROOT / p).exists()]
 
 
-def unauthorized_writes(before: set[str], after: set[str], state: dict) -> list[str]:
-    if state.get("implementation_authorized", False):
-        return []
-    return sorted(p for p in (after - before) if p.startswith(gatekeeper.PROTECTED_SOURCE_PREFIXES))
+def adapter_changes(before, after) -> set[str]:
+    """Paths the adapter run changed.
+
+    New dirty paths always count. When ``before`` is a snapshot with content
+    digests, a path that was already dirty counts too if its content changed.
+    """
+    changed = set(after) - set(before)
+    if isinstance(before, dict):
+        changed |= {p for p in set(after) & set(before) if _fingerprint(p) != before[p]}
+    return changed
+
+
+def unauthorized_writes(before, after, state: dict) -> list[str]:
+    """Adapter-changed paths the gatekeeper would not allow it to write.
+
+    Authority records are flagged whatever the authorization state; protected
+    source is flagged unless implementation is authorized; anything outside
+    planning scope is flagged (the gatekeeper fails closed on it).
+    """
+    return sorted(p for p in adapter_changes(before, after)
+                  if not gatekeeper.check_action("write", p, state)[0])
 
 
 def write_run_result(task: dict, result: dict) -> Path:
@@ -286,7 +338,7 @@ def write_run_result(task: dict, result: dict) -> Path:
     return path
 
 
-def post_dispatch_checks(task: dict, state: dict, before: set[str] | None,
+def post_dispatch_checks(task: dict, state: dict, before,
                          adapter_returncode: int = 0) -> int:
     """Record every adapter outcome and all applicable detective checks.
 
@@ -315,13 +367,14 @@ def post_dispatch_checks(task: dict, state: dict, before: set[str] | None,
 
     after = working_tree_changes()
     if before is None or after is None:
-        print("WARNING: post-run write audit unavailable (git not usable here); detective control skipped")
-        result["checks"]["write_audit"] = "skipped: git unavailable"
+        print("STOP: post-run write audit unavailable (git not usable here); a control that cannot run does not pass")
+        result["checks"]["write_audit"] = "fail: git unavailable"
+        violation("write audit unavailable")
     else:
         viol = unauthorized_writes(before, after, state)
         result["checks"]["write_audit"] = {"violations": viol} if viol else "pass"
         if viol:
-            print("STOP: unauthorized protected-source writes detected after dispatch: " + ", ".join(viol))
+            print("STOP: unauthorized writes detected after dispatch: " + ", ".join(viol))
             violation("unauthorized writes")
     missing = missing_evidence(task)
     result["checks"]["evidence_exists"] = {"missing": missing} if missing else "pass"
@@ -362,7 +415,7 @@ def once(adapter: str) -> int:
     state = gatekeeper.load_state()
     packet = build_packet(task, state)
     if adapter.lower().strip() == "shell":
-        before = working_tree_changes()
+        before = working_tree_snapshot()
         code = dispatch(packet, adapter)
         return post_dispatch_checks(task, state, before, adapter_returncode=code)
     return dispatch(packet, adapter)

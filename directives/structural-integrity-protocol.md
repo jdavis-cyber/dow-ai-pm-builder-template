@@ -15,7 +15,11 @@ A task may enter **In Progress** only when BOTH locks release:
    `automation/validate_spec.py` must pass on `orchestration/system_spec.md`.
 2. **Lock 2 — Governance clearance.** The current phase gate is approved and
    the gatekeeper authority state (`.governance/gate_state.json`) permits the
-   category of work the task performs.
+   category of work the task performs. Any state that grants authority must
+   carry the operator's signature: after reviewing the change, the human
+   operator runs `python3 automation/gatekeeper.py sign` (one-time setup:
+   `python3 automation/gatekeeper.py init-operator-key`, which keeps the key
+   outside the project). Agents cannot write `.governance/`.
 
 The Scrum Master holds Lock 1; the Security & Compliance Officer's gate
 evidence controls Lock 2. Any document referencing “the Double-Lock” means

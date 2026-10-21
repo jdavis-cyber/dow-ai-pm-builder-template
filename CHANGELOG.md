@@ -6,6 +6,16 @@ follows SemVer aligned to the template's major revisions.
 
 ## [Unreleased]
 
+### Authority store and write audit (JER-39, JER-37)
+- `.governance/` is no longer agent-writable: the gatekeeper denies writes there
+  whatever the authorization state, and the post-dispatch audit flags any change.
+- A gate state that grants authority must carry an operator HMAC signature
+  (`gatekeeper.py sign`, key kept outside the project). Unsigned or tampered
+  states fail `verify-consistency`, so dispatch is refused.
+- The write audit fails closed when git is unusable, sees both sides of a
+  rename (`git status -z`), flags every non-planning path the gatekeeper would
+  deny, and attributes changes to files that were already dirty by content digest.
+
 ### Requirement remediation — 2026-10-01
 - SR-04: locked specs reject bounded unresolved `Gap` markers while preserving ordinary gap prose.
 - SR-08: every post-dispatch violation halt points to the override register and explicitly grants no authority.

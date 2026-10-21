@@ -9,6 +9,7 @@ Guards two Codex P1 findings on the provider-neutral governed factory:
         must trigger a human gate stop.
 """
 
+import os
 import pathlib
 import sys
 import unittest
@@ -121,6 +122,123 @@ class PostDispatchDetectiveControlTests(unittest.TestCase):
                 self.assertTrue(path.name.endswith("TASK-TEST-result.json"))
         finally:
             governed_factory.LOG_DIR = orig
+
+
+class AuthorityStoreTests(unittest.TestCase):
+    """JER-39: the agent cannot grant itself authority."""
+
+    def setUp(self):
+        import tempfile
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = pathlib.Path(self.tmp.name) / "project"
+        (self.root / ".governance").mkdir(parents=True)
+        self.key = pathlib.Path(self.tmp.name) / "operator.key"
+        self.key.write_text("k" * 64 + "\n")
+        self._saved = (gatekeeper.ROOT, gatekeeper.GATE_STATE)
+        gatekeeper.ROOT = self.root
+        gatekeeper.GATE_STATE = self.root / ".governance" / "gate_state.json"
+        self._env = os.environ.get(gatekeeper.OPERATOR_KEY_ENV)
+        os.environ[gatekeeper.OPERATOR_KEY_ENV] = str(self.key)
+
+    def tearDown(self):
+        gatekeeper.ROOT, gatekeeper.GATE_STATE = self._saved
+        if self._env is None:
+            os.environ.pop(gatekeeper.OPERATOR_KEY_ENV, None)
+        else:
+            os.environ[gatekeeper.OPERATOR_KEY_ENV] = self._env
+        self.tmp.cleanup()
+
+    def _approved(self):
+        return {"approval_state": "approved", "decision": "Gate 1 approved", "implementation_authorized": True}
+
+    def test_authority_record_write_denied_even_when_authorized(self):
+        for path in [".governance/gate_state.json", ".governance/security-compliance/override-register.md"]:
+            ok, msg = gatekeeper.check_action("write", path, {"implementation_authorized": True})
+            self.assertFalse(ok, msg)
+
+    def test_unsigned_authority_fails_consistency(self):
+        self.assertIn("without an operator signature", gatekeeper.signature_error(self._approved()))
+
+    def test_signed_authority_passes_and_tampering_fails(self):
+        signed = gatekeeper.sign_state(self._approved(), self.key.read_bytes().strip())
+        self.assertEqual(gatekeeper.signature_error(signed), "")
+        signed["deployment_authorized"] = True
+        self.assertIn("does not match", gatekeeper.signature_error(signed))
+
+    def test_forged_self_consistent_state_does_not_authorize_writes(self):
+        import json
+        gatekeeper.GATE_STATE.write_text(json.dumps(self._approved()))
+        ok, _ = gatekeeper.check_action("write", "src/app.py")
+        self.assertFalse(ok)
+
+    def test_signed_state_on_disk_authorizes_source_write(self):
+        import json
+        signed = gatekeeper.sign_state(self._approved(), self.key.read_bytes().strip())
+        gatekeeper.GATE_STATE.write_text(json.dumps(signed))
+        ok, msg = gatekeeper.check_action("write", "src/app.py")
+        self.assertTrue(ok, msg)
+
+    def test_key_inside_project_is_refused(self):
+        inside = self.root / "operator.key"
+        inside.write_text("k" * 64)
+        os.environ[gatekeeper.OPERATOR_KEY_ENV] = str(inside)
+        signed = gatekeeper.sign_state(self._approved(), inside.read_bytes())
+        self.assertIn("inside the project", gatekeeper.signature_error(signed))
+
+    def test_draft_state_needs_no_signature(self):
+        self.assertEqual(gatekeeper.signature_error({"approval_state": "draft"}), "")
+
+
+class WriteAuditTests(unittest.TestCase):
+    """JER-37: the post-dispatch write audit can't be evaded or skipped."""
+
+    def test_rename_into_protected_source_seen_at_destination(self):
+        paths = governed_factory._porcelain_paths(b"R  src/app.py\0docs/x.md\0?? notes.txt\0")
+        self.assertEqual(paths, {"src/app.py", "docs/x.md", "notes.txt"})
+
+    def test_git_mv_into_protected_source_is_flagged(self):
+        import subprocess, tempfile
+        with tempfile.TemporaryDirectory() as td:
+            root = pathlib.Path(td)
+            git = ["git", "-c", "user.name=t", "-c", "user.email=t@example.invalid"]
+            (root / "docs").mkdir()
+            (root / "src").mkdir()
+            (root / "docs/x.md").write_text("x\n")
+            for args in (["init", "-q"], ["add", "-A"], ["commit", "-qm", "init"]):
+                subprocess.run(git + args, cwd=root, check=True, capture_output=True)
+            saved = governed_factory.ROOT
+            governed_factory.ROOT = root
+            try:
+                before = governed_factory.working_tree_snapshot()
+                subprocess.run(git + ["mv", "docs/x.md", "src/app.py"], cwd=root, check=True)
+                after = governed_factory.working_tree_changes()
+            finally:
+                governed_factory.ROOT = saved
+            self.assertIn("src/app.py", governed_factory.unauthorized_writes(before, after, {}))
+
+    def test_authority_store_change_flagged_even_when_authorized(self):
+        viol = governed_factory.unauthorized_writes(
+            set(), {".governance/gate_state.json", "src/app.py"}, {"implementation_authorized": True})
+        self.assertEqual(viol, [".governance/gate_state.json"])
+
+    def test_non_planning_paths_flagged(self):
+        viol = governed_factory.unauthorized_writes(
+            set(), {"automation/gatekeeper.py", "docs/notes.md"}, {"implementation_authorized": False})
+        self.assertEqual(viol, ["automation/gatekeeper.py"])
+
+    def test_changed_preexisting_dirt_is_attributed(self):
+        saved = governed_factory._fingerprint
+        try:
+            governed_factory._fingerprint = lambda path: "after"
+            viol = governed_factory.unauthorized_writes(
+                {"src/app.py": "before"}, {"src/app.py"}, {"implementation_authorized": False})
+            self.assertEqual(viol, ["src/app.py"])
+            governed_factory._fingerprint = lambda path: "before"
+            viol = governed_factory.unauthorized_writes(
+                {"src/app.py": "before"}, {"src/app.py"}, {"implementation_authorized": False})
+            self.assertEqual(viol, [])
+        finally:
+            governed_factory._fingerprint = saved
 
 
 if __name__ == "__main__":
