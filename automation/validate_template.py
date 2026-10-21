@@ -83,7 +83,8 @@ def main():
     # Framework crosswalks and duplicate assurance records are optional
     # reference material, not executable template-integrity requirements.
     if not (ROOT/'automation/factory_metrics.py').exists(): print('ERROR missing factory_metrics.py'); ok=False
-    if 'Incident communication' not in (ROOT/'SECURITY.md').read_text(): print('ERROR SECURITY.md missing incident-communication path'); ok=False
+    security=ROOT/'SECURITY.md'
+    if not security.exists() or 'Incident communication' not in security.read_text(): print('ERROR SECURITY.md missing incident-communication path'); ok=False
     print('whole-template validation passed' if ok else 'whole-template validation failed')
     return 0 if ok else 1
 if __name__=='__main__': sys.exit(main())

@@ -678,6 +678,82 @@ class RequirementAcceptanceTests(unittest.TestCase):
         self.expect(self.cli("validate_runtime", str(runtime / "runtime-manifest.json")), 1, "modified after install")
         self.expect(self.cli("governed_factory", "--adapter", "assisted"), 2, "does not match its recorded digests")
 
+    # ---- JER-46 assisted mode and generated projects --------------------------
+
+    def assisted(self):
+        return self.cli("governed_factory", "--adapter", "assisted")
+
+    def human_closes(self, evidence=True):
+        if evidence:
+            (self.repo / "docs/verification/fixture.md").write_text("human-written evidence\n")
+        p = self.repo / "orchestration/tasks.md"
+        p.write_text(p.read_text().replace("**Status**: Ready", "**Status**: Done"))
+
+    def test_assisted_completion_gets_detective_checks(self):
+        self.board()
+        self.init_git()
+        self.expect(self.assisted(), 0, "detective checks run when TASK-901 leaves Ready")
+        self.human_closes()
+        self.expect(self.assisted(), 0, "checking completed task TASK-901")
+        result = self.result()
+        self.assertEqual(result["outcome"], "pass")
+        self.assertEqual(result["adapter"], "assisted")
+
+    def test_assisted_completion_without_evidence_is_a_violation(self):
+        self.board()
+        self.init_git()
+        self.expect(self.assisted(), 0)
+        self.human_closes(evidence=False)
+        self.expect(self.assisted(), 3, "required evidence missing")
+        self.assertEqual(self.result()["outcome"], "violation: missing evidence")
+
+    def test_assisted_unauthorized_source_write_is_a_violation(self):
+        self.board()
+        self.init_git()
+        self.expect(self.assisted(), 0)
+        (self.repo / "src").mkdir(exist_ok=True)
+        (self.repo / "src/app.py").write_text("# written without implementation authority\n")
+        self.human_closes()
+        self.expect(self.assisted(), 3, "unauthorized writes")
+        self.assertEqual(self.result()["checks"]["write_audit"]["violations"], ["src/app.py"])
+
+    def test_tampered_pending_baseline_is_refused(self):
+        self.board()
+        self.init_git()
+        self.expect(self.assisted(), 0)
+        pending = self.repo / "docs/verification/factory-runs/pending-assisted/TASK-901.json"
+        record = json.loads(pending.read_text())
+        record["gate_state"]["implementation_authorized"] = True
+        pending.write_text(json.dumps(record))
+        self.human_closes()
+        self.expect(self.assisted(), 3, "pending baseline for TASK-901 was changed")
+
+    def test_assisted_dispatch_stops_on_dirty_protected_tree(self):
+        self.board()
+        self.init_git()
+        (self.repo / "src").mkdir(exist_ok=True)
+        (self.repo / "src/wip.py").write_text("# uncommitted operator work\n")
+        self.expect(self.assisted(), 2, "dirty_unexpected_state")
+        self.assertFalse((self.repo / "docs/verification/factory-runs/pending-assisted").exists())
+
+    def test_open_assisted_task_stays_pending(self):
+        self.board()
+        self.init_git()
+        self.expect(self.assisted(), 0)
+        pending = self.repo / "docs/verification/factory-runs/pending-assisted/TASK-901.json"
+        first = pending.read_bytes()
+        self.expect(self.assisted(), 0)
+        self.assertEqual(pending.read_bytes(), first)
+        self.assertFalse(list((self.repo / "docs/verification/factory-runs").glob("*-result.json")))
+
+    def test_generated_project_validation_commands_work(self):
+        parent = Path(self.tmp.name) / "generated-validate"
+        self.expect(self.cli("init_project", "validate-me", str(parent)), 0)
+        project = parent / "validate-me"
+        self.expect(self.run_command(sys.executable, "automation/validate_template.py", cwd=project), 0,
+                    "whole-template validation passed")
+        self.expect(self.run_command(sys.executable, "automation/smoke_test_template.py", cwd=project), 0)
+
     def test_NSR01_stdlib_only_instantiation_on_macos(self):
         # -I ignores environment/user site; -S disables site-packages entirely.
         parent = Path(self.tmp.name) / "stdlib"
