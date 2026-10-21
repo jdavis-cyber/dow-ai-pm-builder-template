@@ -754,6 +754,69 @@ class RequirementAcceptanceTests(unittest.TestCase):
                     "whole-template validation passed")
         self.expect(self.run_command(sys.executable, "automation/smoke_test_template.py", cwd=project), 0)
 
+    # ---- JER-25 plan-before-build ------------------------------------------
+
+    def plan_board(self, status="Ready", **changes):
+        fields = {"Status": status, "Human Gate": "yes", "Plan": "`docs/verification/TASK-901/plan.md`"}
+        fields.update(changes)
+        self.board(**fields)
+
+    def operator_key(self):
+        self.env["FACTORY_OPERATOR_KEY_FILE"] = str(Path(self.tmp.name) / "operator.key")
+        self.expect(self.cli("gatekeeper", "init-operator-key"), 0)
+
+    def test_human_gate_task_is_first_dispatched_for_a_plan_only(self):
+        self.plan_board()
+        write_plan = ("pathlib.Path('docs/verification/TASK-901').mkdir(parents=True, exist_ok=True)\n"
+                      "pathlib.Path('docs/verification/TASK-901/plan.md').write_text('# Plan\\nFiles: src/x.py\\n')\n"
+                      "p=pathlib.Path('orchestration/tasks.md'); p.write_text(p.read_text().replace('**Status**: Ready', '**Status**: Planned'))\n")
+        self.expect(self.adapter(write_plan), 0)
+        stdin = json.loads((self.repo / "docs/verification/adapter-capture.json").read_text())["stdin"]
+        self.assertIn("PLAN ONLY", stdin)
+        self.assertEqual(self.result()["outcome"], "pass")
+        self.expect(self.cli("governed_factory", "--adapter", "assisted"), 0, "no ready tasks")
+
+    def test_plan_only_run_may_not_implement(self):
+        self.plan_board()
+        sneak = ("pathlib.Path('docs/verification/TASK-901').mkdir(parents=True, exist_ok=True)\n"
+                 "pathlib.Path('docs/verification/TASK-901/plan.md').write_text('# Plan\\n')\n"
+                 "pathlib.Path('src').mkdir(exist_ok=True); pathlib.Path('src/x.py').write_text('# early\\n')\n"
+                 "p=pathlib.Path('orchestration/tasks.md'); p.write_text(p.read_text().replace('**Status**: Ready', '**Status**: Planned'))\n")
+        self.expect(self.adapter(sneak), 3, "unauthorized writes")
+
+    def test_plan_approved_requires_a_signed_approval_of_that_plan(self):
+        self.operator_key()
+        self.plan_board(status="Plan Approved")
+        plan = self.repo / "docs/verification/TASK-901/plan.md"
+        plan.parent.mkdir(parents=True, exist_ok=True)
+        plan.write_text("# Plan\nFiles: docs only\n")
+        self.expect(self.cli("governed_factory", "--adapter", "assisted"), 2, "no operator plan approval")
+        self.expect(self.cli("gatekeeper", "approve-plan", "TASK-901", "docs/verification/TASK-901/plan.md"), 0)
+        self.expect(self.cli("governed_factory", "--adapter", "assisted"), 0, "NEXT GOVERNED FACTORY TASK: TASK-901")
+        plan.write_text("# Plan\nFiles: everything\n")
+        self.expect(self.cli("governed_factory", "--adapter", "assisted"), 2, "changed after it was approved")
+
+    def test_forged_plan_approval_is_rejected(self):
+        self.operator_key()
+        self.plan_board(status="Plan Approved")
+        plan = self.repo / "docs/verification/TASK-901/plan.md"
+        plan.parent.mkdir(parents=True, exist_ok=True)
+        plan.write_text("# Plan\n")
+        approval = self.repo / ".governance/plan-approvals/TASK-901.json"
+        approval.parent.mkdir(parents=True, exist_ok=True)
+        approval.write_text(json.dumps({"task_id": "TASK-901", "plan": "docs/verification/TASK-901/plan.md",
+                                        "plan_sha256": hashlib.sha256(plan.read_bytes()).hexdigest(),
+                                        "operator_signature": {"alg": "hmac-sha256", "value": "00" * 32}}))
+        self.expect(self.cli("governed_factory", "--adapter", "assisted"), 2, "not signed by the operator")
+
+    def test_plan_gate_schema_rules(self):
+        self.board(**{"Human Gate": "yes"})
+        self.expect(self.cli("validate_tasks", "orchestration/tasks.md"), 1, "no Plan path")
+        self.board(**{"Phase": "CPMAI Phase IV — Modeling", "Gate Impact": "advances gate"})
+        self.expect(self.cli("validate_tasks", "orchestration/tasks.md"), 1, "needs Human Gate: yes")
+        self.board(**{"Human Gate": "maybe", "Plan": "`docs/p.md`"})
+        self.expect(self.cli("validate_tasks", "orchestration/tasks.md"), 1, "Human Gate must be yes or no")
+
     def test_NSR01_stdlib_only_instantiation_on_macos(self):
         # -I ignores environment/user site; -S disables site-packages entirely.
         parent = Path(self.tmp.name) / "stdlib"

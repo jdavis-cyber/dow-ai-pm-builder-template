@@ -159,6 +159,22 @@ The Scrum Master reports to the human director at five defined touchpoints. Thes
 
 **Why**: Circuit breakers indicate systemic problems, not individual task failures. You need to know when the system hits a structural issue because it may require a strategic decision from you — change scope, adjust approach, or accept a delay.
 
+### 6. Plan Approval Request
+
+**When**: A `Human Gate: yes` task reaches `Planned`.
+
+**Format**: Entry in today's memory file, tagged for the human director, at most 8 lines.
+
+```markdown
+### Director Request: Plan Approval
+**Task**: [TASK-ID — title]
+**Plan**: [path]
+**Change in one line**: [what will be built]
+**Risk**: [main risk and containment]
+**Decisions needed**: [None / list]
+**To approve**: `python3 automation/gatekeeper.py approve-plan [TASK-ID] [path]`, then set Status to Plan Approved
+```
+
 ## Approval Gates
 
 Certain decisions require your explicit approval before the team proceeds. The Scrum Master is responsible for identifying when an approval gate is reached and presenting you with the decision.

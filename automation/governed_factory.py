@@ -90,7 +90,10 @@ FIELDS = [
     "Handoff Target",
     "Gate Impact",
     "Requires Authority",
+    "Human Gate",
+    "Plan",
 ]
+LATE_PHASE_RE = re.compile(r"\bphase\s+(?:iv|v|vi|4|5|6)\b", re.IGNORECASE)
 # Requires Authority value -> gatekeeper action checked before dispatch.
 AUTHORITY_ACTIONS = {
     "implementation": ("write", "src/"),
@@ -178,8 +181,19 @@ def parse_tasks(text: str) -> list[dict]:
     return tasks
 
 
+DISPATCHABLE = {"open", "plan-approved"}
+
+
+def human_gate(task: dict) -> bool:
+    return str(task.get("Human Gate", "")).strip().lower() == "yes"
+
+
 def status_kind(status: str) -> str:
     s = status.strip().lower()
+    if s.startswith("plan approved"):
+        return "plan-approved"
+    if s.startswith("planned"):
+        return "blocked"
     if s.startswith(COMPLETE_PREFIXES):
         return "complete"
     if s.startswith(OPEN_PREFIXES) or "ready to start" in s:
@@ -252,7 +266,7 @@ def infer_required_actions(task: dict) -> list[tuple[str, str]]:
 def select_next_task(tasks: list[dict]) -> tuple[dict | None, str]:
     for task in tasks:
         kind = status_kind(task.get("Status", ""))
-        if kind != "open":
+        if kind not in DISPATCHABLE:
             continue
         owner = task.get("Owner Agent", "Unassigned").strip().strip("[]")
         if owner not in ACCOUNTABLE:
@@ -263,6 +277,21 @@ def select_next_task(tasks: list[dict]) -> tuple[dict | None, str]:
         if required_authorities(task) is None:
             return None, (f"REFUSAL: {task['Task ID']} has no valid Requires Authority field; "
                           "declare none or the authorities it needs (see orchestration/task-schema.md)")
+        if human_gate(task):
+            plan = str(task.get("Plan", "")).strip().strip("`")
+            if kind == "open":
+                # Plan-before-build: a Human Gate task is first dispatched only to
+                # write its plan. The packet carries no authority, so the write
+                # audit flags anything beyond planning scope.
+                if not plan:
+                    return None, f"REFUSAL: {task['Task ID']} has Human Gate: yes but no Plan path"
+                task = dict(task, _plan_only=True)
+                return task, "selected for planning"
+            problem = gatekeeper.plan_approval_error(task["Task ID"], plan)
+            if problem:
+                return None, "STOP: " + problem
+        elif kind == "plan-approved":
+            return None, f"REFUSAL: {task['Task ID']} is Plan Approved but has no Human Gate"
         if task_needs_human(task):
             return None, f"STOP: {task['Task ID']} appears to require human/PM/PO/gate input"
         for action, path in infer_required_actions(task):
@@ -295,7 +324,12 @@ def build_packet(task: dict, state: dict) -> dict:
             "Do not write/import external tracker issues unless external_tracker_writes_authorized is true.",
             "Do not deploy, use real data/APIs, submit CDRLs, accept risk, or close controls without explicit authority.",
         ],
+        "plan_only": bool(task.get("_plan_only")),
         "expected_agent_behavior": [
+            *([f"PLAN ONLY: write the implementation plan to {task.get('Plan', '').strip('`')} using "
+               "directives/templates/implementation-plan.md, set this task's Status to Planned, then stop. "
+               "Do not implement anything; the Human Director approves the plan first."]
+              if task.get("_plan_only") else []),
             "Read startup/governance files before acting.",
             "Execute only the selected task scope.",
             "Create/update required evidence artifacts.",
@@ -536,6 +570,9 @@ def working_tree_snapshot() -> dict[str, str | None] | None:
 
 
 def evidence_paths(task: dict) -> list[str]:
+    if task.get("_plan_only"):
+        plan = str(task.get("Plan", "")).strip().strip("`")
+        return [plan] if "/" in plan else []
     field = str(task.get("Evidence Required", ""))
     return [tok.strip() for tok in re.findall(r"`([^`]+)`", field) if "/" in tok]
 
@@ -747,7 +784,7 @@ def post_dispatch_checks(task: dict, state: dict, before,
             print(f"STOP: {task['Task ID']} changed status but produced no new evidence.")
             violation("evidence unchanged")
     refreshed = {t["Task ID"]: t for t in parse_tasks(TASKS_FILE.read_text())}
-    still_open = status_kind(refreshed.get(task["Task ID"], {}).get("Status", "")) == "open"
+    still_open = status_kind(refreshed.get(task["Task ID"], {}).get("Status", "")) in DISPATCHABLE
     result["checks"]["status_transitioned"] = "pass" if not still_open else "fail: task still open"
     if still_open:
         print(f"STOP: {task['Task ID']} is still open after dispatch; halting to prevent a redispatch loop. The adapter must update task status and evidence.")
@@ -857,7 +894,7 @@ def check_assisted_completions(tasks: list[dict]) -> tuple[int, set[str]]:
         if task is None:
             print(f"STOP: assisted task {record.get('task_id')} was removed from the board before its checks ran")
             return 3, still_pending
-        if status_kind(task.get("Status", "")) == "open":
+        if status_kind(task.get("Status", "")) in DISPATCHABLE:
             still_pending.add(task["Task ID"])
             continue
         print(f"ASSISTED MODE: checking completed task {task['Task ID']}")
@@ -911,6 +948,9 @@ def once(adapter: str) -> int:
         return 0 if reason.startswith("STOP: no ready") else 2
     state = gatekeeper.load_state()
     packet = build_packet(task, state)
+    if task.get("_plan_only"):
+        # Planning carries no authority: audit the run as if nothing were granted.
+        state = {}
     if adapter.lower().strip() == "assisted":
         if task["Task ID"] not in pending:
             problem = dirty_outside_scope(state)
