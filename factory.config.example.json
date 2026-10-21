@@ -13,6 +13,10 @@
       "max_tokens": null,
       "max_cost_usd": null
     },
+    "dispatch": {
+      "content_classification": "public",
+      "adapter_ceiling": "public"
+    },
     "stop_on": [
       "human_input_required",
       "phase_gate_readiness",

@@ -64,8 +64,9 @@ class TaskNeedsHumanGateTests(unittest.TestCase):
     def test_non_gate_impact_does_not_stop(self):
         self.assertFalse(governed_factory.task_needs_human({"Gate Impact": "none"}))
 
-    def test_planning_only_override_preserved(self):
-        self.assertFalse(
+    def test_planning_only_text_cannot_suppress_gate_stop(self):
+        # JER-42: free text ("planning only") no longer escapes a human stop.
+        self.assertTrue(
             governed_factory.task_needs_human(
                 {"Gate Impact": "advances gate", "Status": "planning only"}
             )
