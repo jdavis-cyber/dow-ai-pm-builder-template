@@ -18,7 +18,7 @@ This note defines the minimum project-classification answers that must be captur
 ## Business Rules
 
 - `project_type = dod-regulated` requires `requires_dod_controls = true`.
-- `requires_dod_controls = true` requires regulated overlays and Security and Compliance Officer participation.
+- `requires_dod_controls = true` activates the regulated overlays. Security and Compliance Officer participation is unconditional on every project.
 - `project_type = ai-ml` does not automatically force `requires_dod_controls`; federal and defense scope must be answered separately.
 - `requires_iso42001` must be answered explicitly for every `ai-ml` project.
 - Empty, contradictory, or inferred answers are invalid and must block install-profile generation.

@@ -33,6 +33,9 @@ def main():
     cfg=json.loads((ROOT/'subagents/install-config.json').read_text())
     if cfg.get('accountable_agents')!=ACCOUNTABLE: print('ERROR: install-config accountable_agents mismatch'); ok=False
     if 'security-compliance-officer' not in cfg.get('mandatory_agents',[]): print('ERROR: security not mandatory'); ok=False
+    if not (ROOT/'subagents/global/security-compliance-officer.toml').exists() or (ROOT/'subagents/dod-regulated/security-compliance-officer.toml').exists():
+        print('ERROR: security-compliance-officer must be a global package (mandatory on every project), not a regulated overlay'); ok=False
+    if 'security-compliance-officer' in cfg.get('regulated_overlays',[]): print('ERROR: security-compliance-officer listed as a conditional regulated overlay'); ok=False
     own=json.loads((ROOT/'subagents/specialization-ownership-map.json').read_text())
     tomls=sorted(str(p.relative_to(ROOT/'subagents')).replace('\\','/') for p in template_files('subagents/global/voltagent') if p.suffix=='.toml')
     missing=[t for t in tomls if t not in own]
