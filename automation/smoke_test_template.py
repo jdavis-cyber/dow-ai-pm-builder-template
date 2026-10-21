@@ -15,7 +15,7 @@ def main():
         manifest=project/'.codex/agents/runtime-manifest.json'
         assert manifest.exists(), 'runtime manifest missing'
         run([sys.executable,str(project/'automation/validate_runtime.py'),str(manifest)], project)
-        for d in ['.governance','docs/verification','docs/handoff','docs/product','docs/architecture','docs/governance-frameworks','orchestration']:
+        for d in ['.governance','docs/verification','docs/handoff','docs/product','docs/architecture','orchestration']:
             assert (project/d).exists(), f'missing {d}'
         kickoff=(project/'KICKOFF.md').read_text()
         assert 'Start a new project from the DoW AI PM Builder Template and begin Sprint Zero.' in kickoff, 'kickoff protocol missing canonical phrase'

@@ -103,6 +103,14 @@ follows SemVer aligned to the template's major revisions.
 - SR-08: every post-dispatch violation halt points to the override register and explicitly grants no authority.
 - SR-16: failed adapters retain a run result and all detective checks. A nonzero adapter exit keeps its code and primary failure outcome; simultaneous detective findings remain in the record. Successful adapters retain first-violation outcome and exit 3.
 - Added requirement acceptance and regression cases using isolated deterministic fixtures. Human discovery, real-project evidence, multiplatform and live-runtime qualification remain outside these execution results.
+### Framework mapping documents removed
+- Removed `docs/governance-frameworks/` (control matrix, statement of
+  applicability, factory risk register, objectives, model-supplier criteria,
+  example AI policy, framework status and the maintenance-scope note). The
+  repository holds no framework mappings or self-assessments; generated
+  projects no longer receive copies. README, the governance-scope directive,
+  the documentation map, the generator and the smoke test no longer point at
+  them. Earlier changelog entries are kept as history.
 
 ### Repository maintenance cleanup
 - Removed mandatory presence/exact-prose checks for six duplicate assurance

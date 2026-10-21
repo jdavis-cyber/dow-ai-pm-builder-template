@@ -20,13 +20,12 @@ CMMC, FedRAMP, HIPAA, SOC 2, and similar frameworks are product/engagement overl
 
 Generated projects must retain roster, runtime manifest, task assignments, handoffs, phase-gate decisions, verification records, evidence index, standards applicability record, crosswalk status matrix, risk/corrective-action registers, override records, and template provenance.
 
-## Optional reference mappings
+## Framework mappings
 
-`docs/governance-frameworks/factory-control-matrix.md` and its companion
-self-assessments are optional adoption references. Their presence, exact
-wording and review dates are not prerequisites for ordinary template
-maintenance or a passing build. See
-[repository maintenance](../docs/governance-frameworks/repository-maintenance.md).
+The template ships no framework mappings or self-assessments, and no file,
+exact wording or review date is a prerequisite for ordinary template
+maintenance or a passing build. Framework applicability for a generated
+project is recorded in its own standards applicability record and crosswalk.
 
 The generated project's actual gate state, authority checks and evidence
 contracts remain separate and unchanged. This clarification does not grant

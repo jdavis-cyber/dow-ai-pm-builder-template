@@ -50,8 +50,6 @@ class TemplateValidationTests(unittest.TestCase):
                         'docs/handoff/documentation-map.md']:
                 source = project / rel
                 links = re.findall(r'\[[^\]]*\]\(([^)]+)\)', source.read_text())
-                self.assertTrue(any(urlsplit(link).path.endswith('repository-maintenance.md')
-                                    for link in links), rel)
                 for link in links:
                     target = urlsplit(link)
                     if target.scheme or target.netloc or not target.path:
@@ -61,15 +59,15 @@ class TemplateValidationTests(unittest.TestCase):
                         self.assertTrue(resolved.is_relative_to(project.resolve()))
                         self.assertTrue(resolved.is_file(), f'{rel}: missing {link}')
 
+    def test_no_framework_mapping_documents_ship_in_the_template(self):
+        """The repository holds no framework mappings or self-assessments."""
+        self.assertFalse((ROOT / 'docs/governance-frameworks').exists())
+
     def test_optional_assurance_documents_do_not_gate_template_integrity(self):
         """An adopter can omit reference paperwork without breaking tooling."""
         with tempfile.TemporaryDirectory() as d:
             copy = pathlib.Path(d) / 'template'
             shutil.copytree(ROOT, copy, ignore=shutil.ignore_patterns('.git', '.codex', '.claude', '__pycache__'))
-            for name in ['factory-control-matrix.md', 'factory-soa.md',
-                         'factory-risk-register.md', 'factory-objectives.md',
-                         'model-supplier-criteria.md', 'factory-ai-policy.md']:
-                (copy / 'docs/governance-frameworks' / name).unlink()
             (copy / 'directives/templates/standards-crosswalk-matrix.md').write_text(
                 '# Standards applicability\n\nNo framework selected for this test project.\n')
             r = run(sys.executable, str(copy / 'automation/validate_template.py'), cwd=copy)
