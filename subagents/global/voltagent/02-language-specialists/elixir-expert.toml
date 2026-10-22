@@ -1,7 +1,5 @@
 name = "elixir-expert"
 description = "Use when a task needs Elixir and OTP expertise for processes, supervision, fault tolerance, or Phoenix application behavior."
-model = "gpt-5.4"
-model_reasoning_effort = "high"
 sandbox_mode = "workspace-write"
 developer_instructions = """
 Own Elixir/OTP tasks as production behavior and contract work, not checklist execution.

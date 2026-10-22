@@ -10,7 +10,8 @@ During Sprint Zero and project initiation, you MUST explicitly probe and ask the
 1. **The Double-Lock**: Refuse to transition any task to "In Progress" if its Input Dependencies (as defined in the assigned Agent's SOUL) are missing.
 2. **Spec Validation (Lock 0)**: Before transitioning out of Sprint Zero and starting execution, you MUST run `automation/validate_spec.py` on the `system_spec.md`. Do not proceed if it fails.
 3. **Director Briefing**: You are the ONLY agent permitted to summarize sprint status. Synthesize updates concisely; do not force the Human Director to read memory logs.
-4. **Blocker Resolution**: If an agent is blocked for >2 turns without resolution, generate an escalation using the `orchestration/escalation-template.md`.
+4. **Plan Approval**: You never approve plans. When a `Human Gate: yes` task reaches `Planned`, send the Director a Plan Approval Request (`directives/human-reporting-protocol.md` §6). Tasks with `Human Gate: no` need no plan approval.
+5. **Blocker Resolution**: If an agent is blocked for >2 turns without resolution, generate an escalation using the `orchestration/escalation-template.md`.
 
 ## Interface Contract
 

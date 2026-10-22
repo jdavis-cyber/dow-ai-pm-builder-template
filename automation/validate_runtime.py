@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
-import json, pathlib, sys
+import hashlib, json, pathlib, sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 ACCOUNTABLE = ["requirements-ba","user-story-ba","ui-ux-designer","architecture-se","database-engineer","backend-developer","frontend-developer","pipeline-devops","performance-devops","qa-engineer","automation-test-engineer","scrum-master","program-analyst","documentation-se","security-compliance-officer"]
+
+def sha256_file(path):
+    return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
 
 def validate(path):
     path = pathlib.Path(path)
@@ -27,8 +30,16 @@ def validate(path):
             err(f"runtime source missing: {a.get('source')}")
         if not soul.exists():
             err(f"SOUL missing: {soul}")
-        if not (path.parent / f"{a.get('name')}.toml").exists():
+        materialized = path.parent / f"{a.get('name')}.toml"
+        if not materialized.exists():
             err(f"materialized TOML missing: {a.get('name')}.toml")
+        elif not a.get('sha256'):
+            err(f"no sha256 recorded for {a.get('name')}; reinstall the runtime bundle")
+        else:
+            if sha256_file(materialized) != a['sha256']:
+                err(f"materialized {a.get('name')}.toml was modified after install")
+            if src.exists() and sha256_file(src) != a['sha256']:
+                err(f"runtime source {a.get('source')} changed since install; reinstall the runtime bundle")
     sec = next((a for a in agents if isinstance(a, dict) and a.get('name') == 'security-compliance-officer'), None)
     if not sec or not sec.get('mandatory'):
         err('Security & Compliance Officer is not marked mandatory')
@@ -45,6 +56,8 @@ def validate(path):
         source = ROOT / s.get('source', '')
         if not source.exists():
             err(f"specialization source missing: {s.get('source')}")
+        elif s.get('sha256') != sha256_file(source):
+            err(f"specialization {s.get('source')} does not match its recorded sha256")
     if ok:
         print('runtime validation passed: 15 accountable agents, mandatory security, 156 specialization packages valid')
     return ok

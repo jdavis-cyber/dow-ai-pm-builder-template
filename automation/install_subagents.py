@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Materialize the runtime agent bundle from the subagent catalog."""
-import json, pathlib, shutil, subprocess, sys
+import hashlib, json, pathlib, shutil, subprocess, sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 ACCOUNTABLE = ["requirements-ba","user-story-ba","ui-ux-designer","architecture-se","database-engineer","backend-developer","frontend-developer","pipeline-devops","performance-devops","qa-engineer","automation-test-engineer","scrum-master","program-analyst","documentation-se","security-compliance-officer"]
 CATALOG_DIRS = {"global": ROOT/"subagents"/"global", "project-specific": ROOT/"subagents"/"project-specific", "dod-regulated": ROOT/"subagents"/"dod-regulated"}
@@ -12,6 +12,9 @@ def source_for(name):
             return tier, p
     return None, None
 
+def sha256_file(path):
+    return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
+
 def git_commit():
     r = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True)
     return r.stdout.strip() if r.returncode == 0 else "unknown"
@@ -20,7 +23,13 @@ def entry(name, reason, mandatory=False):
     tier, p = source_for(name)
     if not p:
         raise SystemExit(f"missing runtime package for {name}")
-    return {"name": name, "tier": tier, "reason": reason, "mandatory": bool(mandatory), "source": p.relative_to(ROOT).as_posix(), "source_soul": f".agent/souls/{name}.md"}
+    recorded = json.loads((ROOT / "subagents" / "runtime-package-digests.json").read_text()) \
+        if (ROOT / "subagents" / "runtime-package-digests.json").exists() else {}
+    rel = p.relative_to(ROOT / "subagents").as_posix()
+    if recorded.get(rel) != sha256_file(p):
+        raise SystemExit(f"runtime package subagents/{rel} does not match its recorded sha256; "
+                         "review the change, then run automation/vendor_digests.py update")
+    return {"name": name, "tier": tier, "reason": reason, "mandatory": bool(mandatory), "source": p.relative_to(ROOT).as_posix(), "source_soul": f".agent/souls/{name}.md", "sha256": sha256_file(p)}
 
 def main():
     config_path = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "subagents/install-config.json"
@@ -49,7 +58,11 @@ def main():
         source = ROOT / "subagents" / rel
         if not source.exists():
             raise SystemExit(f"specialization source missing: subagents/{rel}")
-        specs.append({"name": source.stem, "source": "subagents/" + rel, "accountable_owner": owner, "status": meta.get("status", "mapped"), "activation_condition": meta.get("activation_condition", "")})
+        digest = sha256_file(source)
+        if meta.get("sha256") != digest:
+            raise SystemExit(f"specialization subagents/{rel} does not match its recorded sha256; "
+                             "review the change, then run automation/vendor_digests.py update")
+        specs.append({"name": source.stem, "source": "subagents/" + rel, "accountable_owner": owner, "status": meta.get("status", "mapped"), "activation_condition": meta.get("activation_condition", ""), "sha256": digest})
     overlays = [entry(n, "regulated-overlay", False) for n in config.get("regulated_overlays", [])]
     runtime_dir.mkdir(parents=True, exist_ok=True)
     marker = runtime_dir / ".dow-runtime-dir"

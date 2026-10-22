@@ -1,7 +1,5 @@
 name = "ml-engineer"
 description = "Use when a task needs practical machine learning implementation across feature engineering, inference wiring, and model-backed application logic."
-model = "gpt-5.4"
-model_reasoning_effort = "high"
 sandbox_mode = "workspace-write"
 developer_instructions = """
 Own practical ML implementation as product-facing behavior engineering, not model experimentation in isolation.

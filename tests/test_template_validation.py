@@ -50,8 +50,6 @@ class TemplateValidationTests(unittest.TestCase):
                         'docs/handoff/documentation-map.md']:
                 source = project / rel
                 links = re.findall(r'\[[^\]]*\]\(([^)]+)\)', source.read_text())
-                self.assertTrue(any(urlsplit(link).path.endswith('repository-maintenance.md')
-                                    for link in links), rel)
                 for link in links:
                     target = urlsplit(link)
                     if target.scheme or target.netloc or not target.path:
@@ -61,15 +59,15 @@ class TemplateValidationTests(unittest.TestCase):
                         self.assertTrue(resolved.is_relative_to(project.resolve()))
                         self.assertTrue(resolved.is_file(), f'{rel}: missing {link}')
 
+    def test_no_framework_mapping_documents_ship_in_the_template(self):
+        """The repository holds no framework mappings or self-assessments."""
+        self.assertFalse((ROOT / 'docs/governance-frameworks').exists())
+
     def test_optional_assurance_documents_do_not_gate_template_integrity(self):
         """An adopter can omit reference paperwork without breaking tooling."""
         with tempfile.TemporaryDirectory() as d:
             copy = pathlib.Path(d) / 'template'
             shutil.copytree(ROOT, copy, ignore=shutil.ignore_patterns('.git', '.codex', '.claude', '__pycache__'))
-            for name in ['factory-control-matrix.md', 'factory-soa.md',
-                         'factory-risk-register.md', 'factory-objectives.md',
-                         'model-supplier-criteria.md', 'factory-ai-policy.md']:
-                (copy / 'docs/governance-frameworks' / name).unlink()
             (copy / 'directives/templates/standards-crosswalk-matrix.md').write_text(
                 '# Standards applicability\n\nNo framework selected for this test project.\n')
             r = run(sys.executable, str(copy / 'automation/validate_template.py'), cwd=copy)
@@ -86,4 +84,53 @@ class TemplateValidationTests(unittest.TestCase):
             r = run(sys.executable, str(copy / 'automation/validate_template.py'), cwd=copy)
             self.assertNotEqual(r.returncode, 0)
             self.assertIn('gatekeeper missing authority token deployment_authorized', r.stdout)
+    def _clean_clone(self, d):
+        """A fresh repository holding the template's files, as a clean clone would."""
+        clone = pathlib.Path(d) / 'clone'
+        shutil.copytree(ROOT, clone, ignore=shutil.ignore_patterns('.git', '.codex', '.claude', '__pycache__', '.pytest_cache'))
+        env = ['-c', 'user.name=fixture', '-c', 'user.email=fixture@example.invalid']
+        for args in (['init', '-q'], ['add', '-A'], [*env, 'commit', '-qm', 'fixture']):
+            r = run('git', *args, cwd=clone)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        return clone
+
+    def test_untracked_files_do_not_change_validation(self):
+        """A workstation's untracked files must not make it disagree with a clean clone."""
+        with tempfile.TemporaryDirectory() as d:
+            clone = self._clean_clone(d)
+            (clone / 'scratch-notes.md').write_text('complete AI development team - ' + '14\n')
+            (clone / '.agent/souls/local-experiment.md').write_text('# untracked local soul\n')
+            r = run(sys.executable, 'automation/validate_template.py', cwd=clone)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+    def test_tracked_stale_text_still_fails_validation(self):
+        with tempfile.TemporaryDirectory() as d:
+            clone = self._clean_clone(d)
+            (clone / 'scratch-notes.md').write_text('complete AI development team - ' + '14\n')
+            r = run('git', 'add', 'scratch-notes.md', cwd=clone)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            r = run(sys.executable, 'automation/validate_template.py', cwd=clone)
+            self.assertNotEqual(r.returncode, 0)
+            self.assertIn('stale string', r.stdout)
+
+    def test_ci_installs_hash_pinned_test_runner(self):
+        workflow = (ROOT / '.github/workflows/validate.yml').read_text()
+        self.assertIn('--require-hashes -r requirements-ci.txt', workflow)
+        self.assertNotRegex(workflow, r'pip install pytest\b')
+        self.assertRegex((ROOT / 'requirements-ci.txt').read_text(), r'(?m)^pytest==\S+ \\$')
+        for uses in re.findall(r'uses:\s*(\S+)', workflow):
+            with self.subTest(action=uses):
+                self.assertRegex(uses, r'@[0-9a-f]{40}$')
+    def test_agent_packages_do_not_pin_a_model(self):
+        """The operator picks model and effort per session, not the packages."""
+        with tempfile.TemporaryDirectory() as d:
+            copy = pathlib.Path(d) / 'template'
+            shutil.copytree(ROOT, copy, ignore=shutil.ignore_patterns('.git', '.codex', '.claude', '__pycache__'))
+            r = run(sys.executable, str(copy / 'automation/validate_template.py'), cwd=copy)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            pkg = copy / 'subagents/global/requirements-ba.toml'
+            pkg.write_text('model = "gpt-old"\n' + pkg.read_text())
+            r = run(sys.executable, str(copy / 'automation/validate_template.py'), cwd=copy)
+            self.assertNotEqual(r.returncode, 0)
+            self.assertIn('pins model = "gpt-old"', r.stdout)
 if __name__=='__main__': unittest.main()

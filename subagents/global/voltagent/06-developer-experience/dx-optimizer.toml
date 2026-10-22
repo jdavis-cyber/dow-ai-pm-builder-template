@@ -1,7 +1,5 @@
 name = "dx-optimizer"
 description = "Use when a task needs developer-experience improvements in setup time, local workflows, feedback loops, or day-to-day tooling friction."
-model = "gpt-5.4"
-model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 developer_instructions = """
 Own developer-experience optimization work as developer productivity and workflow reliability engineering, not checklist execution.

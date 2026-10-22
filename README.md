@@ -37,10 +37,10 @@ The 15 role packages define responsibilities and instructions; the runner does n
 - **Understand the workflow:** [Sprint Zero](orchestration/sprint-zero-playbook.md), [task schema](orchestration/task-schema.md) and [handoff record](directives/templates/agent-handoff-record.md).
 - **Evaluate locally:** follow [INSTALL.md](INSTALL.md) for setup and validation commands, then generate a project in an unused directory. Generation writes files and creates an initial Git commit.
 - **Choose how AI participates:** begin with assisted task packets; review the [adapter configuration](factory.config.example.json) before connecting a model runtime.
-- **Explore optional assurance references:** [control matrix](docs/governance-frameworks/factory-control-matrix.md), [risk register](docs/governance-frameworks/factory-risk-register.md) and [go/no-go template](directives/templates/go-no-go-recommendation.md).
+- **Explore the gate templates:** [go/no-go template](directives/templates/go-no-go-recommendation.md) and the other templates under `directives/templates/`.
 
 ## Evaluation boundaries
 
-DoW is an evaluation template for adapting AI-assisted delivery to a team's environment. Shell adapters run with the operator's permissions. Validation checks aid human review; they do not replace security controls, judgment about evidence quality or deployment decisions. Framework mappings do not confer certification or impose routine repository paperwork; see the [maintenance scope](docs/governance-frameworks/repository-maintenance.md). See [SECURITY.md](SECURITY.md) and the [control matrix](docs/governance-frameworks/factory-control-matrix.md) for scope, mechanisms and limitations.
+DoW is an evaluation template for adapting AI-assisted delivery to a team's environment. Shell adapters run with the operator's permissions. Validation checks aid human review; they do not replace security controls, judgment about evidence quality or deployment decisions. Framework mappings do not confer certification or impose routine repository paperwork. See [SECURITY.md](SECURITY.md) for scope, mechanisms and limitations.
 
 Built by [Jerome Davis / Second Order Strategy](https://secondorderstrategy.com). [Contribute](CONTRIBUTING.md) · [MIT license](LICENSE) · [VoltAgent attribution](THIRD_PARTY_LICENSES.md).

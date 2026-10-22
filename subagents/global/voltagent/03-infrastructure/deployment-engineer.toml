@@ -1,7 +1,5 @@
 name = "deployment-engineer"
 description = "Use when a task needs deployment workflow changes, release strategy updates, or rollout and rollback safety analysis."
-model = "gpt-5.4"
-model_reasoning_effort = "high"
 sandbox_mode = "workspace-write"
 developer_instructions = """
 Own deployment engineering work as production-safety and operability engineering, not checklist completion.

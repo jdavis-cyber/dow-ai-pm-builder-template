@@ -35,7 +35,7 @@ The **generated runtime** is materialized by the installer when a project is ini
 **Location**: `.codex/agents/runtime-manifest.json` + actual TOML bundles
 **Key Property**: Runtime bundles are **read-only during execution**. Agents use the runtime bundles, not the source catalog.
 
-**Example**: A `dod-regulated` project will have both `program-analyst` and `security-compliance-officer` bundles in the runtime. A `standard` project will have only the global set.
+**Example**: Every project, `standard` or `dod-regulated`, has the global set, including `program-analyst` and `security-compliance-officer`. A `dod-regulated` project also gets the regulated overlay packages.
 
 ---
 
@@ -62,7 +62,7 @@ The **generated runtime** is materialized by the installer when a project is ini
 | `program-analyst` | `global` | Yes | Every initialized project | `subagents/global/program-analyst.toml` | Governance artifact authorship and audit traceability |
 | `documentation-se` | `global` | Yes | Every initialized project | `subagents/global/documentation-se.toml` | Documentation control and truth-depot hygiene |
 | `pipeline-devops` | `global` | Yes | Every initialized project | `subagents/global/pipeline-devops.toml` | Installer, telemetry, and deployment control surfaces |
-| `security-compliance-officer` | `dod-regulated` | No | `project_type` is `dod-regulated` or `hipaa`, OR `requires_dod_controls` is true | `subagents/dod-regulated/security-compliance-officer.toml` | Regulated review gate for deployment and evidence changes |
+| `security-compliance-officer` | `global` | Yes | Every initialized project (mandatory regardless of classification) | `subagents/global/security-compliance-officer.toml` | Review gate for every phase gate, deployment and evidence change |
 
 ---
 
@@ -74,9 +74,9 @@ Every initialized project receives the full `global` agent set. These agents enf
 
 **Effect**: `orchestration/system_spec.md` Section A must be approved before any project initialization.
 
-### Rule 2: Install `dod-regulated` agents only when the classification profile requires them
+### Rule 2: Install regulated overlays only when the classification profile requires them
 
-Regulated overlay agents (e.g., `security-compliance-officer`) are activated only when:
+The Security & Compliance Officer is part of the `global` baseline and participates in every gate on every project. What is conditional is the set of regulated *overlay* packages (`dod-compliance-auditor`, `nist-rmf-analyst`, `ato-documentation-specialist`, `iso42001-auditor` under `subagents/dod-regulated/`). They are activated only when:
 - `project_type` is explicitly `dod-regulated` or `hipaa`, OR
 - `requires_dod_controls` is `true`, OR
 - `requires_iso42001` is `true`
@@ -104,7 +104,7 @@ These rules enforce the tie between discovered project scope and selected runtim
 | Decision | Rule |
 |----------|------|
 | **DoD Regulatory Scope** | If `project_type` is `dod-regulated`, then `requires_dod_controls` MUST be `true`. Conversely, if `requires_dod_controls` is claimed but `project_type` is not `dod-regulated`, installation stops and the Human Director must clarify scope. |
-| **Regulated Overlay Activation** | If `requires_dod_controls` is `true`, the `security-compliance-officer` agent is mandatory. This agent is not optional. |
+| **Regulated Overlay Activation** | If `requires_dod_controls` is `true`, the regulated overlay packages are activated. The `security-compliance-officer` is mandatory on every project whatever the classification. |
 | **AI Project Scope** | If `project_type` is `ai-ml`, then `requires_iso42001` must be explicitly answered (true or false). It may not be inferred. |
 | **Compliance Scope Authority** | The Human Director (not the installer, not the technical team) declares that the project is regulated. This scope must be recorded in `docs/product/project-classification-inputs.md` before any implementation work begins. |
 | **Conflict Resolution** | If classification answers are internally contradictory (e.g., `project_type` is `standard` but `requires_dod_controls` is `true`), installation stops. The Scrum Master must re-open discovery rather than choosing a best-effort profile. |

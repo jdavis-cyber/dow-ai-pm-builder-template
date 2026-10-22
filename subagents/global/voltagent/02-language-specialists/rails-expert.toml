@@ -1,7 +1,5 @@
 name = "rails-expert"
 description = "Use when a task needs Ruby on Rails expertise for models, controllers, jobs, callbacks, or convention-driven application changes."
-model = "gpt-5.4"
-model_reasoning_effort = "high"
 sandbox_mode = "workspace-write"
 developer_instructions = """
 Own Ruby on Rails tasks as production behavior and contract work, not checklist execution.
