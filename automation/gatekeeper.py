@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Provider-neutral gate and authority checks for governed factory runs.
 
-This module intentionally knows nothing about Claude, Codex, Gemini, Hermes, or
-any other model runtime. It answers one question for the factory dispatcher:
+Authority decisions are independent of model runtimes. Provider-specific
+configuration lives in separate modules; sign refreshes existing configuration.
+This module answers one question for the factory dispatcher:
 "Is this action legal under the current project governance state?"
 """
 
@@ -13,8 +14,10 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import secrets
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path.cwd()
@@ -55,6 +58,78 @@ AUTHORITY_FLAGS = (
 )
 SIGNATURE_FIELD = "operator_signature"
 OPERATOR_KEY_ENV = "FACTORY_OPERATOR_KEY_FILE"
+OVERRIDE_REGISTER = Path(".governance/security-compliance/override-register.md")
+
+
+def parse_iso8601(value: str) -> datetime:
+    """Parse an ISO-8601 timestamp, accepting the UTC Z suffix."""
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def implementation_override(state: dict) -> bool:
+    """Recognize an operator-signed, unexpired Human Director row."""
+    if not state.get("override_register_sha256") or not state.get(SIGNATURE_FIELD) or signature_error(state):
+        return False
+    try:
+        content_bytes = (ROOT / OVERRIDE_REGISTER).read_bytes()
+        if hashlib.sha256(content_bytes).hexdigest() != state["override_register_sha256"]:
+            return False
+        content = content_bytes.decode("utf-8")
+    except (OSError, UnicodeError):
+        return False
+    now = datetime.now(timezone.utc)
+    content = re.sub(r"<!--.*?(?:-->|$)", "", content, flags=re.DOTALL)
+    fence = ""
+    for row in content.splitlines():
+        stripped = row.lstrip()
+        if stripped.startswith(("```", "~~~")):
+            marker = stripped[:3]
+            if not fence:
+                fence = marker
+            elif marker == fence:
+                fence = ""
+            continue
+        if fence:
+            continue
+        if not row.strip().startswith("|") or not row.strip().endswith("|"):
+            continue
+        cells = [cell.strip().strip("`") for cell in row.strip().strip("|").split("|")]
+        if len(cells) != 7:
+            continue
+        date, event, authority, requester, approver, evidence, expiry = cells
+        if event != "implementation-override" or authority != "implementation_authorized=true":
+            continue
+        if not requester or not approver.startswith("Human Director: "):
+            continue
+        name = approver.removeprefix("Human Director: ").strip()
+        if any(not value or value.lower() in {"tbd", "todo", "pending", "n/a"}
+               or "[" in value or "<" in value for value in (requester, name, evidence)):
+            continue
+        try:
+            created = parse_iso8601(date)
+            expires = parse_iso8601(expiry)
+            if created.tzinfo is None or expires.tzinfo is None or not created <= now < expires:
+                continue
+            evidence_path = (ROOT / evidence).resolve()
+            evidence_path.relative_to(ROOT.resolve())
+            if not evidence_path.is_file() or not evidence_path.stat().st_size:
+                continue
+        except (ValueError, OSError):
+            continue
+        return True
+    return False
+
+
+def implementation_permission(state: dict) -> bool:
+    """Verified sign-off or a Human Director override grants source access."""
+    if signature_error(state):
+        return False
+    signed_off = (
+        state.get("implementation_authorized") is True
+        and state.get("approval_state") == "approved"
+        and bool(state.get("decision") or state.get("decision_record"))
+    )
+    return signed_off or implementation_override(state)
 
 
 def operator_key_path() -> Path:
@@ -106,8 +181,8 @@ def grants_authority(state: dict) -> bool:
 
 
 def signature_error(state: dict) -> str:
-    """Empty when the state grants nothing or carries a valid operator signature."""
-    if not grants_authority(state):
+    """Verify signed drafts too: they can carry an implementation override."""
+    if not grants_authority(state) and SIGNATURE_FIELD not in state and "override_register_sha256" not in state:
         return ""
     sig = state.get(SIGNATURE_FIELD)
     if not isinstance(sig, dict) or sig.get("alg") != "hmac-sha256" or not sig.get("value"):
@@ -210,11 +285,22 @@ def is_protected_source_path(path: str) -> bool:
     return any(rp == prefix.rstrip("/") or rp.startswith(prefix) for prefix in PROTECTED_SOURCE_PREFIXES)
 
 
+def effective_state(state: dict) -> dict:
+    """Gate state with implementation_authorized set to the effective authority.
+
+    A signed Human Director override grants source access while the stored
+    flag stays false; every caller (selection, packets, write audit) must see
+    the same answer. A bad signature yields an empty, unauthorized state.
+    """
+    implementation_allowed = implementation_permission(state)
+    if signature_error(state):
+        state = {}
+    return {**state, "implementation_authorized": implementation_allowed}
+
+
 def check_action(action: str, path: str | None = None, state: dict | None = None) -> tuple[bool, str]:
     if state is None:
-        state = load_state()
-        if signature_error(state):
-            state = {}
+        state = effective_state(load_state())
     action = action.lower().strip()
     path = path or ""
 
@@ -309,16 +395,27 @@ def init_operator_key() -> int:
 
 
 def sign() -> int:
-    """Operator command: sign the current gate state after reviewing it."""
+    """Operator command: sign the reviewed gate state and override register."""
     key, problem = _read_operator_key()
     if key is None:
         print("REFUSAL: " + problem + "; run `gatekeeper.py init-operator-key` first")
         return 2
-    signed = sign_state(load_state(), key)
+    state = load_state()
+    try:
+        digest = hashlib.sha256((ROOT / OVERRIDE_REGISTER).read_bytes()).hexdigest()
+    except FileNotFoundError:
+        digest = None
+    except OSError as exc:
+        print(f"REFUSAL: cannot read override register: {exc}")
+        return 2
+    state["override_register_sha256"] = digest
+    signed = sign_state(state, key)
     GATE_STATE.parent.mkdir(parents=True, exist_ok=True)
     GATE_STATE.write_text(json.dumps(signed, indent=2, ensure_ascii=False) + "\n")
     print(f"gate state signed: {GATE_STATE.relative_to(ROOT)}")
-    return 0
+    from codex_config import refresh_if_present
+
+    return refresh_if_present()
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -327,7 +424,7 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("status")
     sub.add_parser("verify-consistency")
     sub.add_parser("init-operator-key", help="operator: create the signing key outside the project")
-    sub.add_parser("sign", help="operator: sign the reviewed gate state")
+    sub.add_parser("sign", help="operator: sign the reviewed gate state and override register")
     ap = sub.add_parser("approve-plan", help="operator: approve a Human Gate task's written plan")
     ap.add_argument("task_id")
     ap.add_argument("plan")

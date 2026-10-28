@@ -58,3 +58,26 @@ Every consequential workflow leaves objective evidence: task assignment, upstrea
 ## Phase Gate Protocol
 
 The Scrum Master coordinates phase movement. Security & Compliance Officer must review gate evidence. Program Analyst maintains governance artifacts. A gate is approved only when the gate record explicitly says approved and cites evidence; scaffold presence is not approval.
+
+## Codex source-write boundary (AI-1176 / DEF-017)
+
+Before Sprint Zero sign-off, Codex uses `sandbox_mode = "read-only"` and
+`approval_policy = "on-request"` in `.codex/config.toml`. The sandbox blocks
+project writes by default. Ask the human to approve each planning write to
+planning files such as `orchestration/system_spec.md` or `docs/interview-notes.md`.
+Never approve a `src/` or other source write before sign-off.
+The skip path requires a signed override row; a chat request grants no authority.
+Agents must not write authority records.
+
+Only the human operator may add or edit an implementation override row, with
+named Human Director approval, evidence, and a timezone-aware expiry. The operator
+must run `python3 automation/gatekeeper.py sign` with the existing external key
+so the signature covers both the gate state and the override register digest.
+Unsigned, edited-after-signing, expired, or malformed rows grant nothing.
+A failed gate-state signature check also denies override authority.
+
+Follow the configuration, trust, refresh, and session-restart instructions in
+[Codex project guidance](automation/templates/codex-project.md). Run
+`python3 automation/codex_config.py codex-config` from the project root to
+refresh permissions, then start a new session. Refresh before each session
+and stop active sessions when authority expires or is withdrawn.

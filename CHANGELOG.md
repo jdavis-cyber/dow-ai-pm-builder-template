@@ -6,6 +6,21 @@ follows SemVer aligned to the template's major revisions.
 
 ## [Unreleased]
 
+### Fixed
+- Codex starts generated projects in a read-only sandbox until Sprint Zero sign-off
+  or a signed Human Director implementation override (AI-1176 / DEF-017).
+  Before authority, `approval_policy = "on-request"` lets the human approve each
+  planning write while `sandbox_mode = "read-only"` blocks unapproved writes.
+  Guidance forbids approving source writes before sign-off; the skip path requires
+  a signed override row. The native probe retains source-write refusal checks.
+  `gatekeeper.py sign` signs the gate state and override register digest with the
+  existing external operator key. Unsigned, edited-after-signing, expired, or
+  malformed rows grant nothing; a failed gate-state signature also denies overrides.
+  This applies to both action checks and Codex config (ADR-002).
+  Operators refresh permissions with
+  `python3 automation/codex_config.py codex-config` and start a new session;
+  `gatekeeper.py sign` also refreshes existing generated configurations.
+
 ### Model chosen per session
 - Removed the hardcoded `model` (`gpt-5.4`, `gpt-5.3-codex-spark`) and
   `model_reasoning_effort` pins from the 136 vendored VoltAgent packages; the

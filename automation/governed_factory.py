@@ -946,7 +946,7 @@ def once(adapter: str) -> int:
     if not task:
         print(reason)
         return 0 if reason.startswith("STOP: no ready") else 2
-    state = gatekeeper.load_state()
+    state = gatekeeper.effective_state(gatekeeper.load_state())
     packet = build_packet(task, state)
     if task.get("_plan_only"):
         # Planning carries no authority: audit the run as if nothing were granted.
