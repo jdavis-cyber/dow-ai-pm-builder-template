@@ -263,6 +263,25 @@ def infer_required_actions(task: dict) -> list[tuple[str, str]]:
     return actions
 
 
+def denied_task_paths(task: dict, state: dict) -> list[dict]:
+    """Source mentions anywhere and declared outputs require write permission.
+
+    Other read-only inputs and validation references remain allowed. For a
+    plan-only run the caller supplies no implementation authority.
+    """
+    text = "\n".join(str(value) for value in task.values())
+    paths = {path for path in gatekeeper.paths_in_text(text)
+             if gatekeeper.is_protected_source_path(path)}
+    for field in ("Evidence Required", "Plan"):
+        paths.update(gatekeeper.paths_in_text(str(task.get(field, ""))))
+    denied = []
+    for path in sorted(paths):
+        allowed, reason = gatekeeper.check_action("write", path, state)
+        if not allowed:
+            denied.append({"path": path, "reason": reason})
+    return denied
+
+
 def select_next_task(tasks: list[dict]) -> tuple[dict | None, str]:
     for task in tasks:
         kind = status_kind(task.get("Status", ""))
@@ -277,6 +296,26 @@ def select_next_task(tasks: list[dict]) -> tuple[dict | None, str]:
         if required_authorities(task) is None:
             return None, (f"REFUSAL: {task['Task ID']} has no valid Requires Authority field; "
                           "declare none or the authorities it needs (see orchestration/task-schema.md)")
+        state = gatekeeper.effective_state(gatekeeper.load_state())
+        if human_gate(task) and kind == "open":
+            state = {}
+        denied = denied_task_paths(task, state)
+        if denied:
+            reason = (f"REFUSAL: {task['Task ID']} names denied write paths: "
+                      + "; ".join(f"{item['path']}: {item['reason']}" for item in denied)
+                      + "; implementation needs sign-off")
+            write_run_result(task, {
+                "record_type": "factory-run-result",
+                "task_id": task["Task ID"],
+                "checked_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "gate_state_at_check": {key: state.get(key, False) for key in
+                                        ("approval_state", "implementation_authorized", "deployment_authorized")},
+                "checks": {"task_paths": {"denied": denied}},
+                "outcome": "refused: denied task paths",
+                "reason": reason,
+                "adapter_dispatched": False,
+            })
+            return None, reason
         if human_gate(task):
             plan = str(task.get("Plan", "")).strip().strip("`")
             if kind == "open":
