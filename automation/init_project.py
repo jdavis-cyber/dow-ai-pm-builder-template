@@ -87,6 +87,14 @@ def main() -> None:
     for f in SCAFFOLD_FILES:
         shutil.copyfile(TEMPLATE_ROOT / f, target / f)
 
+    # Preserve provider parity in generated projects as well as the template.
+    # All providers need to know how the operator starts a governed Codex session.
+    codex_guidance = (TEMPLATE_ROOT / "automation/templates/codex-project.md").read_text()
+    for provider in ("CLAUDE.md", "CODEX.md", "GEMINI.md"):
+        context = target / provider
+        context.write_text(context.read_text() + "\n" + codex_guidance)
+    (target / "AGENTS.md").write_text((target / "CODEX.md").read_text())
+
     # ── Orchestration: blank spec + task board from their templates ────────
     orch = target / "orchestration"
     orch.mkdir()
@@ -184,6 +192,12 @@ def main() -> None:
         "complete evidence package needed for security accreditation review.\n"
     )
 
+    # Native Codex permission boundaries exist before the first agent session.
+    subprocess.run(
+        [sys.executable, str(target / "automation/gatekeeper.py"), "codex-config"],
+        cwd=target, check=True, capture_output=True,
+    )
+
     # ── Fresh git history ───────────────────────────────────────────────────
     git(["init", "-q"], target)
     git(["add", "-A"], target)
@@ -204,6 +218,7 @@ def main() -> None:
     print()
     print(f"Next: open {target} in your AI coding agent (Claude Code, Codex, or Gemini)")
     print('  and instruct: "Start a new project from the DoW AI PM Builder Template and begin Sprint Zero."')
+    print("  Codex: review CODEX.md and trust .codex/config.toml; source starts read-only.")
 
 
 if __name__ == "__main__":
