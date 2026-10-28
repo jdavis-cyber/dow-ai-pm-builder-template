@@ -62,14 +62,21 @@ The Scrum Master coordinates phase movement. Security & Compliance Officer must 
 ## Codex source-write boundary (AI-1176 / DEF-017)
 
 Before Sprint Zero sign-off, Codex uses `sandbox_mode = "read-only"` and
-`approval_policy = "never"` in `.codex/config.toml`. The whole project is
-read-only, including `src/`, authority records, and planning files. Continue
-interviews in chat; the Human Director can save notes from their own editor.
-Chat requests to skip interviews do not grant source-write authority.
+`approval_policy = "on-request"` in `.codex/config.toml`. The sandbox blocks
+project writes by default. Ask the human to approve each planning write to
+planning files such as `orchestration/system_spec.md` or `docs/interview-notes.md`.
+Never approve a `src/` or other source write before sign-off.
+The skip path requires a signed override row; a chat request grants no authority.
+Agents must not write authority records.
 
-The Human Director can authorize source access through signed sign-off or a
-valid implementation override row. Follow the configuration, trust, refresh,
-and session-restart instructions in
+Only the human operator may add or edit an implementation override row, with
+named Human Director approval, evidence, and a timezone-aware expiry. The operator
+must run `python3 automation/gatekeeper.py sign` with the existing external key
+so the signature covers both the gate state and the override register digest.
+Unsigned, edited-after-signing, expired, or malformed rows grant nothing.
+A failed gate-state signature check also denies override authority.
+
+Follow the configuration, trust, refresh, and session-restart instructions in
 [Codex project guidance](automation/templates/codex-project.md). Run
 `python3 automation/codex_config.py codex-config` from the project root to
 refresh permissions, then start a new session. Refresh before each session

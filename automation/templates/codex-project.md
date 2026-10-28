@@ -1,12 +1,16 @@
 ## Codex source-write boundary (AI-1176 / DEF-017)
 
-This project uses the **Codex read-only sandbox**, not a pre-write hook.
+This project uses the **Codex read-only sandbox**.
 Before Sprint Zero sign-off, `.codex/config.toml` sets
-`sandbox_mode = "read-only"` and `approval_policy = "never"`. Codex has no
+`sandbox_mode = "read-only"` and `approval_policy = "on-request"`. Codex has no
 writable project roots, so the OS sandbox refuses writes to `src/`, the other
-source directories, authority records, and planning files. Continue interviews
-in chat; the Human Director can save discovery notes from their own editor.
-A request to skip interviews does not change the sandbox.
+source directories, authority records, and planning files by default. Ask the
+human to approve each planning write, such as saving the system specification
+under `orchestration/` or interview notes under `docs/`. Request approval for
+that specific write; do not request a blanket permission change.
+Never approve a `src/` or other source write before sign-off.
+The skip path requires a signed override row. A chat request grants no authority.
+Agents must not write authority records.
 
 The whole-project restriction is deliberate: `workspace-write` includes the
 working directory, and its `writable_roots` setting only adds paths. Listing
@@ -35,17 +39,21 @@ in the project root, use one of these paths:
 1. **Sign-off:** record `approval_state: "approved"`,
    `implementation_authorized: true`, and `decision` or `decision_record` in
    `.governance/gate_state.json`. Use the existing external operator key and run
-   `python3 automation/gatekeeper.py sign`. This signs the authority record
-   and refreshes the generated Codex configuration.
-2. **Skip interviews:** first add a row yourself to
+   `python3 automation/gatekeeper.py sign`. This signs the gate state and the
+   SHA-256 digest of the override register, then refreshes the generated config.
+2. **Skip interviews:** only the human operator may add or edit a row in
    `.governance/security-compliance/override-register.md`. Use all seven columns:
    the current ISO-8601 timestamp with timezone; event `implementation-override`;
    authority `implementation_authorized=true`; the requester's name;
    `Human Director: Your Name`; a project-relative path to a nonempty evidence
    file; and an ISO-8601 expiry timestamp with timezone. The evidence should
-   describe the reason, scope, and rollback. Empty fields, placeholders, future
-   creation dates, and expired rows do not grant access. Then run
-   `python3 automation/codex_config.py codex-config`.
+   describe the reason, scope, and rollback. After reviewing the row and gate
+   state, run `python3 automation/gatekeeper.py sign` with the existing external
+   operator key. Unsigned, edited-after-signing, expired, or malformed rows grant
+   nothing. Empty fields, placeholders, future creation dates, and missing
+   evidence also deny access. Any register edit requires a new signature for
+   override authority. If the gate-state signature check fails, no override
+   can grant authority. Refreshing config alone does not sign a row.
 
 Start a **new** Codex session after either path. The generated config now uses
 `workspace-write`, allowing source and other ordinary project files. Codex
@@ -62,3 +70,9 @@ when refreshing after a writable session. Never continue an old implementation
 session after withdrawing its authority. Malformed gate state or symlinked
 project directories cause the refresh command to install a read-only sandbox
 and refuse.
+
+From the template checkout, run the native acceptance probe
+(`python3 tests/codex_sandbox_probe.py`) in an operator terminal outside an
+existing agent sandbox. It checks source-write
+refusal without escalation, including with an unsigned override row. It does
+not exercise the interactive human approval dialog for planning writes.

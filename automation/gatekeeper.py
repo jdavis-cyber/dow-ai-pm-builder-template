@@ -58,6 +58,7 @@ AUTHORITY_FLAGS = (
 )
 SIGNATURE_FIELD = "operator_signature"
 OPERATOR_KEY_ENV = "FACTORY_OPERATOR_KEY_FILE"
+OVERRIDE_REGISTER = Path(".governance/security-compliance/override-register.md")
 
 
 def parse_iso8601(value: str) -> datetime:
@@ -65,12 +66,16 @@ def parse_iso8601(value: str) -> datetime:
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
-def implementation_override() -> bool:
-    """Recognize a complete, unexpired Human Director row, never a chat request."""
-    register = ROOT / ".governance/security-compliance/override-register.md"
+def implementation_override(state: dict) -> bool:
+    """Recognize an operator-signed, unexpired Human Director row."""
+    if not state.get("override_register_sha256") or not state.get(SIGNATURE_FIELD) or signature_error(state):
+        return False
     try:
-        content = register.read_text()
-    except OSError:
+        content_bytes = (ROOT / OVERRIDE_REGISTER).read_bytes()
+        if hashlib.sha256(content_bytes).hexdigest() != state["override_register_sha256"]:
+            return False
+        content = content_bytes.decode("utf-8")
+    except (OSError, UnicodeError):
         return False
     now = datetime.now(timezone.utc)
     content = re.sub(r"<!--.*?(?:-->|$)", "", content, flags=re.DOTALL)
@@ -117,13 +122,14 @@ def implementation_override() -> bool:
 
 def implementation_permission(state: dict) -> bool:
     """Verified sign-off or a Human Director override grants source access."""
+    if signature_error(state):
+        return False
     signed_off = (
         state.get("implementation_authorized") is True
         and state.get("approval_state") == "approved"
         and bool(state.get("decision") or state.get("decision_record"))
-        and not signature_error(state)
     )
-    return signed_off or implementation_override()
+    return signed_off or implementation_override(state)
 
 
 def operator_key_path() -> Path:
@@ -175,8 +181,8 @@ def grants_authority(state: dict) -> bool:
 
 
 def signature_error(state: dict) -> str:
-    """Empty when the state grants nothing or carries a valid operator signature."""
-    if not grants_authority(state):
+    """Verify signed drafts too: they can carry an implementation override."""
+    if not grants_authority(state) and SIGNATURE_FIELD not in state and "override_register_sha256" not in state:
         return ""
     sig = state.get(SIGNATURE_FIELD)
     if not isinstance(sig, dict) or sig.get("alg") != "hmac-sha256" or not sig.get("value"):
@@ -380,12 +386,21 @@ def init_operator_key() -> int:
 
 
 def sign() -> int:
-    """Operator command: sign the current gate state after reviewing it."""
+    """Operator command: sign the reviewed gate state and override register."""
     key, problem = _read_operator_key()
     if key is None:
         print("REFUSAL: " + problem + "; run `gatekeeper.py init-operator-key` first")
         return 2
-    signed = sign_state(load_state(), key)
+    state = load_state()
+    try:
+        digest = hashlib.sha256((ROOT / OVERRIDE_REGISTER).read_bytes()).hexdigest()
+    except FileNotFoundError:
+        digest = None
+    except OSError as exc:
+        print(f"REFUSAL: cannot read override register: {exc}")
+        return 2
+    state["override_register_sha256"] = digest
+    signed = sign_state(state, key)
     GATE_STATE.parent.mkdir(parents=True, exist_ok=True)
     GATE_STATE.write_text(json.dumps(signed, indent=2, ensure_ascii=False) + "\n")
     print(f"gate state signed: {GATE_STATE.relative_to(ROOT)}")
@@ -400,7 +415,7 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("status")
     sub.add_parser("verify-consistency")
     sub.add_parser("init-operator-key", help="operator: create the signing key outside the project")
-    sub.add_parser("sign", help="operator: sign the reviewed gate state")
+    sub.add_parser("sign", help="operator: sign the reviewed gate state and override register")
     ap = sub.add_parser("approve-plan", help="operator: approve a Human Gate task's written plan")
     ap.add_argument("task_id")
     ap.add_argument("plan")

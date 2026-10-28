@@ -9,6 +9,9 @@ evidence that source protection worked. The probe creates disposable projects
 and fixture authority records, without modifying the template's authority.
 The override phase refreshes permissions with the operator command:
     python3 automation/codex_config.py codex-config
+It then signs the row with gatekeeper.py sign before testing authorized writes.
+No escalation approval is supplied; interactive planning approvals need a live
+client retest.
 """
 
 import argparse
@@ -83,6 +86,9 @@ def probe(binary, project, access):
     # corresponding to the configured legacy mode. This tests OS enforcement;
     # the interactive client's project-config loading still needs a live retest.
     config = tomllib.loads((project / ".codex/config.toml").read_text())
+    assert config["sandbox_mode"] == ("read-only" if access == "read" else "workspace-write")
+    if access == "read":
+        assert config["approval_policy"] == "on-request"
     settings = []
     for key, value in config.items():
         entries = value.items() if isinstance(value, dict) else [(None, value)]
@@ -107,6 +113,8 @@ def main():
             run([sys.executable, "automation/init_project.py", grant, str(parent)], ROOT)
             project = parent / grant
             gatekeeper = [sys.executable, "automation/gatekeeper.py"]
+            env = {**os.environ, "FACTORY_OPERATOR_KEY_FILE": str(parent / "operator.key")}
+            run([*gatekeeper, "init-operator-key"], project, env)
             print(f"Fresh project: {grant}", flush=True)
             probe(args.codex, project, "read")
             if grant == "signoff":
@@ -115,8 +123,6 @@ def main():
                 payload.update(approval_state="approved", implementation_authorized=True,
                                decision="Acceptance-test fixture sign-off")
                 state.write_text(json.dumps(payload))
-                env = {**os.environ, "FACTORY_OPERATOR_KEY_FILE": str(parent / "operator.key")}
-                run([*gatekeeper, "init-operator-key"], project, env)
                 run([*gatekeeper, "sign"], project, env)
             else:
                 evidence = project / "docs/decisions/override.md"
@@ -127,9 +133,12 @@ def main():
                        f"docs/decisions/override.md | {(now + timedelta(hours=1)).isoformat()} |\n")
                 with (project / ".governance/security-compliance/override-register.md").open("a") as handle:
                     handle.write(row)
-                run([sys.executable, "automation/codex_config.py", "codex-config"], project)
+                run([sys.executable, "automation/codex_config.py", "codex-config"], project, env)
+                print("Unsigned override: source remains read-only", flush=True)
+                probe(args.codex, project, "read")
+                run([*gatekeeper, "sign"], project, env)
             probe(args.codex, project, "write")
-    print("PASS: 4 sandbox phases (2 denied before authority, 2 allowed after authority)")
+    print("PASS: 5 sandbox phases (3 denied before authority, 2 allowed after authority)")
 
 
 if __name__ == "__main__":

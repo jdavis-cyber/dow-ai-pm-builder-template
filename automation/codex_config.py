@@ -29,7 +29,7 @@ def codex_config_text(authorized: bool) -> str:
     """
     lines = [
         CODEX_CONFIG_HEADER.rstrip(),
-        'approval_policy = "never"',
+        f'approval_policy = "{"never" if authorized else "on-request"}"',
         f'sandbox_mode = "{"workspace-write" if authorized else "read-only"}"',
         '\n[sandbox_workspace_write]',
         'writable_roots = []',
