@@ -45,7 +45,7 @@ in the project root, use one of these paths:
    file; and an ISO-8601 expiry timestamp with timezone. The evidence should
    describe the reason, scope, and rollback. Empty fields, placeholders, future
    creation dates, and expired rows do not grant access. Then run
-   `python3 automation/gatekeeper.py codex-config`.
+   `python3 automation/codex_config.py codex-config`.
 
 Start a **new** Codex session after either path. The generated config now uses
 `workspace-write`, allowing source and other ordinary project files. Codex
@@ -55,7 +55,8 @@ protection for `.governance/` after authorization. It grants no deployment,
 external-write, or other authority flags.
 
 The sandbox is a session snapshot. On revocation or override expiry, stop active
-sessions, withdraw the grant, run `codex-config`, and start a new session.
+sessions, withdraw the grant, run
+`python3 automation/codex_config.py codex-config`, and start a new session.
 Refresh permissions before each session. Review the authority records yourself
 when refreshing after a writable session. Never continue an old implementation
 session after withdrawing its authority. Malformed gate state or symlinked

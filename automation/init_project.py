@@ -193,10 +193,12 @@ def main() -> None:
     )
 
     # Native Codex permission boundaries exist before the first agent session.
-    subprocess.run(
-        [sys.executable, str(target / "automation/gatekeeper.py"), "codex-config"],
-        cwd=target, check=True, capture_output=True,
+    result = subprocess.run(
+        [sys.executable, str(target / "automation/codex_config.py"), "codex-config"],
+        cwd=target, capture_output=True, text=True,
     )
+    if result.returncode:
+        raise SystemExit((result.stdout + result.stderr).strip())
 
     # ── Fresh git history ───────────────────────────────────────────────────
     git(["init", "-q"], target)

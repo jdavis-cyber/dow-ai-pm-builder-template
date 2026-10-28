@@ -6,6 +6,14 @@ follows SemVer aligned to the template's major revisions.
 
 ## [Unreleased]
 
+### Fixed
+- Codex starts generated projects in a read-only sandbox until Sprint Zero sign-off
+  or a valid Human Director implementation override (AI-1176 / DEF-017).
+  This blocks writes to source, authority records, and planning files before
+  authorization. Operators refresh permissions with
+  `python3 automation/codex_config.py codex-config` and start a new session;
+  `gatekeeper.py sign` also refreshes existing generated configurations.
+
 ### Model chosen per session
 - Removed the hardcoded `model` (`gpt-5.4`, `gpt-5.3-codex-spark`) and
   `model_reasoning_effort` pins from the 136 vendored VoltAgent packages; the

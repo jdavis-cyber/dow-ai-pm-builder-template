@@ -7,11 +7,14 @@ Requires Codex's `sandbox` interface. A missing client,
 unsupported sandbox, or nested-sandbox refusal is a FAILURE, never a skip or
 evidence that source protection worked. The probe creates disposable projects
 and fixture authority records, without modifying the template's authority.
+The override phase refreshes permissions with the operator command:
+    python3 automation/codex_config.py codex-config
 """
 
 import argparse
 from datetime import datetime, timedelta, timezone
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -98,7 +101,6 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--codex", default="codex")
     args = parser.parse_args()
-    import os
     with tempfile.TemporaryDirectory(prefix="ai-1176-sandbox-") as directory:
         parent = Path(directory).resolve()
         for grant in ("signoff", "override"):
@@ -125,7 +127,7 @@ def main():
                        f"docs/decisions/override.md | {(now + timedelta(hours=1)).isoformat()} |\n")
                 with (project / ".governance/security-compliance/override-register.md").open("a") as handle:
                     handle.write(row)
-                run([*gatekeeper, "codex-config"], project)
+                run([sys.executable, "automation/codex_config.py", "codex-config"], project)
             probe(args.codex, project, "write")
     print("PASS: 4 sandbox phases (2 denied before authority, 2 allowed after authority)")
 
