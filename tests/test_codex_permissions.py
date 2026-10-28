@@ -269,6 +269,23 @@ def test_override_row_opens_source_without_other_authority(project, authority):
     assert_source_access(project, "read")
 
 
+def test_signed_override_reaches_dispatcher_packet_and_write_audit(project, authority):
+    add_override(project)
+    assert cli(project, "gatekeeper.py", "sign").returncode == 0
+    probe = (
+        "import sys; sys.path.insert(0, 'automation')\n"
+        "import gatekeeper, governed_factory as g\n"
+        "state = gatekeeper.effective_state(gatekeeper.load_state())\n"
+        "packet = g.build_packet({'Task ID': 'T-1'}, state)\n"
+        "print(packet['gate_state']['implementation_authorized'])\n"
+        "print(gatekeeper.check_action('write', 'src/app.py', state)[0])\n"
+    )
+    result = subprocess.run([sys.executable, "-c", probe], cwd=project,
+                            text=True, capture_output=True)
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.split() == ["True", "True"]
+
+
 def test_gate_signature_failure_cancels_signed_override(project, authority):
     add_override(project)
     assert cli(project, "gatekeeper.py", "sign").returncode == 0

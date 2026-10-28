@@ -285,13 +285,22 @@ def is_protected_source_path(path: str) -> bool:
     return any(rp == prefix.rstrip("/") or rp.startswith(prefix) for prefix in PROTECTED_SOURCE_PREFIXES)
 
 
+def effective_state(state: dict) -> dict:
+    """Gate state with implementation_authorized set to the effective authority.
+
+    A signed Human Director override grants source access while the stored
+    flag stays false; every caller (selection, packets, write audit) must see
+    the same answer. A bad signature yields an empty, unauthorized state.
+    """
+    implementation_allowed = implementation_permission(state)
+    if signature_error(state):
+        state = {}
+    return {**state, "implementation_authorized": implementation_allowed}
+
+
 def check_action(action: str, path: str | None = None, state: dict | None = None) -> tuple[bool, str]:
     if state is None:
-        state = load_state()
-        implementation_allowed = implementation_permission(state)
-        if signature_error(state):
-            state = {}
-        state = {**state, "implementation_authorized": implementation_allowed}
+        state = effective_state(load_state())
     action = action.lower().strip()
     path = path or ""
 
