@@ -64,6 +64,9 @@ SECRET_PATTERNS = (
     re.compile(r"(?<=://)[^/\s:@]+:[^/\s@]+(?=@)"),
 )
 ADAPTER_TIMEOUT_EXIT = 124
+# After a timeout or stop has ended the adapter tree, wait at most this long for
+# its output pipes to close. A process that escaped the kill can hold them open.
+ADAPTER_DRAIN_TIMEOUT = 5.0
 
 ACCOUNTABLE = {
     "Requirements BA",
@@ -651,9 +654,62 @@ def adapter_popen_options() -> dict:
     return {"start_new_session": True}
 
 
-def kill_adapter_tree(proc) -> None:
+class WindowsJob:
+    """A Windows Job Object holding the adapter and the processes it starts.
+
+    taskkill /T walks the tree from the adapter's shell, so it misses children
+    once that shell has exited. A job tracks them independently of the shell.
+    Children the shell starts before the adapter is assigned to the job are not
+    in it; taskkill and the bounded output drain still cover them.
+    """
+
+    def __init__(self, handle, kernel32):
+        self._handle = handle
+        self._kernel32 = kernel32
+
+    @classmethod
+    def for_process(cls, pid: int):
+        """A job holding process ``pid``, or None if one can't be set up."""
+        try:
+            import ctypes
+            from ctypes import wintypes
+            kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+            kernel32.CreateJobObjectW.argtypes = (wintypes.LPVOID, wintypes.LPCWSTR)
+            kernel32.CreateJobObjectW.restype = wintypes.HANDLE
+            kernel32.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+            kernel32.OpenProcess.restype = wintypes.HANDLE
+            kernel32.AssignProcessToJobObject.argtypes = (wintypes.HANDLE, wintypes.HANDLE)
+            kernel32.TerminateJobObject.argtypes = (wintypes.HANDLE, wintypes.UINT)
+            kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
+        except (AttributeError, ImportError, OSError):
+            return None
+        job = kernel32.CreateJobObjectW(None, None)
+        if not job:
+            return None
+        process = kernel32.OpenProcess(0x0101, False, pid)  # PROCESS_SET_QUOTA | PROCESS_TERMINATE
+        assigned = bool(process) and bool(kernel32.AssignProcessToJobObject(job, process))
+        if process:
+            kernel32.CloseHandle(process)
+        if not assigned:
+            kernel32.CloseHandle(job)
+            return None
+        return cls(job, kernel32)
+
+    def terminate(self) -> bool:
+        """End every process in the job. True if Windows accepted the request."""
+        return bool(self._handle) and bool(self._kernel32.TerminateJobObject(self._handle, ADAPTER_TIMEOUT_EXIT))
+
+    def close(self) -> None:
+        if self._handle:
+            self._kernel32.CloseHandle(self._handle)
+            self._handle = None
+
+
+def kill_adapter_tree(proc, job=None) -> None:
     """Stop the adapter and every process it started."""
     if _on_windows():
+        if job is not None and job.terminate():
+            return
         try:
             done = subprocess.run(["taskkill", "/T", "/F", "/PID", str(proc.pid)], capture_output=True)
             killed = done.returncode == 0
@@ -666,6 +722,49 @@ def kill_adapter_tree(proc) -> None:
         os.killpg(proc.pid, signal.SIGKILL)
     except OSError:
         proc.kill()
+
+
+def _partial_output(data) -> str:
+    """Output a timed-out communicate() had collected, as text with universal newlines."""
+    if not data:
+        return ""
+    if isinstance(data, bytes):
+        data = data.decode("utf-8", errors="replace")
+    return data.replace("\r\n", "\n").replace("\r", "\n")
+
+
+def drain_adapter_output(proc) -> tuple[str, str]:
+    """Collect the output of an adapter whose tree was just stopped, waiting at most
+    ADAPTER_DRAIN_TIMEOUT. If a process that escaped the kill still holds the pipes,
+    stop waiting, release them, and say so in stderr."""
+    try:
+        out, err = proc.communicate(timeout=ADAPTER_DRAIN_TIMEOUT)
+        return out or "", err or ""
+    except subprocess.TimeoutExpired as exc:
+        # POSIX communicate() hands back what it read so far; on Windows the
+        # stdlib reader threads keep it until the pipe closes.
+        out, err = _partial_output(exc.output), _partial_output(exc.stderr)
+    if not _on_windows():
+        # communicate() reads with select() on POSIX, so no thread is using these.
+        # On Windows its reader threads hold the file locks; closing would block.
+        for stream in (proc.stdin, proc.stdout, proc.stderr):
+            try:
+                if stream:
+                    stream.close()
+            except OSError:
+                pass
+    if err and not err.endswith("\n"):
+        err += "\n"
+    err += (f"[factory: stopped waiting for adapter output after {ADAPTER_DRAIN_TIMEOUT:g}s; "
+            "a process the adapter started still holds its output pipes]\n")
+    return out, err
+
+
+def _wait_bounded(proc) -> None:
+    try:
+        proc.wait(timeout=ADAPTER_DRAIN_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        pass
 
 
 def _process_start_time(pid: int):
@@ -764,25 +863,33 @@ def _process_group_running(pgid: int) -> bool:
 
 def _run_adapter(command: str, prompt: str, env: dict, timeout: float,
                  on_start=None) -> tuple[int, str, str, bool]:
-    """Run the adapter in its own process group so a timeout or a stop ends all of it."""
+    """Run the adapter in its own process group so a timeout or a stop ends all of it.
+
+    Waiting after a timeout or stop is bounded too, so a child that outlives the
+    kill and keeps the output pipes open cannot hold the factory."""
     proc = subprocess.Popen(command, shell=True, cwd=ROOT, env=env, text=True,
                             encoding="utf-8", errors="replace",
                             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE, **adapter_popen_options())
+    job = WindowsJob.for_process(proc.pid) if _on_windows() else None
     try:
         if on_start:
             on_start(proc)
         out, err = proc.communicate(prompt, timeout=timeout)
         return proc.returncode, out, err, False
     except subprocess.TimeoutExpired:
-        kill_adapter_tree(proc)
-        out, err = proc.communicate()
+        kill_adapter_tree(proc, job)
+        out, err = drain_adapter_output(proc)
+        _wait_bounded(proc)
         return ADAPTER_TIMEOUT_EXIT, out, err, True
     except BaseException:
         # An operator stop must not leave the adapter running on its own.
-        kill_adapter_tree(proc)
-        proc.wait()
+        kill_adapter_tree(proc, job)
+        _wait_bounded(proc)
         raise
+    finally:
+        if job is not None:
+            job.close()
 
 
 IN_FLIGHT_DIR_NAME = "in-flight"
