@@ -42,6 +42,19 @@ class FactoryMetricsTests(unittest.TestCase):
         self.assertEqual(summary["pass_rate"], 0.5)
         self.assertEqual(summary["violation_files"][0]["file"], "b-T2-result.json")
 
+    def test_interrupted_runs_are_not_counted_as_passed(self):
+        # AI-1163: an interrupted dispatch is recorded, and it is not a pass.
+        with tempfile.TemporaryDirectory() as d:
+            runs = pathlib.Path(d)
+            (runs / "a-T1-result.json").write_text(json.dumps(record("pass")))
+            (runs / "b-T2-result.json").write_text(
+                json.dumps(record("interrupted: operator stop (SIGINT) during dispatch")))
+            summary = factory_metrics.summarize(factory_metrics.collect(runs))
+        self.assertEqual(summary["runs_passed"], 1)
+        self.assertEqual(summary["runs_with_violations"], 1)
+        self.assertEqual(summary["violations_by_type"],
+                         {"interrupted: operator stop (SIGINT) during dispatch": 1})
+
     def test_unreadable_record_is_surfaced(self):
         with tempfile.TemporaryDirectory() as d:
             runs = pathlib.Path(d)

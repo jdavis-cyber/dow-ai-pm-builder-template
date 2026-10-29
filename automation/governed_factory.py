@@ -605,8 +605,27 @@ def _tail(text: str) -> str:
     return redact(text[-OUTPUT_TAIL_CHARS:])
 
 
+class FactoryInterrupted(BaseException):
+    """The operator stopped the factory with a signal (SIGTERM; SIGINT is KeyboardInterrupt)."""
+
+    def __init__(self, signum: int):
+        super().__init__(signum)
+        self.signum = signum
+
+
+def _raise_interrupted(signum, _frame):
+    raise FactoryInterrupted(signum)
+
+
+def _kill_group(proc: subprocess.Popen) -> None:
+    try:
+        os.killpg(proc.pid, signal.SIGKILL)
+    except OSError:
+        proc.kill()
+
+
 def _run_adapter(command: str, prompt: str, env: dict, timeout: float) -> tuple[int, str, str, bool]:
-    """Run the adapter in its own process group so a timeout stops all of it."""
+    """Run the adapter in its own process group so a timeout or a stop ends all of it."""
     proc = subprocess.Popen(command, shell=True, cwd=ROOT, env=env, text=True,
                             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE, start_new_session=True)
@@ -614,12 +633,75 @@ def _run_adapter(command: str, prompt: str, env: dict, timeout: float) -> tuple[
         out, err = proc.communicate(prompt, timeout=timeout)
         return proc.returncode, out, err, False
     except subprocess.TimeoutExpired:
-        try:
-            os.killpg(proc.pid, signal.SIGKILL)
-        except OSError:
-            proc.kill()
+        _kill_group(proc)
         out, err = proc.communicate()
         return ADAPTER_TIMEOUT_EXIT, out, err, True
+    except BaseException:
+        # An operator stop must not leave the adapter running on its own.
+        _kill_group(proc)
+        proc.wait()
+        raise
+
+
+IN_FLIGHT_DIR_NAME = "in-flight"
+
+
+def _in_flight_dir() -> Path:
+    """Operator-side markers for dispatches that have started but not been recorded."""
+    return chain_anchor_path().with_suffix("") / IN_FLIGHT_DIR_NAME
+
+
+def mark_in_flight(task_id: str, run_info: dict) -> None:
+    seal = run_info.get("task_packet") or {}
+    name = Path(seal.get("path") or f"{now_id()}-{task_id}.json").stem
+    path = _in_flight_dir() / f"{name}.json"
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    path.write_text(json.dumps({
+        "task_id": task_id,
+        "dispatched_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "adapter": "shell",
+        "task_packet": seal or None,
+    }, indent=2) + "\n")
+    run_info["_in_flight"] = str(path)
+
+
+def recover_interrupted_dispatches() -> list[str]:
+    """Record a run result for every dispatch the factory never finished recording.
+
+    A marker left behind means the factory was killed or crashed between
+    dispatch and its run result; the packet would otherwise be an orphan.
+    """
+    directory = _in_flight_dir()
+    recovered = []
+    for marker in sorted(directory.glob("*.json")) if directory.is_dir() else []:
+        try:
+            info = json.loads(marker.read_text())
+        except (OSError, json.JSONDecodeError):
+            info = {}
+        task_id = str(info.get("task_id") or "UNKNOWN")
+        result = {
+            "record_type": "factory-run-result",
+            "task_id": task_id,
+            "checked_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "dispatched_at_utc": info.get("dispatched_at_utc"),
+            "adapter": info.get("adapter"),
+            "checks": {},
+            "outcome": ("interrupted: dispatch did not complete; the factory stopped before "
+                        "recording a result (orphan task packet)"),
+            "adapter_returncode": None,
+            "violations": ["dispatch interrupted"],
+        }
+        seal = info.get("task_packet")
+        if seal:
+            result["task_packet"] = seal
+            problem = packet_seal_problem(seal)
+            result["checks"]["task_packet"] = "fail: " + problem if problem else "pass"
+        path = write_run_result({"Task ID": task_id}, result)
+        marker.unlink()
+        print(f"STOP: an earlier dispatch of {task_id} did not complete and left no run result; "
+              f"recorded it as interrupted in {path.relative_to(ROOT)}. Review it before continuing.")
+        recovered.append(task_id)
+    return recovered
 
 
 def dispatch(packet: dict, adapter: str, run_info: dict | None = None) -> int:
@@ -660,6 +742,7 @@ def dispatch(packet: dict, adapter: str, run_info: dict | None = None) -> int:
         env["FACTORY_TASK_PROMPT"] = prompt
         env["FACTORY_USAGE_FILE"] = str(usage_path)
         timeout = factory_limits(cfg)["adapter_timeout_seconds"]
+        mark_in_flight(packet["task"]["Task ID"], run_info)
         code, out, err, timed_out = _run_adapter(command, prompt, env, timeout)
         sys.stdout.write(out)
         sys.stderr.write(err)
@@ -988,11 +1071,62 @@ def write_run_result(task: dict, result: dict) -> Path:
 USAGE_TOTALS = {"tokens": 0, "cost_usd": 0.0}
 
 
+# A Verified label in a table cell ("| Verified task evidence |") or a status
+# field ("Evidence Type: Verified"). Column headings such as "Verified By" and
+# words such as "unverified" are not labels.
+VERIFIED_CELL_RE = re.compile(r"^(?:\*\*|__)?\s*verified\b(?!\s+(?:by|date|on)\b)", re.IGNORECASE)
+VERIFIED_FIELD_RE = re.compile(
+    r"^\s*(?:[-*+]\s+)?(?:\*\*|__)?(?:status|evidence type|evidence status|verification status)(?:\*\*|__)?"
+    r"\s*:\s*(?:\*\*|__)?\s*verified\b", re.IGNORECASE)
+
+
+def verified_label_lines(text: str) -> set[str]:
+    """Lines that label evidence as Verified."""
+    lines = set()
+    for line in text.splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")] if line.lstrip().startswith("|") else []
+        if any(VERIFIED_CELL_RE.match(cell) for cell in cells) or VERIFIED_FIELD_RE.match(line):
+            lines.add(line.rstrip())
+    return lines
+
+
+def _read_text(path: str) -> str:
+    try:
+        return (ROOT / path).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
+
+
+def verified_labels_baseline(snapshot) -> dict[str, list[str]]:
+    """Verified-labelled lines in already-dirty Markdown before dispatch; committed
+    files are read back from the pre-dispatch HEAD instead."""
+    return {p: sorted(verified_label_lines(_read_text(p))) for p in (snapshot or {}) if p.endswith(".md")}
+
+
+def added_verified_labels(paths, baseline: dict, head: str) -> list[dict]:
+    """Verified labels the run added. Only the Human Director's review marks
+    evidence Verified, so an adapter adding one is a violation (DEF-021)."""
+    added = []
+    for path in sorted(p for p in paths if p.endswith(".md")):
+        if path in baseline:
+            before = set(baseline[path])
+        elif head:
+            shown = _git("show", f"{head}:{path}")
+            before = verified_label_lines(shown.stdout.decode("utf-8", "replace")) if shown.returncode == 0 else set()
+        else:
+            before = set()
+        added.extend({"path": path, "line": line}
+                     for line in sorted(verified_label_lines(_read_text(path)) - before))
+    return added
+
+
 def post_dispatch_checks(task: dict, state: dict, before,
                          adapter_returncode: int = 0,
                          evidence_before: dict | None = None,
                          run_info: dict | None = None,
-                         git_before=NOT_AUDITED) -> int:
+                         git_before=NOT_AUDITED,
+                         verified_before: dict | None = None,
+                         interrupted: tuple[str, int] | None = None) -> int:
     """Record every adapter outcome and all applicable detective checks.
 
     A nonzero adapter exit retains its exit code and primary failure outcome.
@@ -1003,6 +1137,10 @@ def post_dispatch_checks(task: dict, state: dict, before,
     ref changes the run made are audited and committed paths go through the
     write audit. Assisted completions leave it out: the human finishing the
     task may commit, so only the working tree is compared for them.
+
+    ``verified_before`` (shell runs) turns on the Verified-label check.
+    ``interrupted`` is (reason, exit code) when an operator stop cut the
+    dispatch short; the checks still run and the outcome says it was interrupted.
     """
     result = {
         "record_type": "factory-run-result",
@@ -1041,6 +1179,15 @@ def post_dispatch_checks(task: dict, state: dict, before,
         if viol:
             print("STOP: unauthorized writes detected after dispatch: " + ", ".join(viol))
             violation("unauthorized writes")
+    if verified_before is not None and before is not None and after is not None:
+        head = git_before["head"] if isinstance(git_before, dict) else ""
+        added = added_verified_labels(adapter_changes(before, after) | committed, verified_before, head)
+        result["checks"]["verified_labels"] = {"added": added} if added else "pass"
+        if added:
+            print("STOP: the run labelled evidence Verified before any Human Director review: "
+                  + ", ".join(sorted({a["path"] for a in added}))
+                  + "; record agent output as Generated — awaiting Human Director review")
+            violation("unreviewed evidence labelled verified")
     if git_kinds:
         print("STOP: the adapter changed git history (" + ", ".join(git_kinds) + "); "
               "no task authority permits an adapter to commit, move refs or rewrite history")
@@ -1068,20 +1215,28 @@ def post_dispatch_checks(task: dict, state: dict, before,
         print(f"STOP: required evidence missing or empty after dispatch for {task['Task ID']}: " + ", ".join(missing))
         violation("missing evidence")
     result["evidence_sha256"] = {p: _fingerprint(p) for p in declared}
+    refreshed = {t["Task ID"]: t for t in parse_tasks(TASKS_FILE.read_text())}
+    status_after = str(refreshed.get(task["Task ID"], {}).get("Status", "")).strip()
+    result["status_after_dispatch"] = status_after or None
+    still_open = status_kind(status_after) in DISPATCHABLE
     if evidence_before is not None and declared and not missing:
         unchanged = all(evidence_before.get(p) == result["evidence_sha256"][p] for p in declared)
         result["checks"]["evidence_changed"] = "fail: no evidence changed" if unchanged else "pass"
         if unchanged:
-            print(f"STOP: {task['Task ID']} changed status but produced no new evidence.")
+            # Say what was observed: DEF-019 reported a status change that never happened.
+            if still_open:
+                print(f"STOP: {task['Task ID']} is still {status_after} and produced no new evidence.")
+            elif status_after:
+                print(f"STOP: {task['Task ID']} changed status to {status_after} but produced no new evidence.")
+            else:
+                print(f"STOP: {task['Task ID']} is no longer on the board and produced no new evidence.")
             violation("evidence unchanged")
-    refreshed = {t["Task ID"]: t for t in parse_tasks(TASKS_FILE.read_text())}
-    still_open = status_kind(refreshed.get(task["Task ID"], {}).get("Status", "")) in DISPATCHABLE
     result["checks"]["status_transitioned"] = "pass" if not still_open else "fail: task still open"
     if still_open:
         print(f"STOP: {task['Task ID']} is still open after dispatch; halting to prevent a redispatch loop. The adapter must update task status and evidence.")
         violation("no status transition")
     lock0 = lock0_spec_paths(task)
-    if lock0 and status_kind(refreshed.get(task["Task ID"], {}).get("Status", "")) == "complete":
+    if lock0 and status_kind(status_after) == "complete":
         # Lock 0 completes only when the dispatcher's own locked validation passes.
         problems = lock0_problems(lock0)
         result["checks"]["lock0_spec"] = {"problems": problems} if problems else "pass"
@@ -1107,7 +1262,20 @@ def post_dispatch_checks(task: dict, state: dict, before,
             if over:
                 print("STOP: spend ceiling reached (" + ", ".join(over) + "); human review required before more runs.")
                 violation("budget ceiling reached")
-    if adapter_returncode != 0:
+    if interrupted:
+        reason, code = interrupted
+        print(f"STOP: dispatch interrupted ({reason}); detective checks and the interruption are recorded.")
+        result["violations"].insert(0, "dispatch interrupted")
+        result["outcome"] = "interrupted: " + reason
+        result["adapter_returncode"] = None
+    elif adapter_signal(adapter_returncode):
+        signum = adapter_signal(adapter_returncode)
+        name = _signal_name(signum)
+        print(f"STOP: the adapter was stopped by {name}; detective checks and failure evidence retained.")
+        result["violations"].append("adapter interrupted")
+        result["outcome"] = f"interrupted: adapter stopped by {name}"
+        code = 128 + signum
+    elif adapter_returncode != 0:
         print(f"STOP: adapter failed with exit code {adapter_returncode}; detective checks and failure evidence retained.")
         result["violations"].append("adapter failure")
         result["outcome"] = "violation: adapter failure"
@@ -1115,9 +1283,29 @@ def post_dispatch_checks(task: dict, state: dict, before,
     if code != 0:
         print("Fail-closed halt. Any exception requires explicit human authorization recorded in "
               ".governance/security-compliance/override-register.md; this message grants no override or authority.")
+    in_flight = result.pop("_in_flight", None)
     path = write_run_result(task, result)
+    if in_flight:
+        Path(in_flight).unlink(missing_ok=True)
     print(f"factory run result recorded: {path.relative_to(ROOT)}")
     return code
+
+
+def adapter_signal(returncode: int) -> int:
+    """The signal that stopped the adapter, or 0. The adapter runs through the
+    shell, which reports a child killed by signal N as exit status 128 + N."""
+    if returncode < 0:
+        return -returncode
+    if 128 < returncode < 128 + signal.NSIG:
+        return returncode - 128
+    return 0
+
+
+def _signal_name(signum: int) -> str:
+    try:
+        return signal.Signals(signum).name
+    except ValueError:
+        return f"signal {signum}"
 
 
 PENDING_DIR_NAME = "pending-assisted"
@@ -1261,6 +1449,8 @@ def once(adapter: str) -> int:
         for problem in chain:
             print("STOP: evidence trail broken: " + problem)
         return 2
+    if recover_interrupted_dispatches():
+        return 3
     tasks = parse_tasks(TASKS_FILE.read_text())
     code, pending = check_assisted_completions(tasks)
     if code != 0:
@@ -1295,11 +1485,21 @@ def once(adapter: str) -> int:
             print(problem)
             return 2
         evidence_before = evidence_fingerprints(task)
+        verified_before = verified_labels_baseline(before)
         run_info: dict = {}
-        code = dispatch(packet, adapter, run_info)
+        interrupted = None
+        try:
+            code = dispatch(packet, adapter, run_info)
+        except KeyboardInterrupt:
+            code, interrupted = 0, ("operator stop (SIGINT) during dispatch", 128 + signal.SIGINT)
+        except FactoryInterrupted as stop:
+            code, interrupted = 0, (f"operator stop ({_signal_name(stop.signum)}) during dispatch",
+                                    128 + stop.signum)
+        # A crash here leaves the in-flight marker; the next run records it.
         return post_dispatch_checks(task, state, before, adapter_returncode=code,
                                     evidence_before=evidence_before, run_info=run_info,
-                                    git_before=git_before)
+                                    git_before=git_before, verified_before=verified_before,
+                                    interrupted=interrupted)
     return dispatch(packet, adapter)
 
 
@@ -1329,6 +1529,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-wall-seconds", type=int, default=None,
                         help="stop the loop after this much wall-clock time (default from factory config)")
     args = parser.parse_args(argv)
+    # SIGTERM stops the factory like Ctrl-C: the dispatch in progress is recorded as interrupted.
+    signal.signal(signal.SIGTERM, _raise_interrupted)
     if args.loop:
         unreviewed = task_board_unreviewed()
         if unreviewed:

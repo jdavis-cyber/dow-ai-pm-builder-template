@@ -32,10 +32,14 @@ Use this block near the top of governance, decision, verification, and handoff a
 |---|---|
 | Template Scaffold | Generic template starter material; never approval evidence by itself |
 | Project-Specific | Populated for this project |
-| Generated | Produced by a tool/agent and requires review before authority |
+| Generated | Produced by a tool or agent, including the command output it recorded; requires Human Director review before authority |
 | Historical | Preserved from an earlier state for traceability |
-| Verified | Supported by recorded command/API/tool output |
+| Verified | Reviewed and accepted by the Human Director; cite the review or gate record |
 
 ## Rule
 
 A file's existence is not approval. An artifact is approved only when the relevant approval section or gate package says so.
+
+Agents never label their own output Verified. They record it as Generated; the
+Human Director marks it Verified after reviewing it. The governed factory flags
+any dispatched run that adds a Verified label.
