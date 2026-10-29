@@ -13,10 +13,12 @@ import subprocess
 import sys
 import time
 import unittest
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from test_commit_audit import ShellAdapterFixture  # noqa: E402
+import governed_factory  # noqa: E402
 
 INDEX = "docs/verification/evidence-index.md"
 CLOSE = ("p = pathlib.Path('orchestration/tasks.md')\n"
@@ -159,6 +161,34 @@ class InterruptionTests(Records, unittest.TestCase):
         self.assertEqual(again.returncode, 0, again.stdout + again.stderr)
         self.assertNotIn("did not complete", again.stdout)
 
+    def test_recovery_refuses_while_the_interrupted_adapter_still_runs(self):
+        # Codex P2 on #29: a killed factory frees the lock, but its adapter lives on in
+        # its own process group; recovery must not dispatch the task a second time.
+        proc, pid = self.start(self.SLOW)
+        try:
+            proc.kill()
+            proc.communicate(timeout=30)
+            [marker] = self.in_flight_markers()
+            identity = json.loads(marker.read_text())["adapter_process"]
+            self.assertEqual(identity["pgid"], os.getpgid(pid))
+            for adapter in ("shell", "assisted"):
+                with self.subTest(adapter=adapter):
+                    later = self.factory(adapter)
+                    self.assertEqual(later.returncode, 75, later.stdout + later.stderr)
+                    self.assertIn("adapter from interrupted dispatch still running", later.stdout)
+                    self.assertEqual(self.records(), [])
+                    self.assertEqual(self.in_flight_markers(), [marker])
+        finally:
+            os.kill(pid, signal.SIGKILL)
+        self.assert_adapter_gone(pid)
+        # Once the adapter has exited, recovery records the interruption as before.
+        later = self.factory("shell")
+        self.assertEqual(later.returncode, 3, later.stdout + later.stderr)
+        [record] = self.records()
+        self.assertTrue(record["outcome"].startswith("interrupted: dispatch did not complete"))
+        self.assertEqual(record["adapter_process"], identity)
+        self.assertEqual(self.in_flight_markers(), [])
+
     def in_flight_markers(self):
         return list(Path(self.env["FACTORY_CHAIN_ANCHOR_DIR"]).rglob("in-flight/*.json"))
 
@@ -201,6 +231,48 @@ class InterruptionTests(Records, unittest.TestCase):
         self.assertIn("some-other-host.invalid", result.stdout)
         self.assertTrue(marker.exists())
         self.assertEqual(self.records(), [])
+
+
+class AdapterIdentityTests(unittest.TestCase):
+    """Recovery tells a surviving adapter from an exited one or a reused pid."""
+
+    def spawn(self):
+        proc = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"], start_new_session=True)
+        self.addCleanup(lambda: (proc.kill(), proc.wait()))
+        return proc
+
+    def test_running_adapter_is_still_running(self):
+        proc = self.spawn()
+        identity = governed_factory.adapter_identity(proc)
+        self.assertEqual(identity["pgid"], proc.pid)
+        self.assertTrue(governed_factory.adapter_still_running(identity))
+
+    def test_exited_adapter_is_not_running(self):
+        proc = self.spawn()
+        identity = governed_factory.adapter_identity(proc)
+        proc.kill()
+        proc.wait()
+        self.assertFalse(governed_factory.adapter_still_running(identity))
+
+    def test_reused_pid_is_not_the_recorded_adapter(self):
+        proc = self.spawn()
+        identity = governed_factory.adapter_identity(proc)
+        self.assertIsNotNone(identity["start_time"])
+        self.assertFalse(governed_factory.adapter_still_running({**identity, "start_time": "another process"}))
+
+    def test_malformed_identity_is_not_running(self):
+        for identity in ({}, {"pid": "1"}, {"pid": True}, {"pid": 0}):
+            with self.subTest(identity=identity):
+                self.assertFalse(governed_factory.adapter_still_running(identity))
+
+    def test_windows_checks_the_adapter_process_and_its_start_time(self):
+        with mock.patch.object(governed_factory, "_on_windows", return_value=True), \
+                mock.patch.object(governed_factory, "_windows_process", return_value=(True, 1234)) as probe:
+            self.assertTrue(governed_factory.adapter_still_running({"pid": 42, "pgid": None, "start_time": 1234}))
+            self.assertFalse(governed_factory.adapter_still_running({"pid": 42, "pgid": None, "start_time": 99}))
+            probe.return_value = (False, 1234)
+            self.assertFalse(governed_factory.adapter_still_running({"pid": 42, "pgid": None, "start_time": 1234}))
+        probe.assert_called_with(42)
 
 
 if __name__ == "__main__":

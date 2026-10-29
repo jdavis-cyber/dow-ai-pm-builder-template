@@ -626,12 +626,109 @@ def _kill_group(proc: subprocess.Popen) -> None:
         proc.kill()
 
 
-def _run_adapter(command: str, prompt: str, env: dict, timeout: float) -> tuple[int, str, str, bool]:
+def _process_start_time(pid: int):
+    """When the process started, as the OS reports it, or None if that can't be
+    read cheaply. Used only to tell a recorded adapter from a reused pid."""
+    if _on_windows():
+        return _windows_process(pid)[1]
+    if Path("/proc/self/stat").exists():
+        try:
+            stat = Path(f"/proc/{pid}/stat").read_text()
+            return int(stat.rsplit(")", 1)[1].split()[19])  # field 22: starttime, clock ticks since boot
+        except (OSError, ValueError, IndexError):
+            return None
+    try:  # macOS and other BSDs: no /proc
+        shown = subprocess.run(["ps", "-o", "lstart=", "-p", str(pid)], capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return shown.stdout.strip() or None
+
+
+def _windows_process(pid: int) -> tuple[bool, int | None]:
+    """(running, creation time) of a Windows process, without psutil."""
+    import ctypes
+    from ctypes import wintypes
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+    kernel32.OpenProcess.restype = wintypes.HANDLE
+    kernel32.GetExitCodeProcess.argtypes = (wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD))
+    kernel32.GetProcessTimes.argtypes = (wintypes.HANDLE,) + (ctypes.POINTER(wintypes.FILETIME),) * 4
+    kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
+    handle = kernel32.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+    if not handle:
+        return ctypes.get_last_error() == 5, None  # access denied: it exists but isn't ours to inspect
+    try:
+        code = wintypes.DWORD()
+        running = bool(kernel32.GetExitCodeProcess(handle, ctypes.byref(code))) and code.value == 259  # STILL_ACTIVE
+        times = [wintypes.FILETIME() for _ in range(4)]
+        if not kernel32.GetProcessTimes(handle, *(ctypes.byref(t) for t in times)):
+            return running, None
+        return running, (times[0].dwHighDateTime << 32) | times[0].dwLowDateTime
+    finally:
+        kernel32.CloseHandle(handle)
+
+
+def adapter_identity(proc) -> dict:
+    """What recovery needs to tell whether this adapter is still running."""
+    return {"pid": proc.pid, "pgid": None if _on_windows() else proc.pid,
+            "start_time": _process_start_time(proc.pid)}
+
+
+def adapter_still_running(identity: dict) -> bool:
+    """True if the recorded adapter, or anything left in its process group, still runs.
+
+    POSIX: the adapter leads its own session, so its group id is its pid, and any
+    running member of that group counts (zombies don't). A group id can't be reused while
+    the group exists, so a live leader whose start time differs is a new process
+    that only reused the number. Windows: the adapter process itself is checked.
+    """
+    pid = identity.get("pid")
+    if not isinstance(pid, int) or isinstance(pid, bool) or pid <= 0:
+        return False
+    recorded = identity.get("start_time")
+    if _on_windows():
+        running, started = _windows_process(pid)
+        return running and (recorded is None or started is None or started == recorded)
+    pgid = identity.get("pgid")
+    pgid = pgid if isinstance(pgid, int) and not isinstance(pgid, bool) and pgid > 0 else pid
+    if not _process_group_running(pgid):
+        return False
+    started = _process_start_time(pid)
+    return recorded is None or started is None or started == recorded
+
+
+def _process_group_running(pgid: int) -> bool:
+    """Whether any process in the group is running. A zombie waiting to be reaped
+    has stopped, so it doesn't count; Linux shows that in /proc, elsewhere signal
+    0 to the group is the cheap check."""
+    proc_root = Path("/proc")
+    if (proc_root / "self" / "stat").exists():
+        for stat in proc_root.glob("[0-9]*/stat"):
+            try:
+                fields = stat.read_text().rsplit(")", 1)[1].split()
+            except (OSError, IndexError):
+                continue
+            if len(fields) > 2 and fields[2] == str(pgid) and fields[0] not in ("Z", "X"):
+                return True
+        return False
+    try:
+        os.killpg(pgid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        pass  # it exists, under another user
+    return True
+
+
+def _run_adapter(command: str, prompt: str, env: dict, timeout: float,
+                 on_start=None) -> tuple[int, str, str, bool]:
     """Run the adapter in its own process group so a timeout or a stop ends all of it."""
     proc = subprocess.Popen(command, shell=True, cwd=ROOT, env=env, text=True,
                             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE, start_new_session=True)
     try:
+        if on_start:
+            on_start(proc)
         out, err = proc.communicate(prompt, timeout=timeout)
         return proc.returncode, out, err, False
     except subprocess.TimeoutExpired:
@@ -726,6 +823,31 @@ def mark_in_flight(task_id: str, run_info: dict) -> None:
     run_info["_in_flight"] = str(path)
 
 
+def record_adapter_started(run_info: dict, proc) -> None:
+    """Add the running adapter's identity to the in-flight marker, so recovery
+    after a killed factory can see the adapter outlived it."""
+    path = Path(run_info["_in_flight"])
+    info = json.loads(path.read_text())
+    info["adapter_process"] = adapter_identity(proc)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(info, indent=2) + "\n")
+    os.replace(tmp, path)
+
+
+def live_adapter_markers() -> list[str]:
+    """Markers whose adapter is still running: its dispatch has not ended."""
+    directory = _in_flight_dir()
+    live = []
+    for marker in sorted(directory.glob("*.json")) if directory.is_dir() else []:
+        try:
+            identity = json.loads(marker.read_text()).get("adapter_process")
+        except (OSError, json.JSONDecodeError, AttributeError):
+            continue
+        if isinstance(identity, dict) and adapter_still_running(identity):
+            live.append(f"{marker.name} (adapter pid {identity.get('pid')})")
+    return live
+
+
 def foreign_in_flight_markers() -> list[str]:
     """Markers owned by another host: their owner can't be proven gone from here."""
     directory = _in_flight_dir()
@@ -765,6 +887,7 @@ def recover_interrupted_dispatches() -> list[str]:
             "dispatched_at_utc": info.get("dispatched_at_utc"),
             "adapter": info.get("adapter"),
             "dispatch_owner": info.get("owner"),
+            "adapter_process": info.get("adapter_process"),
             "checks": {},
             "outcome": ("interrupted: dispatch did not complete; the factory stopped before "
                         "recording a result (orphan task packet)"),
@@ -823,7 +946,8 @@ def dispatch(packet: dict, adapter: str, run_info: dict | None = None) -> int:
         env["FACTORY_USAGE_FILE"] = str(usage_path)
         timeout = factory_limits(cfg)["adapter_timeout_seconds"]
         mark_in_flight(packet["task"]["Task ID"], run_info)
-        code, out, err, timed_out = _run_adapter(command, prompt, env, timeout)
+        code, out, err, timed_out = _run_adapter(command, prompt, env, timeout,
+                                                 on_start=lambda proc: record_adapter_started(run_info, proc))
         sys.stdout.write(out)
         sys.stderr.write(err)
         run_info.update({
@@ -1547,6 +1671,12 @@ def _once(adapter: str) -> int:
         print("STOP: dispatch in progress or unproven: in-flight markers from another host can't be "
               "checked from here: " + ", ".join(foreign) + "; nothing was recorded. A human must confirm "
               "that dispatch ended before removing the marker.")
+        return DISPATCH_IN_PROGRESS_EXIT
+    live = live_adapter_markers()
+    if live:
+        print("STOP: adapter from interrupted dispatch still running: " + ", ".join(live) + "; nothing was "
+              "recorded. The factory that started it was stopped; wait for the adapter to exit, or stop it, "
+              "then run again.")
         return DISPATCH_IN_PROGRESS_EXIT
     if recover_interrupted_dispatches():
         return 3
