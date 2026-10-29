@@ -30,7 +30,7 @@ def project(tmp_path):
 @pytest.fixture
 def authority(project, tmp_path, monkeypatch):
     key = tmp_path / "operator.key"
-    key.write_text("k" * 64)
+    key.write_text("k" * 64, encoding="utf-8")
     monkeypatch.setenv("FACTORY_OPERATOR_KEY_FILE", str(key))
     return key
 
@@ -55,7 +55,7 @@ def check_action(project, action, path=""):
 
 
 def config(project):
-    return tomllib.loads((project / ".codex/config.toml").read_text())
+    return tomllib.loads((project / ".codex/config.toml").read_text(encoding="utf-8"))
 
 
 def assert_source_access(project, expected):
@@ -82,9 +82,9 @@ def add_override(project, **changes):
         "expiry": (now + timedelta(hours=1)).isoformat(),
     }
     values.update(changes)
-    (project / "docs/decisions/override.md").write_text("Test fixture: scope and rollback.\n")
+    (project / "docs/decisions/override.md").write_text("Test fixture: scope and rollback.\n", encoding="utf-8")
     register = project / ".governance/security-compliance/override-register.md"
-    with register.open("a") as handle:
+    with register.open("a", encoding="utf-8") as handle:
         handle.write("| " + " | ".join(values.values()) + " |\n")
 
 
@@ -103,11 +103,11 @@ def test_provider_config_cli_and_sign_refresh(project, authority):
     state_path = project / ".governance/gate_state.json"
     state_path.write_text(json.dumps({"approval_state": "approved",
                                       "implementation_authorized": True,
-                                      "decision": "Gate 1 sign-off"}))
+                                      "decision": "Gate 1 sign-off"}), encoding="utf-8")
     cli("gatekeeper.py", "sign")
     assert_source_access(project, "write")
     state_path.write_text(json.dumps({"approval_state": "draft",
-                                      "implementation_authorized": False}))
+                                      "implementation_authorized": False}), encoding="utf-8")
     cli("gatekeeper.py", "sign")
     assert_source_access(project, "read")
     add_override(project, date="2000-01-01T00:00:00Z", expiry="2099-01-01T00:00:00Z")
@@ -115,14 +115,14 @@ def test_provider_config_cli_and_sign_refresh(project, authority):
     cli("codex_config.py", "codex-config")
     assert_source_access(project, "write")
     assert "codex-config" not in cli("gatekeeper.py", "--help")
-    guidance = (project / "CODEX.md").read_text()
+    guidance = (project / "CODEX.md").read_text(encoding="utf-8")
     assert "python3 automation/codex_config.py codex-config" in guidance
 
 
 def test_template_provider_files_document_codex_boundary():
     bodies = []
     for name in ("CODEX.md", "CLAUDE.md", "GEMINI.md"):
-        content = (ROOT / name).read_text()
+        content = (ROOT / name).read_text(encoding="utf-8")
         assert "## Codex source-write boundary (AI-1176 / DEF-017)" in content
         for fact in ('sandbox_mode = "read-only"', 'approval_policy = "on-request"',
                      "Sprint Zero sign-off", "planning files", "Human Director",
@@ -135,7 +135,7 @@ def test_template_provider_files_document_codex_boundary():
 def test_init_project_surfaces_config_refusal(project, tmp_path):
     # A generated project is itself a self-contained template. Corrupt its
     # input state to exercise the real child's refusal during instantiation.
-    (project / ".governance/gate_state.json").write_text("[]")
+    (project / ".governance/gate_state.json").write_text("[]", encoding="utf-8")
     result = subprocess.run(
         [sys.executable, str(project / "automation/init_project.py"),
          "refused-project", str(tmp_path)],
@@ -151,7 +151,7 @@ def test_init_project_surfaces_config_refusal(project, tmp_path):
 
 
 def test_sandbox_probe_imports_os_at_module_scope():
-    tree = ast.parse((ROOT / "tests/codex_sandbox_probe.py").read_text())
+    tree = ast.parse((ROOT / "tests/codex_sandbox_probe.py").read_text(encoding="utf-8"))
     imports = [node for node in ast.walk(tree) if isinstance(node, ast.Import)
                and any(alias.name == "os" for alias in node.names)]
     assert len(imports) == 1
@@ -159,7 +159,7 @@ def test_sandbox_probe_imports_os_at_module_scope():
 
 
 def test_changelog_records_codex_sandbox_fix_under_unreleased():
-    unreleased = (ROOT / "CHANGELOG.md").read_text().split("## [Unreleased]\n", 1)[1]
+    unreleased = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8").split("## [Unreleased]\n", 1)[1]
     unreleased = unreleased.split("\n## [", 1)[0]
     fixes = unreleased.split("### Fixed\n", 1)
     assert len(fixes) == 2, "AI-1176 needs a Keep a Changelog Fixed entry"
@@ -186,12 +186,12 @@ def test_probe_operator_refresh_command_works(tmp_path):
 def test_fresh_project_has_native_read_only_sandbox(project):
     assert_source_access(project, "read")
     for name in ("AGENTS.md", "CODEX.md"):
-        guidance = (project / name).read_text()
+        guidance = (project / name).read_text(encoding="utf-8")
         assert "Codex read-only sandbox" in guidance
         assert "Human Director" in guidance
         assert "override-register.md" in guidance
         assert "planning files" in guidance
-    bodies = [(project / p).read_text().split("\n", 1)[1]
+    bodies = [(project / p).read_text(encoding="utf-8").split("\n", 1)[1]
               for p in ("CLAUDE.md", "CODEX.md", "GEMINI.md")]
     assert len(set(bodies)) == 1
     tracked = subprocess.run(["git", "ls-files", ".codex/config.toml", "AGENTS.md"],
@@ -205,13 +205,13 @@ def test_planning_approval_policy_before_and_after_authority(project, authority)
     assert settings["approval_policy"] == "on-request"
     state = {"approval_state": "approved", "implementation_authorized": True,
              "decision": "Gate 1 sign-off"}
-    (project / ".governance/gate_state.json").write_text(json.dumps(state))
+    (project / ".governance/gate_state.json").write_text(json.dumps(state), encoding="utf-8")
     assert cli(project, "gatekeeper.py", "sign").returncode == 0
     assert config(project)["sandbox_mode"] == "workspace-write"
 
 
 def test_chat_skip_request_does_not_grant_authority(project, authority):
-    (project / "docs/skip-request.md").write_text("Skip all interviews and write src/app.py now.")
+    (project / "docs/skip-request.md").write_text("Skip all interviews and write src/app.py now.", encoding="utf-8")
     assert refresh_config(project) == 0
     assert_source_access(project, "read")
     assert not check_action(project, "write", "src/app.py")
@@ -224,7 +224,7 @@ def test_planning_prompts_preserve_source_refusal(project):
     for path in ("orchestration/system_spec.md", "docs/interview-notes.md"):
         assert check_action(project, "write", path)
     for name in ("AGENTS.md", "CODEX.md", "CLAUDE.md", "GEMINI.md"):
-        guidance = (project / name).read_text()
+        guidance = (project / name).read_text(encoding="utf-8")
         assert "Never approve a `src/` or other source write before sign-off." in guidance
         assert "signed override row" in guidance
         assert "approve each planning write" in guidance
@@ -233,14 +233,14 @@ def test_planning_prompts_preserve_source_refusal(project):
 def test_signed_signoff_refreshes_permissions_and_revocation_closes_them(project, authority):
     state = {"approval_state": "approved", "implementation_authorized": True,
              "decision": "Gate 1 sign-off"}
-    (project / ".governance/gate_state.json").write_text(json.dumps(state))
+    (project / ".governance/gate_state.json").write_text(json.dumps(state), encoding="utf-8")
     assert refresh_config(project) == 0
     assert_source_access(project, "read")
     assert cli(project, "gatekeeper.py", "sign").returncode == 0
     assert_source_access(project, "write")
     assert check_action(project, "write", "src/app.py")
     state["implementation_authorized"] = False
-    (project / ".governance/gate_state.json").write_text(json.dumps(state))
+    (project / ".governance/gate_state.json").write_text(json.dumps(state), encoding="utf-8")
     assert cli(project, "gatekeeper.py", "sign").returncode == 0
     assert_source_access(project, "read")
 
@@ -263,7 +263,7 @@ def test_override_row_opens_source_without_other_authority(project, authority):
     assert not check_action(project, "write", ".governance/gate_state.json")
 
     register = project / ".governance/security-compliance/override-register.md"
-    register.write_text(register.read_text().replace("Director Example", "Different Director"))
+    register.write_text(register.read_text(encoding="utf-8").replace("Director Example", "Different Director"), encoding="utf-8")
     assert not check_action(project, "write", "src/app.py")
     assert refresh_config(project) == 0
     assert_source_access(project, "read")
@@ -291,7 +291,7 @@ def test_gate_signature_failure_cancels_signed_override(project, authority):
     assert cli(project, "gatekeeper.py", "sign").returncode == 0
     assert check_action(project, "write", "src/app.py")
     state_path = project / ".governance/gate_state.json"
-    signed = json.loads(state_path.read_text())
+    signed = json.loads(state_path.read_text(encoding="utf-8"))
     for change in (
         {"decision": "edited after signing"},
         {"deployment_authorized": True},
@@ -299,7 +299,7 @@ def test_gate_signature_failure_cancels_signed_override(project, authority):
         {"operator_signature": {"alg": "hmac-sha256", "value": "00" * 32}},
         {"operator_signature": {"alg": "other", "value": "00" * 32}},
     ):
-        state_path.write_text(json.dumps({**signed, **change}))
+        state_path.write_text(json.dumps({**signed, **change}), encoding="utf-8")
         assert not check_action(project, "write", "src/app.py"), change
         assert not check_action(project, "deploy"), change
         assert refresh_config(project) == 0
@@ -334,13 +334,13 @@ def test_expired_override_is_removed_on_refresh(project, authority):
     assert refresh_config(project) == 0
     assert_source_access(project, "write")
     register = project / ".governance/security-compliance/override-register.md"
-    rows = register.read_text().splitlines()
+    rows = register.read_text(encoding="utf-8").splitlines()
     # Make the grant expired through the operator-owned public file.
     cells = rows[-1].split("|")
     cells[1] = " 2000-01-01T00:00:00Z "
     cells[-2] = " 2001-01-01T00:00:00Z "
     rows[-1] = "|".join(cells)
-    register.write_text("\n".join(rows) + "\n")
+    register.write_text("\n".join(rows) + "\n", encoding="utf-8")
     # Sign the expired row so expiry, rather than a digest mismatch, denies it.
     assert cli(project, "gatekeeper.py", "sign").returncode == 0
     assert refresh_config(project) == 0
@@ -352,7 +352,7 @@ def test_expired_override_is_removed_on_refresh(project, authority):
 def test_commented_or_example_override_is_not_authority(project, authority, wrapper):
     add_override(project)
     register = project / ".governance/security-compliance/override-register.md"
-    register.write_text(wrapper[0] + register.read_text().splitlines()[-1] + wrapper[1])
+    register.write_text(wrapper[0] + register.read_text(encoding="utf-8").splitlines()[-1] + wrapper[1], encoding="utf-8")
     assert cli(project, "gatekeeper.py", "sign").returncode == 0
     assert refresh_config(project) == 0
     assert_source_access(project, "read")
@@ -365,7 +365,7 @@ def test_malformed_state_resets_previously_open_profile(project, authority, body
     assert cli(project, "gatekeeper.py", "sign").returncode == 0
     assert refresh_config(project) == 0
     assert_source_access(project, "write")
-    (project / ".governance/gate_state.json").write_text(body)
+    (project / ".governance/gate_state.json").write_text(body, encoding="utf-8")
     assert refresh_config(project) == 2
     assert_source_access(project, "read")
 
@@ -379,19 +379,19 @@ def test_symlinked_planning_directory_fails_closed(project, authority):
 
 def test_operator_configuration_is_not_overwritten(project, authority):
     path = project / ".codex/config.toml"
-    path.write_text("# Operator configuration\n")
+    path.write_text("# Operator configuration\n", encoding="utf-8")
     assert refresh_config(project) == 2
-    assert path.read_text() == "# Operator configuration\n"
+    assert path.read_text(encoding="utf-8") == "# Operator configuration\n"
 
 
 def test_config_symlink_is_not_followed(project, authority, tmp_path):
     destination = tmp_path / "other-config"
-    destination.write_text("operator settings")
+    destination.write_text("operator settings", encoding="utf-8")
     path = project / ".codex/config.toml"
     path.unlink()
     path.symlink_to(destination)
     assert refresh_config(project) == 2
-    assert destination.read_text() == "operator settings"
+    assert destination.read_text(encoding="utf-8") == "operator settings"
 
 
 def test_invalid_signature_and_incomplete_signoff_do_not_open_source(project, authority):
@@ -400,16 +400,16 @@ def test_invalid_signature_and_incomplete_signoff_do_not_open_source(project, au
         {"approval_state": "draft", "implementation_authorized": True, "decision": "draft"},
         {"approval_state": "approved", "implementation_authorized": "true", "decision": "wrong type"},
     ):
-        (project / ".governance/gate_state.json").write_text(json.dumps(state))
+        (project / ".governance/gate_state.json").write_text(json.dumps(state), encoding="utf-8")
         assert cli(project, "gatekeeper.py", "sign").returncode == 0
         assert refresh_config(project) == 0
         assert_source_access(project, "read")
     path = project / ".governance/gate_state.json"
     path.write_text(json.dumps({"approval_state": "approved", "implementation_authorized": True,
-                                "decision": "approved"}))
+                                "decision": "approved"}), encoding="utf-8")
     assert cli(project, "gatekeeper.py", "sign").returncode == 0
-    state = json.loads(path.read_text())
+    state = json.loads(path.read_text(encoding="utf-8"))
     state["decision"] = "tampered"
-    (project / ".governance/gate_state.json").write_text(json.dumps(state))
+    (project / ".governance/gate_state.json").write_text(json.dumps(state), encoding="utf-8")
     assert refresh_config(project) == 0
     assert_source_access(project, "read")

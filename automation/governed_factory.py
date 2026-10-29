@@ -587,7 +587,7 @@ def write_packet(packet: dict, run_info: dict | None = None) -> Path:
     raw = (json.dumps(packet, indent=2, ensure_ascii=False) + "\n").encode()
     path.write_bytes(raw)
     if run_info is not None:
-        run_info["task_packet"] = {"path": str(path.relative_to(ROOT)),
+        run_info["task_packet"] = {"path": path.relative_to(ROOT).as_posix(),
                                    "sha256": hashlib.sha256(raw).hexdigest()}
     return path
 
@@ -1731,7 +1731,7 @@ def check_assisted_completions(tasks: list[dict]) -> tuple[int, set[str]]:
         operator_records = frozenset()
         plan = str(task.get("Plan", "")).strip().strip("`")
         if planning and plan and not gatekeeper.plan_approval_error(task["Task ID"], plan):
-            operator_records = frozenset({str(gatekeeper.plan_approval_path(task["Task ID"]).relative_to(ROOT))})
+            operator_records = frozenset({gatekeeper.plan_approval_path(task["Task ID"]).relative_to(ROOT).as_posix()})
         print(f"ASSISTED MODE: checking completed {'planning for' if planning else 'task'} {task['Task ID']}")
         code = post_dispatch_checks(dict(task, _plan_only=True) if planning else task,
                                     record.get("gate_state") or {}, record.get("working_tree"),
@@ -1862,7 +1862,7 @@ def task_board_unreviewed() -> str:
     A loop runs on whatever the board says, and the board is agent-writable,
     so the operator reviews and commits it first. Uncommitted edits stop the loop.
     """
-    rel_board = str(TASKS_FILE.relative_to(ROOT))
+    rel_board = TASKS_FILE.relative_to(ROOT).as_posix()
     tracked = subprocess.run(["git", "ls-files", "--error-unmatch", rel_board], cwd=ROOT, capture_output=True)
     if tracked.returncode != 0:
         return f"{rel_board} is not committed (or git is unavailable); review and commit it first"

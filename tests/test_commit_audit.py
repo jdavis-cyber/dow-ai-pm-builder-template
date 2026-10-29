@@ -44,7 +44,7 @@ class ShellAdapterFixture:
                 "Handoff Target": "User Story BA", "Gate Impact": "none", "Requires Authority": "none"}
         (self.repo / "orchestration/tasks.md").write_text(
             "#### TASK-901: Synthetic documentation task\n"
-            + "\n".join(f"**{k}**: {v}" for k, v in task.items()) + "\n")
+            + "\n".join(f"**{k}**: {v}" for k, v in task.items()) + "\n", encoding="utf-8")
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -65,18 +65,18 @@ class ShellAdapterFixture:
                      "p = pathlib.Path('orchestration/tasks.md')\n"
                      "p.write_text(p.read_text().replace('**Status**: Ready', '**Status**: Done'))\n")
         code += body
-        (self.repo / "adapter.py").write_text(code)
+        (self.repo / "adapter.py").write_text(code, encoding="utf-8")
         self.git("init", "-q")
         self.git("add", "-A")
         self.git("commit", "-qm", "synthetic fixture")
         for n in range(extra_commits):
-            (self.repo / "docs" / f"history-{n}.md").write_text(f"history {n}\n")
+            (self.repo / "docs" / f"history-{n}.md").write_text(f"history {n}\n", encoding="utf-8")
             self.git("add", "-A")
             self.git("commit", "-qm", f"history {n}")
         result = self.factory("shell")
         records = list((self.repo / "docs/verification/factory-runs").glob("*-result.json"))
         self.assertEqual(len(records), 1, result.stdout + result.stderr)
-        return result, json.loads(records[0].read_text())
+        return result, json.loads(records[0].read_text(encoding="utf-8"))
 
     def factory(self, adapter):
         command = portable_command(sys.executable, "adapter.py")

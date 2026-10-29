@@ -81,36 +81,36 @@ class PacketSealTests(ShellAdapterFixture, unittest.TestCase):
         result, record = self.run_adapter("")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         packet = self.packet(record)
-        packet.write_text(packet.read_text().replace('"implementation_authorized": false',
-                                                     '"implementation_authorized": true'))
+        packet.write_text(packet.read_text(encoding="utf-8").replace('"implementation_authorized": false',
+                                                     '"implementation_authorized": true'), encoding="utf-8")
         later = self.factory("assisted")
         self.assertEqual(later.returncode, 2, later.stdout + later.stderr)
         self.assertIn("evidence trail broken", later.stdout)
         self.assertIn(packet.name, later.stdout)
 
     def test_assisted_packet_edited_before_completion_is_flagged(self):
-        (self.repo / "adapter.py").write_text("")
+        (self.repo / "adapter.py").write_text("", encoding="utf-8")
         self.git("init", "-q")
         self.git("add", "-A")
         self.git("commit", "-qm", "synthetic fixture")
         first = self.factory("assisted")
         self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
-        baseline = json.loads((self.repo / "docs/verification/factory-runs/pending-assisted/TASK-901.json").read_text())
+        baseline = json.loads((self.repo / "docs/verification/factory-runs/pending-assisted/TASK-901.json").read_text(encoding="utf-8"))
         packet = self.repo / baseline["task_packet"]["path"]
-        packet.write_text(packet.read_text().replace('"implementation_authorized": false',
-                                                     '"implementation_authorized": true'))
-        (self.repo / "docs/verification/fixture.md").write_text("Synthetic verification only\n")
+        packet.write_text(packet.read_text(encoding="utf-8").replace('"implementation_authorized": false',
+                                                     '"implementation_authorized": true'), encoding="utf-8")
+        (self.repo / "docs/verification/fixture.md").write_text("Synthetic verification only\n", encoding="utf-8")
         board = self.repo / "orchestration/tasks.md"
-        board.write_text(board.read_text().replace("**Status**: Ready", "**Status**: Done"))
+        board.write_text(board.read_text(encoding="utf-8").replace("**Status**: Ready", "**Status**: Done"), encoding="utf-8")
         done = self.factory("assisted")
         self.assertEqual(done.returncode, 3, done.stdout + done.stderr)
         records = list((self.repo / "docs/verification/factory-runs").glob("*-result.json"))
         self.assertEqual(len(records), 1)
-        self.assertIn("task packet modified", json.loads(records[0].read_text())["violations"])
+        self.assertIn("task packet modified", json.loads(records[0].read_text(encoding="utf-8"))["violations"])
 
     def test_second_assisted_invocation_reuses_the_sealed_packet(self):
         # Codex P2 on #27: a re-dispatch wrote a second, unsealed packet.
-        (self.repo / "adapter.py").write_text("")
+        (self.repo / "adapter.py").write_text("", encoding="utf-8")
         self.git("init", "-q")
         self.git("add", "-A")
         self.git("commit", "-qm", "synthetic fixture")
@@ -124,15 +124,15 @@ class PacketSealTests(ShellAdapterFixture, unittest.TestCase):
         self.assertIn(str(packets[0].relative_to(self.repo)), again.stdout)
         self.assertEqual(sorted(runs.glob("*-TASK-901.json")), packets)
         # Editing the one advertised packet is caught at re-dispatch and at completion.
-        packets[0].write_text(packets[0].read_text().replace('"implementation_authorized": false',
-                                                             '"implementation_authorized": true'))
+        packets[0].write_text(packets[0].read_text(encoding="utf-8").replace('"implementation_authorized": false',
+                                                             '"implementation_authorized": true'), encoding="utf-8")
         self.assertEqual(self.factory("assisted").returncode, 3)
-        (self.repo / "docs/verification/fixture.md").write_text("Synthetic verification only\n")
+        (self.repo / "docs/verification/fixture.md").write_text("Synthetic verification only\n", encoding="utf-8")
         board = self.repo / "orchestration/tasks.md"
-        board.write_text(board.read_text().replace("**Status**: Ready", "**Status**: Done"))
+        board.write_text(board.read_text(encoding="utf-8").replace("**Status**: Ready", "**Status**: Done"), encoding="utf-8")
         done = self.factory("assisted")
         self.assertEqual(done.returncode, 3, done.stdout + done.stderr)
-        result = json.loads(next(runs.glob("*-result.json")).read_text())
+        result = json.loads(next(runs.glob("*-result.json")).read_text(encoding="utf-8"))
         self.assertIn("task packet modified", result["violations"])
 
 

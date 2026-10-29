@@ -35,7 +35,7 @@ def append(path, line):
 class Records(ShellAdapterFixture):
     def records(self):
         runs = self.repo / "docs/verification/factory-runs"
-        return [json.loads(p.read_text()) for p in sorted(runs.glob("*-result.json"))]
+        return [json.loads(p.read_text(encoding="utf-8")) for p in sorted(runs.glob("*-result.json"))]
 
 
 class StatusWordingTests(Records, unittest.TestCase):
@@ -43,7 +43,7 @@ class StatusWordingTests(Records, unittest.TestCase):
 
     def setUp(self):
         super().setUp()
-        (self.repo / "docs/verification/fixture.md").write_text("old evidence\n")
+        (self.repo / "docs/verification/fixture.md").write_text("old evidence\n", encoding="utf-8")
 
     def test_unchanged_status_is_reported_as_unchanged(self):
         result, record = self.run_adapter("", complete=False)
@@ -79,7 +79,7 @@ class VerifiedLabelTests(Records, unittest.TestCase):
     def test_generated_label_and_existing_human_verification_pass(self):
         human = "| EV-001 | 2026-10-01 | docs/a.md | notes | review | abc | Verified (Human Director review, GR-1) |"
         index = self.repo / INDEX
-        index.write_text(index.read_text() + human + "\n")  # committed before the run
+        index.write_text(index.read_text(encoding="utf-8") + human + "\n", encoding="utf-8")  # committed before the run
         row = "| EV-002 | 2026-10-29 | docs/verification/fixture.md | notes | pytest | abc | Generated — awaiting Human Director review |"
         result, record = self.run_adapter(append(INDEX, row) + append(INDEX, "Prose: results were unverified."))
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
@@ -123,8 +123,8 @@ class InterruptionTests(Records, unittest.TestCase):
             "time.sleep(60)\n")
 
     def start(self, body):
-        (self.repo / "adapter.py").write_text("import pathlib\n" + body)
-        (self.repo / ".gitignore").write_text((self.repo / ".gitignore").read_text() + "\nstarted\n")
+        (self.repo / "adapter.py").write_text("import pathlib\n" + body, encoding="utf-8")
+        (self.repo / ".gitignore").write_text((self.repo / ".gitignore").read_text(encoding="utf-8") + "\nstarted\n", encoding="utf-8")
         self.git("init", "-q")
         self.git("add", "-A")
         self.git("commit", "-qm", "synthetic fixture")
@@ -136,7 +136,7 @@ class InterruptionTests(Records, unittest.TestCase):
         while not (self.repo / "started").exists():
             self.assertLess(time.monotonic(), deadline, "adapter never started")
             time.sleep(0.1)
-        return proc, int((self.repo / "started").read_text())
+        return proc, int((self.repo / "started").read_text(encoding="utf-8"))
 
     def assert_adapter_gone(self, pid):
         deadline = time.monotonic() + 10
@@ -187,7 +187,7 @@ class InterruptionTests(Records, unittest.TestCase):
         marker.write_text(json.dumps({
             "task_id": "TASK-901", "dispatched_at_utc": record.get("dispatched_at_utc"), "adapter": "shell",
             "task_packet": record["task_packet"],
-            "owner": {"pid": 1, "host": socket.gethostname(), "token": "crashed", "started_at_utc": None}}))
+            "owner": {"pid": 1, "host": socket.gethostname(), "token": "crashed", "started_at_utc": None}}), encoding="utf-8")
         later = self.factory("shell")
         self.assertNotIn("did not complete", later.stdout)
         self.assertEqual(later.returncode, 0, later.stdout + later.stderr)
@@ -221,7 +221,7 @@ class InterruptionTests(Records, unittest.TestCase):
             proc.kill()
             proc.communicate(timeout=30)
             [marker] = self.in_flight_markers()
-            identity = json.loads(marker.read_text())["adapter_process"]
+            identity = json.loads(marker.read_text(encoding="utf-8"))["adapter_process"]
             self.assertEqual(identity["pgid"], os.getpgid(pid))
             for adapter in ("shell", "assisted"):
                 with self.subTest(adapter=adapter):
@@ -255,7 +255,7 @@ class InterruptionTests(Records, unittest.TestCase):
                     self.assertIn("dispatch in progress", second.stdout)
                     self.assertEqual(self.records(), [])
                     self.assertEqual(len(self.in_flight_markers()), 1)
-            marker = json.loads(self.in_flight_markers()[0].read_text())
+            marker = json.loads(self.in_flight_markers()[0].read_text(encoding="utf-8"))
             self.assertEqual(marker["owner"]["pid"], proc.pid)
             self.assertTrue(marker["owner"]["host"] and marker["owner"]["token"])
         finally:
@@ -267,7 +267,7 @@ class InterruptionTests(Records, unittest.TestCase):
         self.assertEqual(self.in_flight_markers(), [])
 
     def test_marker_from_another_host_is_not_recovered(self):
-        (self.repo / "adapter.py").write_text("")
+        (self.repo / "adapter.py").write_text("", encoding="utf-8")
         self.git("init", "-q")
         self.git("add", "-A")
         self.git("commit", "-qm", "synthetic fixture")
@@ -277,7 +277,7 @@ class InterruptionTests(Records, unittest.TestCase):
         in_flight.mkdir(exist_ok=True)
         marker = in_flight / "20261029T000000Z-TASK-901.json"
         marker.write_text(json.dumps({"task_id": "TASK-901", "owner": {
-            "pid": 1, "host": "some-other-host.invalid", "token": "abc", "started_at_utc": None}}))
+            "pid": 1, "host": "some-other-host.invalid", "token": "abc", "started_at_utc": None}}), encoding="utf-8")
         result = self.factory("assisted")
         self.assertEqual(result.returncode, 75, result.stdout + result.stderr)
         self.assertIn("some-other-host.invalid", result.stdout)

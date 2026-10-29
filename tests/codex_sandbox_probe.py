@@ -77,7 +77,7 @@ def run(command, cwd, env=None):
 
 
 def probe(binary, project, access):
-    (project / "docs/planning-probe.md").write_text("Operator fixture for the rename check.\n")
+    (project / "docs/planning-probe.md").write_text("Operator fixture for the rename check.\n", encoding="utf-8")
     alias = project / "docs/source-alias"
     if not alias.exists():
         alias.symlink_to("../src", target_is_directory=True)
@@ -85,7 +85,7 @@ def probe(binary, project, access):
     # Codex's standalone sandbox command requires a built-in permission profile
     # corresponding to the configured legacy mode. This tests OS enforcement;
     # the interactive client's project-config loading still needs a live retest.
-    config = tomllib.loads((project / ".codex/config.toml").read_text())
+    config = tomllib.loads((project / ".codex/config.toml").read_text(encoding="utf-8"))
     assert config["sandbox_mode"] == ("read-only" if access == "read" else "workspace-write")
     if access == "read":
         assert config["approval_policy"] == "on-request"
@@ -119,19 +119,19 @@ def main():
             probe(args.codex, project, "read")
             if grant == "signoff":
                 state = project / ".governance/gate_state.json"
-                payload = json.loads(state.read_text())
+                payload = json.loads(state.read_text(encoding="utf-8"))
                 payload.update(approval_state="approved", implementation_authorized=True,
                                decision="Acceptance-test fixture sign-off")
-                state.write_text(json.dumps(payload))
+                state.write_text(json.dumps(payload), encoding="utf-8")
                 run([*gatekeeper, "sign"], project, env)
             else:
                 evidence = project / "docs/decisions/override.md"
-                evidence.write_text("Acceptance-test fixture: temporary implementation authority.\n")
+                evidence.write_text("Acceptance-test fixture: temporary implementation authority.\n", encoding="utf-8")
                 now = datetime.now(timezone.utc)
                 row = (f"| {(now - timedelta(minutes=1)).isoformat()} | implementation-override | "
                        "implementation_authorized=true | Test operator | Human Director: Test director | "
                        f"docs/decisions/override.md | {(now + timedelta(hours=1)).isoformat()} |\n")
-                with (project / ".governance/security-compliance/override-register.md").open("a") as handle:
+                with (project / ".governance/security-compliance/override-register.md").open("a", encoding="utf-8") as handle:
                     handle.write(row)
                 run([sys.executable, "automation/codex_config.py", "codex-config"], project, env)
                 print("Unsigned override: source remains read-only", flush=True)

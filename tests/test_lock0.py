@@ -20,7 +20,7 @@ LOCK0 = "`python3 automation/validate_spec.py --mode locked orchestration/system
 
 def resolved_spec() -> str:
     """The spec template with every placeholder answered, as Lock 0 expects."""
-    text = (ROOT / "orchestration/system-spec-template.md").read_text()
+    text = (ROOT / "orchestration/system-spec-template.md").read_text(encoding="utf-8")
     text = text.replace("[Draft / Validated]", "Validated")
     return validate_spec.PLACEHOLDER_RE.sub("synthetic value", text)
 
@@ -53,7 +53,7 @@ class LockedLabelTests(unittest.TestCase):
 
     def check(self, text):
         path = Path(self.tmp) / "spec.md"
-        path.write_text(text)
+        path.write_text(text, encoding="utf-8")
         return subprocess.run([sys.executable, str(ROOT / "automation/validate_spec.py"), "--mode", "locked", str(path)],
                               capture_output=True, text=True)
 
@@ -80,7 +80,7 @@ class LockedLabelTests(unittest.TestCase):
 
     def test_filled_template_passes_and_raw_template_fails(self):
         self.assertEqual(validate_spec.locked_problems(resolved_spec()), [])
-        self.assertTrue(validate_spec.locked_problems((ROOT / "orchestration/system-spec-template.md").read_text()))
+        self.assertTrue(validate_spec.locked_problems((ROOT / "orchestration/system-spec-template.md").read_text(encoding="utf-8")))
 
     def test_lock0_task_detection(self):
         detect = governed_factory.lock0_spec_paths
@@ -114,14 +114,14 @@ class LockedLabelTests(unittest.TestCase):
 class DispatcherLock0Tests(ShellAdapterFixture, unittest.TestCase):
     def lock0_board(self, status="Ready", follower=False):
         board = self.repo / "orchestration/tasks.md"
-        text = board.read_text().replace("**Verification Command or Method**: local fixture check",
+        text = board.read_text(encoding="utf-8").replace("**Verification Command or Method**: local fixture check",
                                          f"**Verification Command or Method**: {LOCK0}")
         text = text.replace("**Status**: Ready", f"**Status**: {status}")
         if follower:
-            follower_task = re.sub(r"TASK-901", "TASK-902", board.read_text())
+            follower_task = re.sub(r"TASK-901", "TASK-902", board.read_text(encoding="utf-8"))
             follower_task = follower_task.replace("**Dependencies**: None", "**Dependencies**: TASK-901")
             text += "\n" + follower_task
-        board.write_text(text)
+        board.write_text(text, encoding="utf-8")
 
     def test_lock0_cannot_complete_on_an_unresolved_spec(self):
         self.lock0_board()
@@ -131,7 +131,7 @@ class DispatcherLock0Tests(ShellAdapterFixture, unittest.TestCase):
 
     def test_lock0_completes_on_a_resolved_spec(self):
         self.lock0_board()
-        (self.repo / "orchestration/system_spec.md").write_text(resolved_spec())
+        (self.repo / "orchestration/system_spec.md").write_text(resolved_spec(), encoding="utf-8")
         result, record = self.run_adapter("")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(record["checks"]["lock0_spec"], "pass")
@@ -139,7 +139,7 @@ class DispatcherLock0Tests(ShellAdapterFixture, unittest.TestCase):
     def test_task_after_lock0_is_not_dispatched_on_an_unresolved_spec(self):
         # TASK-901 (Lock 0) is already Done, e.g. on the strength of a verify.md alone.
         self.lock0_board(status="Done", follower=True)
-        (self.repo / "adapter.py").write_text("raise SystemExit('adapter must not run')\n")
+        (self.repo / "adapter.py").write_text("raise SystemExit('adapter must not run')\n", encoding="utf-8")
         self.git("init", "-q")
         self.git("add", "-A")
         self.git("commit", "-qm", "synthetic fixture")
@@ -147,7 +147,7 @@ class DispatcherLock0Tests(ShellAdapterFixture, unittest.TestCase):
         self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
         self.assertIn("TASK-902 follows Lock 0", result.stdout)
         self.assertNotIn("NEXT GOVERNED FACTORY TASK", result.stdout)
-        (self.repo / "orchestration/system_spec.md").write_text(resolved_spec())
+        (self.repo / "orchestration/system_spec.md").write_text(resolved_spec(), encoding="utf-8")
         result = self.factory("assisted")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("NEXT GOVERNED FACTORY TASK: TASK-902", result.stdout)
