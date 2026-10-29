@@ -126,6 +126,7 @@ ADAPTER_ENV_WINDOWS = ("SYSTEMROOT", "SYSTEMDRIVE", "COMSPEC", "PATHEXT", "WINDI
 ADAPTER_ENV_PASSTHROUGH = "FACTORY_ADAPTER_ENV_PASSTHROUGH"
 # Windows: start the adapter in its own process group (subprocess constant, defined here for POSIX tests).
 CREATE_NEW_PROCESS_GROUP = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0x00000200)
+CREATE_SUSPENDED = 0x00000004  # Windows: the process runs no code until it is resumed
 COMPLETE_PREFIXES = ("done", "complete", "completed", "approved")
 OPEN_PREFIXES = ("ready", "ready to start", "backlog", "pending")
 HUMAN_STOP_PATTERNS = (
@@ -769,17 +770,36 @@ def _kernel32():
     return kernel32
 
 
+def _ntdll():
+    """ntdll with NtResumeProcess declared. Raises off Windows."""
+    import ctypes
+    from ctypes import wintypes
+    ntdll = ctypes.WinDLL("ntdll")
+    ntdll.NtResumeProcess.argtypes = (wintypes.HANDLE,)
+    ntdll.NtResumeProcess.restype = ctypes.c_long  # NTSTATUS
+    return ntdll
+
+
+def _resume_process(handle: int) -> bool:
+    """Resume a process started with CREATE_SUSPENDED. Popen doesn't expose its
+    main thread handle, so resume the whole process through ntdll."""
+    try:
+        return _ntdll().NtResumeProcess(handle) == 0  # STATUS_SUCCESS
+    except (AttributeError, ImportError, OSError):
+        return False
+
+
 class WindowsJob:
     """A Windows Job Object holding the adapter and the processes it starts.
 
     taskkill /T walks the tree from the adapter's shell, so it misses children
     once that shell has exited. A job tracks them independently of the shell.
-    The job is kill-on-close: when its last handle closes, at the end of the
-    dispatch or because Windows closed it when the factory died, every process
-    still in it ends. So no adapter descendant outlives its factory, and
-    recovery's check of the recorded adapter pid is enough.
-    Children the shell starts before the adapter is assigned to the job are not
-    in it; taskkill and the bounded output drain still cover them.
+    The adapter starts suspended and joins the job before it runs any code, so
+    every process it starts is in the job too. The job is kill-on-close: when
+    its last handle closes, at the end of the dispatch or because Windows closed
+    it when the factory died, every process still in it ends. So no adapter
+    descendant outlives its factory, and recovery's check of the recorded
+    adapter pid is enough.
     """
 
     def __init__(self, handle, kernel32):
@@ -787,8 +807,8 @@ class WindowsJob:
         self._kernel32 = kernel32
 
     @classmethod
-    def for_process(cls, pid: int):
-        """A kill-on-close job holding process ``pid``, or None if one can't be set up."""
+    def create(cls):
+        """A new, empty kill-on-close job, or None if one can't be set up."""
         try:
             import ctypes
             kernel32 = _kernel32()
@@ -803,14 +823,26 @@ class WindowsJob:
                                                 ctypes.byref(limits), ctypes.sizeof(limits)):
             kernel32.CloseHandle(job)
             return None
-        process = kernel32.OpenProcess(0x0101, False, pid)  # PROCESS_SET_QUOTA | PROCESS_TERMINATE
-        assigned = bool(process) and bool(kernel32.AssignProcessToJobObject(job, process))
-        if process:
-            kernel32.CloseHandle(process)
-        if not assigned:
-            kernel32.CloseHandle(job)
-            return None
         return cls(job, kernel32)
+
+    @classmethod
+    def for_process(cls, pid: int):
+        """A kill-on-close job holding the running process ``pid``, or None."""
+        job = cls.create()
+        if job is None:
+            return None
+        process = job._kernel32.OpenProcess(0x0101, False, pid)  # PROCESS_SET_QUOTA | PROCESS_TERMINATE
+        assigned = bool(process) and job.assign(process)
+        if process:
+            job._kernel32.CloseHandle(process)
+        if not assigned:
+            job.close()
+            return None
+        return job
+
+    def assign(self, process_handle) -> bool:
+        """Put the process behind ``process_handle`` in this job."""
+        return bool(self._handle) and bool(self._kernel32.AssignProcessToJobObject(self._handle, process_handle))
 
     def terminate(self) -> bool:
         """End every process in the job. True if Windows accepted the request."""
@@ -825,14 +857,14 @@ class WindowsJob:
 def kill_adapter_tree(proc, job=None) -> None:
     """Stop the adapter and every process it started."""
     if _on_windows():
-        if job is not None and job.terminate():
-            return
+        # The job and taskkill each run, so neither depends on the other working.
+        stopped = job is not None and job.terminate()
         try:
             done = subprocess.run(["taskkill", "/T", "/F", "/PID", str(proc.pid)], capture_output=True)
             killed = done.returncode == 0
         except OSError:
             killed = False
-        if not killed and proc.poll() is None:
+        if not (stopped or killed) and proc.poll() is None:
             proc.kill()
         return
     try:
@@ -978,17 +1010,53 @@ def _process_group_running(pgid: int) -> bool:
     return True
 
 
+def _start_adapter(command: str, env: dict):
+    """Start the adapter: (process, Windows job or None).
+
+    On Windows the shell starts suspended, joins a kill-on-close job, and only
+    then resumes, so no process it starts can be outside the job. If that
+    fails, the suspended shell, which has run no code, is discarded and the
+    adapter starts without a job; taskkill and the bounded drain cover it."""
+    popen = dict(shell=True, cwd=ROOT, env=env, text=True, encoding="utf-8", errors="replace",
+                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    options = adapter_popen_options()
+    if not _on_windows():
+        return subprocess.Popen(command, **popen, **options), None
+    proc = subprocess.Popen(command, **popen, creationflags=options["creationflags"] | CREATE_SUSPENDED)
+    job = None
+    try:
+        job = WindowsJob.create()
+        handle = getattr(proc, "_handle", None)  # Popen keeps the process handle; not public API
+        if job is not None and handle is not None and job.assign(int(handle)) and _resume_process(int(handle)):
+            return proc, job
+    except BaseException:
+        _discard_suspended(proc, job)
+        raise
+    _discard_suspended(proc, job)
+    return subprocess.Popen(command, **popen, **options), None
+
+
+def _discard_suspended(proc, job) -> None:
+    """End a suspended adapter shell that never ran, and its job."""
+    if job is not None:
+        job.close()
+    try:
+        proc.kill()
+    except OSError:
+        pass
+    try:
+        proc.communicate(timeout=ADAPTER_DRAIN_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        pass
+
+
 def _run_adapter(command: str, prompt: str, env: dict, timeout: float,
                  on_start=None) -> tuple[int, str, str, bool]:
     """Run the adapter in its own process group so a timeout or a stop ends all of it.
 
     Waiting after a timeout or stop is bounded too, so a child that outlives the
     kill and keeps the output pipes open cannot hold the factory."""
-    proc = subprocess.Popen(command, shell=True, cwd=ROOT, env=env, text=True,
-                            encoding="utf-8", errors="replace",
-                            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, **adapter_popen_options())
-    job = WindowsJob.for_process(proc.pid) if _on_windows() else None
+    proc, job = _start_adapter(command, env)
     try:
         if on_start:
             on_start(proc)

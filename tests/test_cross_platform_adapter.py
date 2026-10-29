@@ -176,15 +176,18 @@ class DescendantOutlivesShellTests(unittest.TestCase):
 
 
 class WindowsJobTests(unittest.TestCase):
-    def test_a_job_that_terminates_skips_taskkill(self):
+    def test_taskkill_also_runs_after_the_job_terminates(self):
+        # Review 4411207906: the job and taskkill don't depend on each other.
         proc = mock.Mock(pid=4242)
+        proc.poll.return_value = None
         job = mock.Mock()
         job.terminate.return_value = True
+        gone = subprocess.CompletedProcess([], 128)  # the job already ended the shell
         with mock.patch.object(gf, "_on_windows", return_value=True), \
-                mock.patch.object(gf.subprocess, "run") as run:
+                mock.patch.object(gf.subprocess, "run", return_value=gone) as run:
             gf.kill_adapter_tree(proc, job)
         job.terminate.assert_called_once_with()
-        run.assert_not_called()
+        run.assert_called_once_with(["taskkill", "/T", "/F", "/PID", "4242"], capture_output=True)
         proc.kill.assert_not_called()
 
     def test_taskkill_still_runs_when_the_job_cannot_terminate(self):
@@ -279,6 +282,130 @@ class WindowsJobTests(unittest.TestCase):
     @unittest.skipIf(os.name == "nt", "the POSIX fallback")
     def test_no_job_off_windows(self):
         self.assertIsNone(gf.WindowsJob.for_process(os.getpid()))
+
+
+class SuspendedWindowsStartTests(unittest.TestCase):
+    """Review 4411207906: the shell joins the job before it runs any code."""
+
+    def _fakes(self, *, assign=1, resume=0):
+        events = mock.Mock()
+        procs = []
+
+        def popen(command, **kwargs):
+            proc = mock.Mock(pid=4242 + len(procs), _handle=77 + len(procs), returncode=0)
+            proc.communicate.return_value = ("out", "err")
+            procs.append(proc)
+            events.popen(kwargs.get("creationflags"))
+            return proc
+
+        kernel32 = mock.Mock()
+        kernel32.CreateJobObjectW.return_value = 11
+        kernel32.SetInformationJobObject.return_value = 1
+        kernel32.AssignProcessToJobObject.return_value = assign
+        ntdll = mock.Mock()
+        ntdll.NtResumeProcess.return_value = resume
+        events.attach_mock(kernel32, "kernel32")
+        events.attach_mock(ntdll, "ntdll")
+        patches = [mock.patch.object(gf, "_on_windows", return_value=True),
+                   mock.patch.object(gf.subprocess, "Popen", side_effect=popen),
+                   mock.patch.object(gf, "_kernel32", return_value=kernel32),
+                   mock.patch.object(gf, "_ntdll", return_value=ntdll)]
+        for patch in patches:
+            patch.start()
+            self.addCleanup(patch.stop)
+        return events, procs, kernel32, ntdll
+
+    def _order(self, events):
+        return [name for name, _args, _kw in events.mock_calls
+                if name in ("popen", "kernel32.CreateJobObjectW", "kernel32.SetInformationJobObject",
+                            "kernel32.AssignProcessToJobObject", "ntdll.NtResumeProcess")]
+
+    def test_starts_suspended_then_joins_the_job_then_resumes(self):
+        events, procs, kernel32, ntdll = self._fakes()
+        result = gf._run_adapter("adapter", "prompt", {}, 30)
+        self.assertEqual(result, (0, "out", "err", False))
+        self.assertEqual(len(procs), 1)
+        self.assertEqual(self._order(events), [
+            "popen", "kernel32.CreateJobObjectW", "kernel32.SetInformationJobObject",
+            "kernel32.AssignProcessToJobObject", "ntdll.NtResumeProcess"])
+        flags = events.popen.call_args.args[0]
+        self.assertEqual(flags, gf.CREATE_NEW_PROCESS_GROUP | gf.CREATE_SUSPENDED)
+        self.assertEqual(gf.CREATE_SUSPENDED, 0x4)
+        kernel32.AssignProcessToJobObject.assert_called_once_with(11, 77)
+        ntdll.NtResumeProcess.assert_called_once_with(77)
+        kernel32.CloseHandle.assert_any_call(11)  # kill-on-close at the end of the dispatch
+        procs[0].kill.assert_not_called()
+
+    def _assert_fell_back(self, events, procs):
+        self.assertEqual(len(procs), 2)
+        procs[0].kill.assert_called_once_with()  # the suspended shell, which ran no code
+        procs[1].kill.assert_not_called()
+        first, second = [call.args[0] for call in events.popen.call_args_list]
+        self.assertEqual(first, gf.CREATE_NEW_PROCESS_GROUP | gf.CREATE_SUSPENDED)
+        self.assertEqual(second, gf.CREATE_NEW_PROCESS_GROUP)  # the no-job path
+        procs[1].communicate.assert_called_once()
+
+    def test_assign_failure_kills_the_suspended_shell_and_falls_back(self):
+        events, procs, kernel32, ntdll = self._fakes(assign=0)
+        result = gf._run_adapter("adapter", "prompt", {}, 30)
+        self.assertEqual(result, (0, "out", "err", False))
+        ntdll.NtResumeProcess.assert_not_called()
+        kernel32.CloseHandle.assert_any_call(11)
+        self._assert_fell_back(events, procs)
+
+    def test_resume_failure_kills_the_suspended_shell_and_falls_back(self):
+        events, procs, kernel32, ntdll = self._fakes(resume=0xC0000022)  # STATUS_ACCESS_DENIED
+        result = gf._run_adapter("adapter", "prompt", {}, 30)
+        self.assertEqual(result, (0, "out", "err", False))
+        kernel32.CloseHandle.assert_any_call(11)
+        self._assert_fell_back(events, procs)
+
+    def test_posix_does_not_start_suspended(self):
+        with mock.patch.object(gf, "_on_windows", return_value=False), \
+                mock.patch.object(gf.subprocess, "Popen") as popen:
+            popen.return_value.communicate.return_value = ("", "")
+            popen.return_value.returncode = 0
+            gf._run_adapter("adapter", "", {}, 30)
+        self.assertEqual(popen.call_count, 1)
+        self.assertNotIn("creationflags", popen.call_args.kwargs)
+        self.assertTrue(popen.call_args.kwargs["start_new_session"])
+
+    @unittest.skipUnless(os.name == "nt", "Windows job objects")
+    def test_real_child_spawned_at_once_dies_with_the_job(self):
+        # The adapter starts a child as its first act. With taskkill made to
+        # fail, only the job can end that child, so it must have been in the job.
+        tmp = Path(tempfile.mkdtemp(prefix="ai1151-suspended-"))
+        pid_file = tmp / "child.pid"
+        launcher = tmp / "launcher.py"
+        launcher.write_text(
+            "import subprocess, sys, time\n"
+            "child = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(60)'])\n"
+            f"open({str(pid_file)!r}, 'w', encoding='utf-8').write(str(child.pid))\n"
+            "time.sleep(60)\n", encoding="utf-8")
+        failed = subprocess.CompletedProcess([], 128)
+        real_run = subprocess.run
+        def run(args, *a, **kw):
+            return failed if args and args[0] == "taskkill" else real_run(args, *a, **kw)
+        try:
+            with mock.patch.object(gf.subprocess, "run", side_effect=run):
+                code, _out, _err, timed_out = gf._run_adapter(
+                    portable_command(sys.executable, str(launcher)), "", gf.adapter_environment(), 5)
+            self.assertTrue(timed_out)
+            self.assertEqual(code, gf.ADAPTER_TIMEOUT_EXIT)
+            pid = int(pid_file.read_text(encoding="utf-8"))
+            deadline = time.monotonic() + 10
+            while _process_alive(pid) and time.monotonic() < deadline:
+                time.sleep(0.1)
+            self.assertFalse(_process_alive(pid), "a child the adapter started at once escaped the job")
+        finally:
+            try:
+                pid = int(pid_file.read_text(encoding="utf-8"))
+                if _process_alive(pid):
+                    os.kill(pid, signal.SIGTERM)
+            except (OSError, ValueError):
+                pass
+            import shutil
+            shutil.rmtree(tmp, ignore_errors=True)
 
 
 class AdapterEnvironmentTests(unittest.TestCase):
