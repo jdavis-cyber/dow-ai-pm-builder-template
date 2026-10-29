@@ -263,6 +263,53 @@ def infer_required_actions(task: dict) -> list[tuple[str, str]]:
     return actions
 
 
+def _looks_like_output_path(path: str) -> bool:
+    """Tell a declared output from slash-shaped prose such as "PM/PO review".
+
+    A path names a file (extension or dotfile), a single bare file name, or
+    starts in a directory that exists in the repo.
+    """
+    parts = [part for part in path.split("/") if part]
+    if not parts:
+        return False
+    last = parts[-1]
+    if "." in last.lstrip(".") or last.startswith("."):
+        return True
+    if len(parts) == 1:
+        return True
+    return (ROOT / parts[0]).is_dir()
+
+
+def denied_task_paths(task: dict, state: dict) -> list[dict]:
+    """Source mentions anywhere and declared outputs require write permission.
+
+    Other read-only inputs and validation references remain allowed. For a
+    plan-only run the caller supplies no implementation authority.
+    """
+    text = "\n".join(str(value) for value in task.values())
+    paths = {path for path in gatekeeper.paths_in_text(text)
+             if gatekeeper.is_protected_source_path(path)}
+    for field in ("Evidence Required", "Plan"):
+        value = str(task.get(field, ""))
+        if value.strip().lower() in {"", "none", "n/a"}:
+            continue
+        backticked = {tok.strip() for tok in re.findall(r"`([^`]+)`", value)}
+        paths.update(path for path in gatekeeper.paths_in_text(value)
+                     if path in backticked or _looks_like_output_path(path))
+        # Output lists also name bare files (Makefile, LICENSE) with no slash
+        # or extension. Prose such as "a short note" is not a declared path.
+        for item in re.split(r"[,;\n]|\band\b", value):
+            item = item.strip()
+            if re.fullmatch(r"[\w.-]+", item):
+                paths.add(item)
+    denied = []
+    for path in sorted(paths):
+        allowed, reason = gatekeeper.check_action("write", path, state)
+        if not allowed:
+            denied.append({"path": path, "reason": reason})
+    return denied
+
+
 def select_next_task(tasks: list[dict]) -> tuple[dict | None, str]:
     for task in tasks:
         kind = status_kind(task.get("Status", ""))
@@ -286,14 +333,36 @@ def select_next_task(tasks: list[dict]) -> tuple[dict | None, str]:
                 if not plan:
                     return None, f"REFUSAL: {task['Task ID']} has Human Gate: yes but no Plan path"
                 task = dict(task, _plan_only=True)
-                return task, "selected for planning"
-            problem = gatekeeper.plan_approval_error(task["Task ID"], plan)
-            if problem:
-                return None, "STOP: " + problem
+            else:
+                problem = gatekeeper.plan_approval_error(task["Task ID"], plan)
+                if problem:
+                    return None, "STOP: " + problem
         elif kind == "plan-approved":
             return None, f"REFUSAL: {task['Task ID']} is Plan Approved but has no Human Gate"
-        if task_needs_human(task):
+        if not task.get("_plan_only") and task_needs_human(task):
             return None, f"STOP: {task['Task ID']} appears to require human/PM/PO/gate input"
+        state = gatekeeper.effective_state(gatekeeper.load_state())
+        if task.get("_plan_only"):
+            state = {}
+        denied = denied_task_paths(task, state)
+        if denied:
+            reason = (f"REFUSAL: {task['Task ID']} names denied write paths: "
+                      + "; ".join(f"{item['path']}: {item['reason']}" for item in denied)
+                      + "; implementation needs sign-off")
+            write_run_result(task, {
+                "record_type": "factory-run-result",
+                "task_id": task["Task ID"],
+                "checked_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "gate_state_at_check": {key: state.get(key) for key in
+                                        ("approval_state", "implementation_authorized", "deployment_authorized")},
+                "checks": {"task_paths": {"denied": denied}},
+                "outcome": "refused: denied task paths",
+                "reason": reason,
+                "adapter_dispatched": False,
+            })
+            return None, reason
+        if task.get("_plan_only"):
+            return task, "selected for planning"
         for action, path in infer_required_actions(task):
             allowed, msg = gatekeeper.check_action(action, path)
             if not allowed:

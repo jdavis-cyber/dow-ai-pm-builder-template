@@ -285,6 +285,30 @@ def is_protected_source_path(path: str) -> bool:
     return any(rp == prefix.rstrip("/") or rp.startswith(prefix) for prefix in PROTECTED_SOURCE_PREFIXES)
 
 
+def paths_in_text(text: str) -> list[str]:
+    """Extract path-shaped references without inferring intent from keywords."""
+    paths = set()
+    tokens = re.finditer(r'''`([^`\n]+)`|"([^"\n]+)"|'([^'\n]+)'|([^\s`"'<>()[\]{},;:=]+)''', text)
+    for match in tokens:
+        token = next(value for value in match.groups() if value is not None)
+        quoted = match.group(4) is None
+        # Keep quoted paths with spaces whole, but still inspect quoted prose
+        # or commands such as "write src/app.py" for embedded paths.
+        if quoted and len(token.split()) > 1:
+            embedded = paths_in_text(token)
+            if "/" not in token.split()[0].replace("\\", "/"):
+                paths.update(embedded)
+                continue
+            paths.update(path for path in embedded if is_protected_source_path(path))
+        path = token.replace("\\", "/").rstrip(".!?")
+        while len(path) > 2 and path[0] in "*_" and path[-1] == path[0]:
+            path = path[1:-1]
+            quoted = True
+        if quoted or "/" in path or re.fullmatch(r"(?:[\w.-]+\.[\w-]+|\.[\w-]+)", path):
+            paths.add(path)
+    return sorted(paths)
+
+
 def effective_state(state: dict) -> dict:
     """Gate state with implementation_authorized set to the effective authority.
 
