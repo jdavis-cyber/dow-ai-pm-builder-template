@@ -14,6 +14,7 @@ import hashlib
 import json
 import os
 import re
+import shlex
 import signal
 import subprocess
 import sys
@@ -22,10 +23,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import gatekeeper
+import validate_spec
 
 ROOT = Path.cwd()
 TASKS_FILE = ROOT / "orchestration" / "tasks.md"
 LOG_DIR = ROOT / "docs" / "verification" / "factory-runs"
+SPEC_REL = "orchestration/system_spec.md"
 CHAIN_HEAD = "chain/head.json"  # kept apart from the per-run records
 CONFIG_FILES = ("factory.config.json", "factory.config.example.json")
 # Every stop condition is mandatory: stop_on documents them and the dispatcher
@@ -310,6 +313,68 @@ def denied_task_paths(task: dict, state: dict) -> list[dict]:
     return denied
 
 
+VALIDATE_SPEC_RE = re.compile(r"validate_spec\.py([^;&|`\n]*)")
+
+
+def lock0_spec_paths(task: dict) -> list[str]:
+    """Specs a Lock 0 task must leave lock-ready; empty when it is not a Lock 0 task.
+
+    A Lock 0 task is one titled "Lock 0" or whose verification runs
+    validate_spec.py in locked mode (its default). The project spec is always
+    checked, whatever path the board names, so editing the command can't
+    point the lock at an easier file.
+    """
+    paths: list[str] = []
+    lock0 = "lock 0" in str(task.get("Title", "")).lower()
+    for match in VALIDATE_SPEC_RE.finditer(str(task.get("Verification Command or Method", ""))):
+        try:
+            args = shlex.split(match.group(1))
+        except ValueError:
+            args = match.group(1).split()
+        mode, named, i = "locked", [], 0
+        while i < len(args):
+            arg = args[i]
+            if arg == "--mode" and i + 1 < len(args):
+                mode, i = args[i + 1], i + 2
+                continue
+            if arg.startswith("--mode="):
+                mode = arg.split("=", 1)[1]
+            elif not arg.startswith("-"):
+                named.append(arg)
+            i += 1
+        if mode == "locked":
+            lock0 = True
+            paths.extend(named)
+    if not lock0:
+        return []
+    return sorted({SPEC_REL, *paths})
+
+
+def lock0_problems(paths: list[str]) -> list[str]:
+    """Locked-mode validation run by the dispatcher itself; empty when every spec passes."""
+    problems = []
+    for rel_path in paths:
+        path = (ROOT / rel_path).resolve()
+        if not path.is_relative_to(ROOT.resolve()) or not path.is_file():
+            problems.append(f"{rel_path}: spec missing or outside the project")
+            continue
+        problems.extend(f"{rel_path}: {p}" for p in validate_spec.locked_problems(path.read_text(encoding="utf-8")))
+    return problems
+
+
+def upstream_tasks(task: dict, by_id: dict[str, dict]) -> list[dict]:
+    """Every task the given task depends on, directly or through other tasks."""
+    seen: dict[str, dict] = {}
+    queue = re.findall(r"TASK-\d+", str(task.get("Dependencies", "")))
+    while queue:
+        task_id = queue.pop()
+        if task_id in seen or task_id not in by_id:
+            continue
+        seen[task_id] = by_id[task_id]
+        queue.extend(re.findall(r"TASK-\d+", str(by_id[task_id].get("Dependencies", ""))))
+    return list(seen.values())
+
+
 def select_next_task(tasks: list[dict]) -> tuple[dict | None, str]:
     for task in tasks:
         kind = status_kind(task.get("Status", ""))
@@ -321,6 +386,13 @@ def select_next_task(tasks: list[dict]) -> tuple[dict | None, str]:
         ok, missing = deps_complete(task, tasks)
         if not ok:
             return None, f"STOP: dependencies incomplete for {task['Task ID']}: {', '.join(missing)}"
+        # Nothing downstream of Lock 0 runs unless the spec still passes locked validation.
+        by_id = {t["Task ID"]: t for t in tasks}
+        lock0 = sorted({p for up in upstream_tasks(task, by_id) for p in lock0_spec_paths(up)})
+        problems = lock0_problems(lock0) if lock0 else []
+        if problems:
+            return None, (f"STOP: {task['Task ID']} follows Lock 0, but the spec no longer passes locked "
+                          "validation: " + "; ".join(problems))
         if required_authorities(task) is None:
             return None, (f"REFUSAL: {task['Task ID']} has no valid Requires Authority field; "
                           "declare none or the authorities it needs (see orchestration/task-schema.md)")
@@ -995,6 +1067,14 @@ def post_dispatch_checks(task: dict, state: dict, before,
     if still_open:
         print(f"STOP: {task['Task ID']} is still open after dispatch; halting to prevent a redispatch loop. The adapter must update task status and evidence.")
         violation("no status transition")
+    lock0 = lock0_spec_paths(task)
+    if lock0 and status_kind(refreshed.get(task["Task ID"], {}).get("Status", "")) == "complete":
+        # Lock 0 completes only when the dispatcher's own locked validation passes.
+        problems = lock0_problems(lock0)
+        result["checks"]["lock0_spec"] = {"problems": problems} if problems else "pass"
+        if problems:
+            print(f"STOP: {task['Task ID']} is Lock 0 but the spec fails locked validation: " + "; ".join(problems))
+            violation("lock 0 spec validation failed")
     usage = (run_info or {}).get("usage")
     limits = factory_limits(load_factory_config())
     # Adapter-reported usage is self-attested; the dispatcher-enforced
