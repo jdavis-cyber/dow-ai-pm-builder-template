@@ -207,7 +207,7 @@ class InterruptionTests(Records, unittest.TestCase):
         self.assertIn("did not complete", later.stdout)
         [record] = self.records()
         self.assertTrue(record["outcome"].startswith("interrupted: dispatch did not complete"))
-        self.assertEqual(record["task_packet"]["path"], str(packets[0].relative_to(self.repo)))
+        self.assertEqual(record["task_packet"]["path"], packets[0].relative_to(self.repo).as_posix())
         # The interruption is recorded once; the next run carries on.
         again = self.factory("assisted")
         self.assertEqual(again.returncode, 0, again.stdout + again.stderr)

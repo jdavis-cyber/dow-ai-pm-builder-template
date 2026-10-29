@@ -121,7 +121,7 @@ class PacketSealTests(ShellAdapterFixture, unittest.TestCase):
         again = self.factory("assisted")
         self.assertEqual(again.returncode, 0, again.stdout + again.stderr)
         self.assertIn("NEXT GOVERNED FACTORY TASK: TASK-901", again.stdout)
-        self.assertIn(str(packets[0].relative_to(self.repo)), again.stdout)
+        self.assertIn(packets[0].relative_to(self.repo).as_posix(), again.stdout)
         self.assertEqual(sorted(runs.glob("*-TASK-901.json")), packets)
         # Editing the one advertised packet is caught at re-dispatch and at completion.
         packets[0].write_text(packets[0].read_text(encoding="utf-8").replace('"implementation_authorized": false',
