@@ -263,6 +263,23 @@ def infer_required_actions(task: dict) -> list[tuple[str, str]]:
     return actions
 
 
+def _looks_like_output_path(path: str) -> bool:
+    """Tell a declared output from slash-shaped prose such as "PM/PO review".
+
+    A path names a file (extension or dotfile), a single bare file name, or
+    starts in a directory that exists in the repo.
+    """
+    parts = [part for part in path.split("/") if part]
+    if not parts:
+        return False
+    last = parts[-1]
+    if "." in last.lstrip(".") or last.startswith("."):
+        return True
+    if len(parts) == 1:
+        return True
+    return (ROOT / parts[0]).is_dir()
+
+
 def denied_task_paths(task: dict, state: dict) -> list[dict]:
     """Source mentions anywhere and declared outputs require write permission.
 
@@ -276,7 +293,9 @@ def denied_task_paths(task: dict, state: dict) -> list[dict]:
         value = str(task.get(field, ""))
         if value.strip().lower() in {"", "none", "n/a"}:
             continue
-        paths.update(gatekeeper.paths_in_text(value))
+        backticked = {tok.strip() for tok in re.findall(r"`([^`]+)`", value)}
+        paths.update(path for path in gatekeeper.paths_in_text(value)
+                     if path in backticked or _looks_like_output_path(path))
         # Output lists also name bare files (Makefile, LICENSE) with no slash
         # or extension. Prose such as "a short note" is not a declared path.
         for item in re.split(r"[,;\n]|\band\b", value):

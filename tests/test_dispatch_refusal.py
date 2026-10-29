@@ -207,3 +207,16 @@ def test_authorized_source_task_still_dispatches(project, monkeypatch, authority
     record = json.loads(records[0].read_text())
     assert record["outcome"] == "pass"
     assert record["gate_state_at_check"]["implementation_authorized"] is True
+
+
+
+def test_evidence_annotation_is_not_a_declared_output():
+    # "PM/PO" in an evidence note is prose, not a write destination.
+    sys.path.insert(0, str(ROOT / "automation"))
+    import governed_factory as gf
+
+    task = {"Task ID": "TASK-901", "Acceptance Criteria": "Record planning notes",
+            "Evidence Required": "`docs/verification/notes.md` — PM/PO review"}
+    assert gf.denied_task_paths(task, {}) == []
+    task["Evidence Required"] = "docs/verification/notes.md, automation/early.py — PM/PO review"
+    assert [item["path"] for item in gf.denied_task_paths(task, {})] == ["automation/early.py"]
