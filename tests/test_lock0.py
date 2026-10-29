@@ -85,6 +85,23 @@ class LockedLabelTests(unittest.TestCase):
                                  "python3 automation/validate_spec.py --mode template orchestration/x.md"}), [])
         self.assertEqual(detect({"Verification Command or Method": "local fixture check"}), [])
 
+    def test_shell_redirections_are_not_spec_paths(self):
+        # Codex P2 on #28: "> verify.md" was read as two spec paths.
+        spec = "orchestration/system_spec.md"
+        for tail in ["> docs/verification/TASK-009/verify.md", ">> docs/v.md", "2> err.txt", "&> all.txt",
+                     "< /dev/null", "1> out.txt", "2>&1", "> out.txt 2>&1", ">docs/v.md", "2>err.txt",
+                     ">>docs/v.md", "&>all.txt", "<in.txt", "2>&1 > out.txt"]:
+            with self.subTest(tail=tail):
+                command = f"`python3 automation/validate_spec.py --mode locked {spec} {tail}`"
+                self.assertEqual(governed_factory.lock0_spec_paths({"Verification Command or Method": command}),
+                                 [spec])
+        attached = f"python3 automation/validate_spec.py --mode locked {spec}>docs/v.md"
+        self.assertEqual(governed_factory.lock0_spec_paths({"Verification Command or Method": attached}), [spec])
+        redirected = {"Verification Command or Method":
+                      f"python3 automation/validate_spec.py --mode locked {spec} > docs/verification/TASK-009/verify.md"}
+        problems = governed_factory.lock0_problems(governed_factory.lock0_spec_paths(redirected))
+        self.assertFalse([p for p in problems if not p.startswith(spec + ":")], problems)
+
 
 class DispatcherLock0Tests(ShellAdapterFixture, unittest.TestCase):
     def lock0_board(self, status="Ready", follower=False):

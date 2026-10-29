@@ -314,6 +314,9 @@ def denied_task_paths(task: dict, state: dict) -> list[dict]:
 
 
 VALIDATE_SPEC_RE = re.compile(r"validate_spec\.py([^;&|`\n]*)")
+# A shell redirection inside a token: >, >>, <, an fd duplication such as >&1,
+# and any target written straight after the operator.
+SHELL_REDIRECT_RE = re.compile(r"(?:>>?|<)(?P<dup>&(?:\d+|-))?(?P<target>.*)$")
 
 
 def lock0_spec_paths(task: dict) -> list[str]:
@@ -334,6 +337,16 @@ def lock0_spec_paths(task: dict) -> list[str]:
         mode, named, i = "locked", [], 0
         while i < len(args):
             arg = args[i]
+            redirect = SHELL_REDIRECT_RE.search(arg)
+            if redirect:
+                # "spec.md>out" keeps its argument; "2>", ">" or "<" alone take the next token as target.
+                before = arg[:redirect.start()]
+                if before and not re.fullmatch(r"\d+|&", before):
+                    named.append(before)
+                if not redirect.group("dup") and not redirect.group("target"):
+                    i += 1
+                i += 1
+                continue
             if arg == "--mode" and i + 1 < len(args):
                 mode, i = args[i + 1], i + 2
                 continue
