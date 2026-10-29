@@ -318,6 +318,25 @@ VALIDATE_SPEC_SCRIPT = "validate_spec.py"
 # A command separator inside a shell word: ;, |, || or &&. A single & inside a
 # word is part of a redirection (2>&1, &>out), not a separator.
 SHELL_SEPARATOR_RE = re.compile(r"\|\||&&|[;|]")
+# A backslash before a word character or "." is a Windows path separator
+# (automation\validate_spec.py), not a POSIX escape such as "\ " or '\"'.
+WINDOWS_BACKSLASH_RE = re.compile(r"\\[\w.]")
+
+
+def _shell_words(segment: str) -> list[str]:
+    """Split *segment* into shell words, keeping Windows backslash separators.
+
+    POSIX quoting applies either way. When the segment uses backslash path
+    separators the backslash is treated as a literal character instead of an
+    escape (Codex P2 4410860851); otherwise POSIX escapes still apply.
+    Raises ValueError on unbalanced quotes, like shlex.split.
+    """
+    lexer = shlex.shlex(segment, posix=True)
+    lexer.whitespace_split = True
+    lexer.commenters = ""
+    if WINDOWS_BACKSLASH_RE.search(segment):
+        lexer.escape = ""
+    return list(lexer)
 # A shell redirection inside a token: >, >>, <, an fd duplication such as >&1,
 # and any target written straight after the operator.
 SHELL_REDIRECT_RE = re.compile(r"(?:>>?|<)(?P<dup>&(?:\d+|-))?(?P<target>.*)$")
@@ -337,7 +356,7 @@ def validator_invocations(text: str) -> list[list[str]]:
         if VALIDATE_SPEC_SCRIPT not in segment:
             continue
         try:
-            tokens = shlex.split(segment)
+            tokens = _shell_words(segment)
         except ValueError:
             for match in VALIDATE_SPEC_RE.finditer(segment):
                 words = (word.strip("'\"") for word in match.group(1).split())
@@ -401,7 +420,8 @@ def lock0_spec_paths(task: dict) -> list[str]:
             i += 1
         if mode == "locked":
             lock0 = True
-            paths.extend(named)
+            # Both separators name the same project file: resolve with "/".
+            paths.extend(path.replace("\\", "/") for path in named)
     if not lock0:
         return []
     return sorted({SPEC_REL, *paths})
