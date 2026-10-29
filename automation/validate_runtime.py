@@ -8,7 +8,7 @@ def sha256_file(path):
 
 def validate(path):
     path = pathlib.Path(path)
-    m = json.loads(path.read_text())
+    m = json.loads(path.read_text(encoding="utf-8"))
     ok = True
     def err(msg):
         nonlocal ok
@@ -63,5 +63,10 @@ def validate(path):
     return ok
 
 if __name__ == '__main__':
+    # Survive a console that is not UTF-8, e.g. cp1252 on Windows (AI-1151).
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    sys.dont_write_bytecode = True  # leave no __pycache__ behind in the project
+    import safe_console
+    safe_console.make_console_safe()
     target = sys.argv[1] if len(sys.argv) > 1 else '.codex/agents/runtime-manifest.json'
     sys.exit(0 if validate(target) else 1)

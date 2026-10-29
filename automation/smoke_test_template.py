@@ -2,7 +2,7 @@
 import pathlib, shutil, subprocess, sys, tempfile
 ROOT=pathlib.Path(__file__).resolve().parent.parent
 def run(cmd,cwd=ROOT):
-    r=subprocess.run(cmd,cwd=cwd,capture_output=True,text=True)
+    r=subprocess.run(cmd,cwd=cwd,capture_output=True,text=True,errors="replace")
     if r.returncode!=0: print(r.stdout+r.stderr); raise SystemExit(r.returncode)
     return r.stdout.strip()
 def main():
@@ -17,9 +17,9 @@ def main():
         run([sys.executable,str(project/'automation/validate_runtime.py'),str(manifest)], project)
         for d in ['.governance','docs/verification','docs/handoff','docs/product','docs/architecture','orchestration']:
             assert (project/d).exists(), f'missing {d}'
-        kickoff=(project/'KICKOFF.md').read_text()
+        kickoff=(project/'KICKOFF.md').read_text(encoding="utf-8")
         assert 'Start a new project from the DoW AI PM Builder Template and begin Sprint Zero.' in kickoff, 'kickoff protocol missing canonical phrase'
-        readme=(project/'README.md').read_text()
+        readme=(project/'README.md').read_text(encoding="utf-8")
         assert 'Start a new project from the DoW AI PM Builder Template and begin Sprint Zero.' in readme, 'generated README missing canonical kickoff phrase'
         run([sys.executable,str(project/'automation/validate_spec.py'),'--mode','draft',str(project/'orchestration/system_spec.md')], project)
         run([sys.executable,str(project/'automation/gatekeeper.py'),'verify-consistency'], project)
@@ -28,10 +28,16 @@ def main():
         assert 'Provider-neutral factory contract' in factory_output, 'factory output missing provider-neutral contract'
         assert 'implementation_authorized' in factory_output, 'factory output missing gate authority state'
         assert (project/'factory.config.example.json').exists(), 'generated project missing factory config example'
-        factory_sh=(project/'automation/factory.sh').read_text()
+        factory_sh=(project/'automation/factory.sh').read_text(encoding="utf-8")
         assert 'LLM_COMMAND' not in factory_sh, 'generated factory.sh still uses LLM_COMMAND'
         assert 'FACTORY_ADAPTER' in factory_sh, 'generated factory.sh missing adapter interface'
         print('golden-path smoke test passed')
     finally:
         shutil.rmtree(parent, ignore_errors=True)
-if __name__=='__main__': main()
+if __name__ == '__main__':
+    # Survive a console that is not UTF-8, e.g. cp1252 on Windows (AI-1151).
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    sys.dont_write_bytecode = True  # leave no __pycache__ behind in the project
+    import safe_console
+    safe_console.make_console_safe()
+    main()

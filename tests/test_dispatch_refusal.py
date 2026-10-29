@@ -3,12 +3,12 @@
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-import shlex
 import shutil
 import subprocess
 import sys
 
 import pytest
+from portable import portable_command  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,12 +24,12 @@ def project(tmp_path, monkeypatch):
         (root / directory).mkdir(parents=True)
     (root / ".governance/gate_state.json").write_text(json.dumps({
         "approval_state": "draft", "implementation_authorized": False,
-    }))
+    }), encoding="utf-8")
     shutil.copyfile(ROOT / "subagents/install-config.json", root / "subagents/install-config.json")
     monkeypatch.setenv("FACTORY_CHAIN_ANCHOR_DIR", str(tmp_path / "anchors"))
     monkeypatch.setenv("FACTORY_OPERATOR_KEY_FILE", str(tmp_path / "operator.key"))
-    (tmp_path / "operator.key").write_text("k" * 64)
-    monkeypatch.setenv("FACTORY_ADAPTER_COMMAND", shlex.join([
+    (tmp_path / "operator.key").write_text("k" * 64, encoding="utf-8")
+    monkeypatch.setenv("FACTORY_ADAPTER_COMMAND", portable_command(*[
         sys.executable, "-c", "from pathlib import Path; Path('docs/dispatched').touch()",
     ]))
     subprocess.run(["git", "init", "-q"], cwd=root, check=True)
@@ -53,7 +53,7 @@ def board(project, **changes):
     fields.update(changes)
     (project / "orchestration/tasks.md").write_text(
         "#### TASK-901: Planning notes\n" + "\n".join(
-            f"**{key}**: {value}" for key, value in fields.items()) + "\n")
+            f"**{key}**: {value}" for key, value in fields.items()) + "\n", encoding="utf-8")
     # Commit fixture setup so the real pre-dispatch dirty-tree audit can run.
     subprocess.run(["git", "add", "."], cwd=project, check=True)
     subprocess.run(["git", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
@@ -69,7 +69,7 @@ def assert_refused(project, result, path):
     runs = project / "docs/verification/factory-runs"
     records = list(runs.glob("*-result.json"))
     assert len(records) == 1
-    record = json.loads(records[0].read_text())
+    record = json.loads(records[0].read_text(encoding="utf-8"))
     assert record["task_id"] == "TASK-901"
     assert record["outcome"] == "refused: denied task paths"
     assert record["adapter_dispatched"] is False
@@ -111,7 +111,7 @@ def test_source_reference_in_any_task_field_is_refused(project, field):
 def test_source_reference_in_unstructured_task_text_is_refused(project):
     board(project)
     task_file = project / "orchestration/tasks.md"
-    task_file.write_text(task_file.read_text() + "\nAlso create src/early.py.\n")
+    task_file.write_text(task_file.read_text(encoding="utf-8") + "\nAlso create src/early.py.\n", encoding="utf-8")
     assert_refused(project, cli(project), "src/early.py")
 
 
@@ -177,22 +177,22 @@ def test_authorized_source_task_still_dispatches(project, monkeypatch, authority
     if authority == "signoff":
         state_file.write_text(json.dumps({"approval_state": "approved",
                                           "implementation_authorized": True,
-                                          "decision": "Synthetic Gate 1 sign-off"}))
+                                          "decision": "Synthetic Gate 1 sign-off"}), encoding="utf-8")
     else:
         now = datetime.now(timezone.utc)
         evidence = project / "docs/override.md"
-        evidence.write_text("Synthetic source scope and rollback approval.\n")
+        evidence.write_text("Synthetic source scope and rollback approval.\n", encoding="utf-8")
         register = project / ".governance/security-compliance/override-register.md"
         register.parent.mkdir(parents=True)
         register.write_text(
             "| " + " | ".join([(now - timedelta(minutes=1)).isoformat(),
             "implementation-override", "implementation_authorized=true", "Operator Example",
             "Human Director: Director Example", "docs/override.md",
-            (now + timedelta(hours=1)).isoformat()]) + " |\n")
+            (now + timedelta(hours=1)).isoformat()]) + " |\n", encoding="utf-8")
     signed = cli(project, "gatekeeper", "sign")
     assert signed.returncode == 0, signed.stdout + signed.stderr
     board(project, **{"Acceptance Criteria": "Create src/early.py"})
-    monkeypatch.setenv("FACTORY_ADAPTER_COMMAND", shlex.join([sys.executable, "-c",
+    monkeypatch.setenv("FACTORY_ADAPTER_COMMAND", portable_command(*[sys.executable, "-c",
         "from pathlib import Path; Path('src').mkdir(exist_ok=True); "
         "Path('src/early.py').write_text('# synthetic source\\n'); "
         "Path('docs/verification/notes.md').write_text('Synthetic evidence\\n'); "
@@ -204,7 +204,7 @@ def test_authorized_source_task_still_dispatches(project, monkeypatch, authority
     assert (project / "src/early.py").exists()
     records = list((project / "docs/verification/factory-runs").glob("*-result.json"))
     assert len(records) == 1
-    record = json.loads(records[0].read_text())
+    record = json.loads(records[0].read_text(encoding="utf-8"))
     assert record["outcome"] == "pass"
     assert record["gate_state_at_check"]["implementation_authorized"] is True
 

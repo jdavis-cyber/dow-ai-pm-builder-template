@@ -204,7 +204,7 @@ def plan_approval_error(task_id: str, plan_path: str) -> str:
     """Empty when the operator signed an approval of this exact plan."""
     path = plan_approval_path(task_id)
     try:
-        record = json.loads(path.read_text())
+        record = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return f"no operator plan approval for {task_id}; run `gatekeeper.py approve-plan {task_id} <plan>`"
     plan_file = ROOT / plan_path
@@ -240,7 +240,7 @@ def approve_plan(task_id: str, plan_path: str) -> int:
         "plan_sha256": hashlib.sha256(plan_file.read_bytes()).hexdigest(),
     }, key)
     plan_approval_path(task_id).parent.mkdir(parents=True, exist_ok=True)
-    plan_approval_path(task_id).write_text(json.dumps(record, indent=2) + "\n")
+    plan_approval_path(task_id).write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
     print(f"plan approved for {task_id}: {plan_path}; set the task status to Plan Approved")
     return 0
 
@@ -259,7 +259,7 @@ def load_state() -> dict:
             "risk_acceptance_authorized": False,
             "control_closure_authorized": False,
         }
-    return json.loads(GATE_STATE.read_text())
+    return json.loads(GATE_STATE.read_text(encoding="utf-8"))
 
 
 def rel(path: str) -> str:
@@ -435,7 +435,7 @@ def sign() -> int:
     state["override_register_sha256"] = digest
     signed = sign_state(state, key)
     GATE_STATE.parent.mkdir(parents=True, exist_ok=True)
-    GATE_STATE.write_text(json.dumps(signed, indent=2, ensure_ascii=False) + "\n")
+    GATE_STATE.write_text(json.dumps(signed, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"gate state signed: {GATE_STATE.relative_to(ROOT)}")
     from codex_config import refresh_if_present
 
@@ -475,4 +475,9 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    # Survive a console that is not UTF-8, e.g. cp1252 on Windows (AI-1151).
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    sys.dont_write_bytecode = True  # leave no __pycache__ behind in the project
+    import safe_console
+    safe_console.make_console_safe()
     sys.exit(main())

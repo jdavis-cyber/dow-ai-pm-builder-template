@@ -6,19 +6,19 @@ def run(*args, cwd=ROOT): return subprocess.run(args,cwd=cwd,capture_output=True
 class TemplateValidationTests(unittest.TestCase):
     def test_roster_and_souls(self):
         self.assertEqual(sorted(p.stem for p in (ROOT/'.agent/souls').glob('*.md')), sorted(ACCOUNTABLE))
-        roster=(ROOT/'.agent/AGENT-ROSTER.md').read_text()
+        roster=(ROOT/'.agent/AGENT-ROSTER.md').read_text(encoding="utf-8")
         for a in ACCOUNTABLE: self.assertIn(a, roster)
     def test_runtime_install_and_validate(self):
         tmp=pathlib.Path(tempfile.mkdtemp())
         try:
             r=run(sys.executable,'automation/install_subagents.py','subagents/install-config.json',str(tmp)); self.assertEqual(r.returncode,0,r.stdout+r.stderr)
-            m=json.loads((tmp/'runtime-manifest.json').read_text())
+            m=json.loads((tmp/'runtime-manifest.json').read_text(encoding="utf-8"))
             self.assertEqual([a['name'] for a in m['accountable_agents']], ACCOUNTABLE)
             self.assertTrue(next(a for a in m['accountable_agents'] if a['name']=='security-compliance-officer')['mandatory'])
             r=run(sys.executable,'automation/validate_runtime.py',str(tmp/'runtime-manifest.json')); self.assertEqual(r.returncode,0,r.stdout+r.stderr)
         finally: shutil.rmtree(tmp, ignore_errors=True)
     def test_specialization_ownership_covers_voltagent(self):
-        own=json.loads((ROOT/'subagents/specialization-ownership-map.json').read_text())
+        own=json.loads((ROOT/'subagents/specialization-ownership-map.json').read_text(encoding="utf-8"))
         tomls=sorted(str(p.relative_to(ROOT/'subagents')).replace('\\','/') for p in (ROOT/'subagents/global/voltagent').glob('**/*.toml'))
         self.assertEqual(len(tomls),136); self.assertFalse([t for t in tomls if t not in own])
     def test_spec_modes_and_template_validator(self):
@@ -27,7 +27,7 @@ class TemplateValidationTests(unittest.TestCase):
     def test_kickoff_protocol_exists_and_is_operator_concise(self):
         kickoff=ROOT/'KICKOFF.md'
         self.assertTrue(kickoff.exists(), 'KICKOFF.md must be present at template root')
-        txt=kickoff.read_text()
+        txt=kickoff.read_text(encoding="utf-8")
         self.assertIn('Start a new project from the DoW AI PM Builder Template and begin Sprint Zero.', txt)
         self.assertNotIn('Start a new project from the DoW AI PM Builder Template.\n', txt)
         self.assertIn('canonical operator phrase', txt.lower())
@@ -49,7 +49,7 @@ class TemplateValidationTests(unittest.TestCase):
             for rel in ['directives/factory-governance-scope.md',
                         'docs/handoff/documentation-map.md']:
                 source = project / rel
-                links = re.findall(r'\[[^\]]*\]\(([^)]+)\)', source.read_text())
+                links = re.findall(r'\[[^\]]*\]\(([^)]+)\)', source.read_text(encoding="utf-8"))
                 for link in links:
                     target = urlsplit(link)
                     if target.scheme or target.netloc or not target.path:
@@ -69,7 +69,7 @@ class TemplateValidationTests(unittest.TestCase):
             copy = pathlib.Path(d) / 'template'
             shutil.copytree(ROOT, copy, ignore=shutil.ignore_patterns('.git', '.codex', '.claude', '__pycache__'))
             (copy / 'directives/templates/standards-crosswalk-matrix.md').write_text(
-                '# Standards applicability\n\nNo framework selected for this test project.\n')
+                '# Standards applicability\n\nNo framework selected for this test project.\n', encoding="utf-8")
             r = run(sys.executable, str(copy / 'automation/validate_template.py'), cwd=copy)
             self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
@@ -79,8 +79,8 @@ class TemplateValidationTests(unittest.TestCase):
             copy = pathlib.Path(d) / 'template'
             shutil.copytree(ROOT, copy, ignore=shutil.ignore_patterns('.git', '.codex', '.claude', '__pycache__'))
             gatekeeper = copy / 'automation/gatekeeper.py'
-            gatekeeper.write_text(gatekeeper.read_text().replace(
-                'deployment_authorized', 'deployment_control_removed_for_test'))
+            gatekeeper.write_text(gatekeeper.read_text(encoding="utf-8").replace(
+                'deployment_authorized', 'deployment_control_removed_for_test'), encoding="utf-8")
             r = run(sys.executable, str(copy / 'automation/validate_template.py'), cwd=copy)
             self.assertNotEqual(r.returncode, 0)
             self.assertIn('gatekeeper missing authority token deployment_authorized', r.stdout)
@@ -98,15 +98,15 @@ class TemplateValidationTests(unittest.TestCase):
         """A workstation's untracked files must not make it disagree with a clean clone."""
         with tempfile.TemporaryDirectory() as d:
             clone = self._clean_clone(d)
-            (clone / 'scratch-notes.md').write_text('complete AI development team - ' + '14\n')
-            (clone / '.agent/souls/local-experiment.md').write_text('# untracked local soul\n')
+            (clone / 'scratch-notes.md').write_text('complete AI development team - ' + '14\n', encoding="utf-8")
+            (clone / '.agent/souls/local-experiment.md').write_text('# untracked local soul\n', encoding="utf-8")
             r = run(sys.executable, 'automation/validate_template.py', cwd=clone)
             self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
     def test_tracked_stale_text_still_fails_validation(self):
         with tempfile.TemporaryDirectory() as d:
             clone = self._clean_clone(d)
-            (clone / 'scratch-notes.md').write_text('complete AI development team - ' + '14\n')
+            (clone / 'scratch-notes.md').write_text('complete AI development team - ' + '14\n', encoding="utf-8")
             r = run('git', 'add', 'scratch-notes.md', cwd=clone)
             self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
             r = run(sys.executable, 'automation/validate_template.py', cwd=clone)
@@ -114,10 +114,10 @@ class TemplateValidationTests(unittest.TestCase):
             self.assertIn('stale string', r.stdout)
 
     def test_ci_installs_hash_pinned_test_runner(self):
-        workflow = (ROOT / '.github/workflows/validate.yml').read_text()
+        workflow = (ROOT / '.github/workflows/validate.yml').read_text(encoding="utf-8")
         self.assertIn('--require-hashes -r requirements-ci.txt', workflow)
         self.assertNotRegex(workflow, r'pip install pytest\b')
-        self.assertRegex((ROOT / 'requirements-ci.txt').read_text(), r'(?m)^pytest==\S+ \\$')
+        self.assertRegex((ROOT / 'requirements-ci.txt').read_text(encoding="utf-8"), r'(?m)^pytest==\S+ \\$')
         for uses in re.findall(r'uses:\s*(\S+)', workflow):
             with self.subTest(action=uses):
                 self.assertRegex(uses, r'@[0-9a-f]{40}$')
@@ -129,7 +129,7 @@ class TemplateValidationTests(unittest.TestCase):
             r = run(sys.executable, str(copy / 'automation/validate_template.py'), cwd=copy)
             self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
             pkg = copy / 'subagents/global/requirements-ba.toml'
-            pkg.write_text('model = "gpt-old"\n' + pkg.read_text())
+            pkg.write_text('model = "gpt-old"\n' + pkg.read_text(encoding="utf-8"), encoding="utf-8")
             r = run(sys.executable, str(copy / 'automation/validate_template.py'), cwd=copy)
             self.assertNotEqual(r.returncode, 0)
             self.assertIn('pins model = "gpt-old"', r.stdout)

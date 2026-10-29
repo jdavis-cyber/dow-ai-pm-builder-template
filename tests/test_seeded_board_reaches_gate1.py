@@ -30,33 +30,33 @@ class SeededBoardReachesGate1Tests(unittest.TestCase):
 
     def complete(self, task_id):
         board = self.project / "orchestration/tasks.md"
-        text = board.read_text()
+        text = board.read_text(encoding="utf-8")
         block = re.search(rf"#### {task_id}:.*?(?=\n#### |\Z)", text, re.S).group(0)
         evidence = re.findall(r"`([^`]+)`", re.search(r"\*\*Evidence Required\*\*: (.*)", block).group(1))
         for rel in evidence:
             path = self.project / rel
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(f"Synthetic evidence for {task_id}\n")
+            path.write_text(f"Synthetic evidence for {task_id}\n", encoding="utf-8")
         if task_id == "TASK-009":
             # Lock 0: the dispatcher runs locked validation itself, so answer the spec.
             spec = self.project / "orchestration/system_spec.md"
-            answered = spec.read_text().replace("[Draft / Validated]", "Validated")
-            spec.write_text(re.sub(r"(?<![!])\[[^\]]+\](?!\()", "synthetic value", answered))
+            answered = spec.read_text(encoding="utf-8").replace("[Draft / Validated]", "Validated")
+            spec.write_text(re.sub(r"(?<![!])\[[^\]]+\](?!\()", "synthetic value", answered), encoding="utf-8")
         done = re.sub(r"\*\*Status\*\*: \w+", "**Status**: Done", block, count=1)
         text = text.replace(block, done)
         # Dependent tasks become Ready once everything they wait on is Done.
-        board.write_text(text)
+        board.write_text(text, encoding="utf-8")
 
     def promote_ready(self):
         board = self.project / "orchestration/tasks.md"
-        text = board.read_text()
+        text = board.read_text(encoding="utf-8")
         done = set(re.findall(r"#### (TASK-\d+):[^\n]*\n(?:[^\n]*\n)*?\*\*Status\*\*: Done", text))
         for m in re.finditer(r"#### (TASK-\d+):.*?(?=\n#### |\Z)", text, re.S):
             block = m.group(0)
             deps = set(re.findall(r"TASK-\d+", re.search(r"\*\*Dependencies\*\*: (.*)", block).group(1)))
             if "**Status**: Pending" in block and deps <= done:
                 text = text.replace(block, block.replace("**Status**: Pending", "**Status**: Ready", 1))
-        board.write_text(text)
+        board.write_text(text, encoding="utf-8")
 
     def test_seeded_board_is_schema_valid(self):
         for board in ["orchestration/task-board-template.md", "orchestration/tasks.md"]:
@@ -82,7 +82,7 @@ class SeededBoardReachesGate1Tests(unittest.TestCase):
         results = list((self.project / "docs/verification/factory-runs").glob("*-result.json"))
         self.assertEqual(len(results), 13)  # TASK-013 is checked on the run that stops at TASK-014
         import json
-        self.assertTrue(all(json.loads(p.read_text())["outcome"] == "pass" for p in results))
+        self.assertTrue(all(json.loads(p.read_text(encoding="utf-8"))["outcome"] == "pass" for p in results))
 
 
 if __name__ == "__main__":

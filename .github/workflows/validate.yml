@@ -31,3 +31,42 @@ jobs:
         run: |
           python3 -m pip install --require-hashes -r requirements-ci.txt
           python3 -m pytest tests/ -q
+
+  # NSR-01: the factory must run on macOS and Windows as well as Linux (AI-1151).
+  # These jobs gate on the smoke test and the adapter process, timeout, stop,
+  # environment and dispatch-lock tests; the full suite also runs for visibility.
+  cross-platform:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        # bash (Git Bash on Windows) stops at the first failing command; pwsh would not.
+        shell: bash
+    steps:
+      - name: Keep checked-out files byte-identical (recorded digests)
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+      - name: Golden-path smoke test
+        run: |
+          git config --global user.name "ci-runner"
+          git config --global user.email "ci-runner@users.noreply.github.com"
+          python automation/smoke_test_template.py
+      - name: Adapter process, timeout, stop, environment, lock and console tests
+        run: |
+          python -m pip install --require-hashes -r requirements-ci.txt
+          python -m pytest -q tests/test_cross_platform_adapter.py tests/test_console_encoding.py
+          python -m pytest -q tests/test_run_record_truth.py -k AdapterIdentityTests
+          python -m pytest -q tests/test_requirement_acceptance.py -k "NSR01 or adapter_timeout or SR11 or SR12 or SR16"
+      - name: Whole-template validation and full suite (informational)
+        continue-on-error: true
+        run: |
+          python automation/validate_template.py
+          python -m pytest tests/ -q

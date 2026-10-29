@@ -83,6 +83,11 @@ def validate(path, mode):
     return True
 
 if __name__ == '__main__':
+    # Survive a console that is not UTF-8, e.g. cp1252 on Windows (AI-1151).
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    sys.dont_write_bytecode = True  # leave no __pycache__ behind in the project
+    import safe_console
+    safe_console.make_console_safe()
     ap = argparse.ArgumentParser()
     ap.add_argument('--mode', choices=['template','draft','locked'], default='locked')
     ap.add_argument('spec')

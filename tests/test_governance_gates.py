@@ -121,7 +121,7 @@ class PostDispatchDetectiveControlTests(unittest.TestCase):
                 governed_factory.LOG_DIR = pl.Path(td)
                 task = {"Task ID": "TASK-TEST"}
                 path = governed_factory.write_run_result(task, {"record_type": "factory-run-result", "outcome": "pass"})
-                data = json.loads(path.read_text())
+                data = json.loads(path.read_text(encoding="utf-8"))
                 self.assertEqual(data["outcome"], "pass")
                 self.assertTrue(path.name.endswith("TASK-TEST-result.json"))
         finally:
@@ -137,7 +137,7 @@ class AuthorityStoreTests(unittest.TestCase):
         self.root = pathlib.Path(self.tmp.name) / "project"
         (self.root / ".governance").mkdir(parents=True)
         self.key = pathlib.Path(self.tmp.name) / "operator.key"
-        self.key.write_text("k" * 64 + "\n")
+        self.key.write_text("k" * 64 + "\n", encoding="utf-8")
         self._saved = (gatekeeper.ROOT, gatekeeper.GATE_STATE)
         gatekeeper.ROOT = self.root
         gatekeeper.GATE_STATE = self.root / ".governance" / "gate_state.json"
@@ -171,20 +171,20 @@ class AuthorityStoreTests(unittest.TestCase):
 
     def test_forged_self_consistent_state_does_not_authorize_writes(self):
         import json
-        gatekeeper.GATE_STATE.write_text(json.dumps(self._approved()))
+        gatekeeper.GATE_STATE.write_text(json.dumps(self._approved()), encoding="utf-8")
         ok, _ = gatekeeper.check_action("write", "src/app.py")
         self.assertFalse(ok)
 
     def test_signed_state_on_disk_authorizes_source_write(self):
         import json
         signed = gatekeeper.sign_state(self._approved(), self.key.read_bytes().strip())
-        gatekeeper.GATE_STATE.write_text(json.dumps(signed))
+        gatekeeper.GATE_STATE.write_text(json.dumps(signed), encoding="utf-8")
         ok, msg = gatekeeper.check_action("write", "src/app.py")
         self.assertTrue(ok, msg)
 
     def test_key_inside_project_is_refused(self):
         inside = self.root / "operator.key"
-        inside.write_text("k" * 64)
+        inside.write_text("k" * 64, encoding="utf-8")
         os.environ[gatekeeper.OPERATOR_KEY_ENV] = str(inside)
         signed = gatekeeper.sign_state(self._approved(), inside.read_bytes())
         self.assertIn("inside the project", gatekeeper.signature_error(signed))
@@ -207,7 +207,7 @@ class WriteAuditTests(unittest.TestCase):
             git = ["git", "-c", "user.name=t", "-c", "user.email=t@example.invalid"]
             (root / "docs").mkdir()
             (root / "src").mkdir()
-            (root / "docs/x.md").write_text("x\n")
+            (root / "docs/x.md").write_text("x\n", encoding="utf-8")
             for args in (["init", "-q"], ["add", "-A"], ["commit", "-qm", "init"]):
                 subprocess.run(git + args, cwd=root, check=True, capture_output=True)
             saved = governed_factory.ROOT

@@ -50,7 +50,7 @@ def codex_config() -> int:
     if config.parent.is_symlink() or config.is_symlink():
         print("REFUSAL: Codex configuration must not be a symlink")
         return 2
-    if config.exists() and not config.read_text().startswith(CODEX_CONFIG_HEADER):
+    if config.exists() and not config.read_text(encoding="utf-8").startswith(CODEX_CONFIG_HEADER):
         print(f"REFUSAL: existing {CODEX_CONFIG_PATH.as_posix()} is not gatekeeper-owned")
         return 2
     problem = ""
@@ -100,4 +100,9 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    # Survive a console that is not UTF-8, e.g. cp1252 on Windows (AI-1151).
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    sys.dont_write_bytecode = True  # leave no __pycache__ behind in the project
+    import safe_console
+    safe_console.make_console_safe()
     sys.exit(main())

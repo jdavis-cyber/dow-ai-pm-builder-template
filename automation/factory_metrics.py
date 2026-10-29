@@ -17,7 +17,7 @@ def collect(runs_dir=RUNS_DIR):
         return records
     for p in sorted(runs_dir.glob('*-result.json')):
         try:
-            data = json.loads(p.read_text())
+            data = json.loads(p.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError) as e:
             records.append({'file': p.name, 'parse_error': str(e)})
             continue
@@ -63,4 +63,9 @@ def main():
 
 
 if __name__ == '__main__':
+    # Survive a console that is not UTF-8, e.g. cp1252 on Windows (AI-1151).
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    sys.dont_write_bytecode = True  # leave no __pycache__ behind in the project
+    import safe_console
+    safe_console.make_console_safe()
     sys.exit(main())

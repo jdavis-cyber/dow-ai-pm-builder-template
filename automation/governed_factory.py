@@ -64,6 +64,9 @@ SECRET_PATTERNS = (
     re.compile(r"(?<=://)[^/\s:@]+:[^/\s@]+(?=@)"),
 )
 ADAPTER_TIMEOUT_EXIT = 124
+# After a timeout or stop has ended the adapter tree, wait at most this long for
+# its output pipes to close. A process that escaped the kill can hold them open.
+ADAPTER_DRAIN_TIMEOUT = 5.0
 
 ACCOUNTABLE = {
     "Requirements BA",
@@ -117,7 +120,13 @@ TASK_ID_RE = re.compile(r"TASK-\d+")
 CUI_MARKING_RE = re.compile(r"\bCUI\b|controlled\s+unclassified|//\s*(?:SP-|NOFORN)|\bFOUO\b|for\s+official\s+use\s+only", re.IGNORECASE)
 # Environment the adapter always gets; anything else must be opted in by name.
 ADAPTER_ENV_BASE = ("PATH", "HOME", "USER", "LOGNAME", "SHELL", "LANG", "LC_ALL", "LC_CTYPE", "TERM", "TMPDIR", "TZ")
+# What cmd.exe and Windows programs need to start at all (AI-1151).
+ADAPTER_ENV_WINDOWS = ("SYSTEMROOT", "SYSTEMDRIVE", "COMSPEC", "PATHEXT", "WINDIR", "TEMP", "TMP",
+                       "USERPROFILE", "APPDATA", "LOCALAPPDATA")
 ADAPTER_ENV_PASSTHROUGH = "FACTORY_ADAPTER_ENV_PASSTHROUGH"
+# Windows: start the adapter in its own process group (subprocess constant, defined here for POSIX tests).
+CREATE_NEW_PROCESS_GROUP = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0x00000200)
+CREATE_SUSPENDED = 0x00000004  # Windows: the process runs no code until it is resumed
 COMPLETE_PREFIXES = ("done", "complete", "completed", "approved")
 OPEN_PREFIXES = ("ready", "ready to start", "backlog", "pending")
 HUMAN_STOP_PATTERNS = (
@@ -137,7 +146,7 @@ def load_factory_config() -> dict:
     for name in CONFIG_FILES:
         path = ROOT / name
         if path.is_file():
-            return (json.loads(path.read_text()).get("factory") or {})
+            return (json.loads(path.read_text(encoding="utf-8")).get("factory") or {})
     return {}
 
 
@@ -661,7 +670,7 @@ def dispatch_classification(packet: dict, cfg: dict) -> dict:
     dispatch_cfg = cfg.get("dispatch") or {}
     levels = [str(dispatch_cfg.get("content_classification", "public")).lower()]
     try:
-        install = json.loads((ROOT / "subagents" / "install-config.json").read_text())
+        install = json.loads((ROOT / "subagents" / "install-config.json").read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         # Can't tell whether the project is regulated: treat it as CUI.
         install = {"requires_dod_controls": True}
@@ -680,6 +689,10 @@ def adapter_environment() -> dict:
     """Minimal environment for the adapter; credentials only by explicit opt-in."""
     names = set(ADAPTER_ENV_BASE)
     names |= {n.strip() for n in os.environ.get(ADAPTER_ENV_PASSTHROUGH, "").split(",") if n.strip()}
+    if _on_windows():
+        # Windows variable names are case-insensitive (Path, SystemRoot).
+        names = {n.upper() for n in names | set(ADAPTER_ENV_WINDOWS)}
+        return {k: v for k, v in os.environ.items() if k.upper() in names}
     return {k: v for k, v in os.environ.items() if k in names}
 
 
@@ -697,7 +710,7 @@ def write_packet(packet: dict, run_info: dict | None = None) -> Path:
     raw = (json.dumps(packet, indent=2, ensure_ascii=False) + "\n").encode()
     path.write_bytes(raw)
     if run_info is not None:
-        run_info["task_packet"] = {"path": str(path.relative_to(ROOT)),
+        run_info["task_packet"] = {"path": path.relative_to(ROOT).as_posix(),
                                    "sha256": hashlib.sha256(raw).hexdigest()}
     return path
 
@@ -738,11 +751,224 @@ def _raise_interrupted(signum, _frame):
     raise FactoryInterrupted(signum)
 
 
-def _kill_group(proc: subprocess.Popen) -> None:
+def install_stop_handlers() -> list[int]:
+    """Make an operator stop end the dispatch like Ctrl-C, so it is recorded as
+    interrupted: SIGTERM everywhere, and Ctrl-Break (SIGBREAK) on Windows."""
+    signums = [signal.SIGTERM]
+    if _on_windows() and hasattr(signal, "SIGBREAK"):
+        signums.append(signal.SIGBREAK)
+    for signum in signums:
+        signal.signal(signum, _raise_interrupted)
+    return signums
+
+
+def _on_windows() -> bool:
+    return os.name == "nt"
+
+
+def adapter_popen_options() -> dict:
+    """Start the adapter apart from the factory, so a stop or timeout can end
+    everything it started: a new session on POSIX, a new process group on Windows."""
+    if _on_windows():
+        return {"creationflags": CREATE_NEW_PROCESS_GROUP}
+    return {"start_new_session": True}
+
+
+JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x2000
+JOB_OBJECT_EXTENDED_LIMIT_INFORMATION_CLASS = 9  # JobObjectExtendedLimitInformation
+
+
+def _job_extended_limit_type():
+    """The JOBOBJECT_EXTENDED_LIMIT_INFORMATION structure, built with ctypes."""
+    import ctypes
+
+    class BasicLimits(ctypes.Structure):
+        _fields_ = [("PerProcessUserTimeLimit", ctypes.c_int64),
+                    ("PerJobUserTimeLimit", ctypes.c_int64),
+                    ("LimitFlags", ctypes.c_uint32),
+                    ("MinimumWorkingSetSize", ctypes.c_size_t),
+                    ("MaximumWorkingSetSize", ctypes.c_size_t),
+                    ("ActiveProcessLimit", ctypes.c_uint32),
+                    ("Affinity", ctypes.c_size_t),
+                    ("PriorityClass", ctypes.c_uint32),
+                    ("SchedulingClass", ctypes.c_uint32)]
+
+    class IoCounters(ctypes.Structure):
+        _fields_ = [(name, ctypes.c_uint64) for name in (
+            "ReadOperationCount", "WriteOperationCount", "OtherOperationCount",
+            "ReadTransferCount", "WriteTransferCount", "OtherTransferCount")]
+
+    class ExtendedLimits(ctypes.Structure):
+        _fields_ = [("BasicLimitInformation", BasicLimits),
+                    ("IoInfo", IoCounters),
+                    ("ProcessMemoryLimit", ctypes.c_size_t),
+                    ("JobMemoryLimit", ctypes.c_size_t),
+                    ("PeakProcessMemoryUsed", ctypes.c_size_t),
+                    ("PeakJobMemoryUsed", ctypes.c_size_t)]
+
+    return ExtendedLimits
+
+
+def _kernel32():
+    """kernel32 with the job-object signatures declared. Raises off Windows."""
+    import ctypes
+    from ctypes import wintypes
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.CreateJobObjectW.argtypes = (wintypes.LPVOID, wintypes.LPCWSTR)
+    kernel32.CreateJobObjectW.restype = wintypes.HANDLE
+    kernel32.SetInformationJobObject.argtypes = (wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD)
+    kernel32.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+    kernel32.OpenProcess.restype = wintypes.HANDLE
+    kernel32.AssignProcessToJobObject.argtypes = (wintypes.HANDLE, wintypes.HANDLE)
+    kernel32.TerminateJobObject.argtypes = (wintypes.HANDLE, wintypes.UINT)
+    kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
+    return kernel32
+
+
+def _ntdll():
+    """ntdll with NtResumeProcess declared. Raises off Windows."""
+    import ctypes
+    from ctypes import wintypes
+    ntdll = ctypes.WinDLL("ntdll")
+    ntdll.NtResumeProcess.argtypes = (wintypes.HANDLE,)
+    ntdll.NtResumeProcess.restype = ctypes.c_long  # NTSTATUS
+    return ntdll
+
+
+def _resume_process(handle: int) -> bool:
+    """Resume a process started with CREATE_SUSPENDED. Popen doesn't expose its
+    main thread handle, so resume the whole process through ntdll."""
+    try:
+        return _ntdll().NtResumeProcess(handle) == 0  # STATUS_SUCCESS
+    except (AttributeError, ImportError, OSError):
+        return False
+
+
+class WindowsJob:
+    """A Windows Job Object holding the adapter and the processes it starts.
+
+    taskkill /T walks the tree from the adapter's shell, so it misses children
+    once that shell has exited. A job tracks them independently of the shell.
+    The adapter starts suspended and joins the job before it runs any code, so
+    every process it starts is in the job too. The job is kill-on-close: when
+    its last handle closes, at the end of the dispatch or because Windows closed
+    it when the factory died, every process still in it ends. So no adapter
+    descendant outlives its factory, and recovery's check of the recorded
+    adapter pid is enough.
+    """
+
+    def __init__(self, handle, kernel32):
+        self._handle = handle
+        self._kernel32 = kernel32
+
+    @classmethod
+    def create(cls):
+        """A new, empty kill-on-close job, or None if one can't be set up."""
+        try:
+            import ctypes
+            kernel32 = _kernel32()
+        except (AttributeError, ImportError, OSError):
+            return None
+        job = kernel32.CreateJobObjectW(None, None)
+        if not job:
+            return None
+        limits = _job_extended_limit_type()()
+        limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+        if not kernel32.SetInformationJobObject(job, JOB_OBJECT_EXTENDED_LIMIT_INFORMATION_CLASS,
+                                                ctypes.byref(limits), ctypes.sizeof(limits)):
+            kernel32.CloseHandle(job)
+            return None
+        return cls(job, kernel32)
+
+    @classmethod
+    def for_process(cls, pid: int):
+        """A kill-on-close job holding the running process ``pid``, or None."""
+        job = cls.create()
+        if job is None:
+            return None
+        process = job._kernel32.OpenProcess(0x0101, False, pid)  # PROCESS_SET_QUOTA | PROCESS_TERMINATE
+        assigned = bool(process) and job.assign(process)
+        if process:
+            job._kernel32.CloseHandle(process)
+        if not assigned:
+            job.close()
+            return None
+        return job
+
+    def assign(self, process_handle) -> bool:
+        """Put the process behind ``process_handle`` in this job."""
+        return bool(self._handle) and bool(self._kernel32.AssignProcessToJobObject(self._handle, process_handle))
+
+    def terminate(self) -> bool:
+        """End every process in the job. True if Windows accepted the request."""
+        return bool(self._handle) and bool(self._kernel32.TerminateJobObject(self._handle, ADAPTER_TIMEOUT_EXIT))
+
+    def close(self) -> None:
+        if self._handle:
+            self._kernel32.CloseHandle(self._handle)
+            self._handle = None
+
+
+def kill_adapter_tree(proc, job=None) -> None:
+    """Stop the adapter and every process it started."""
+    if _on_windows():
+        # The job and taskkill each run, so neither depends on the other working.
+        stopped = job is not None and job.terminate()
+        try:
+            done = subprocess.run(["taskkill", "/T", "/F", "/PID", str(proc.pid)], capture_output=True)
+            killed = done.returncode == 0
+        except OSError:
+            killed = False
+        if not (stopped or killed) and proc.poll() is None:
+            proc.kill()
+        return
     try:
         os.killpg(proc.pid, signal.SIGKILL)
     except OSError:
         proc.kill()
+
+
+def _partial_output(data) -> str:
+    """Output a timed-out communicate() had collected, as text with universal newlines."""
+    if not data:
+        return ""
+    if isinstance(data, bytes):
+        data = data.decode("utf-8", errors="replace")
+    return data.replace("\r\n", "\n").replace("\r", "\n")
+
+
+def drain_adapter_output(proc) -> tuple[str, str]:
+    """Collect the output of an adapter whose tree was just stopped, waiting at most
+    ADAPTER_DRAIN_TIMEOUT. If a process that escaped the kill still holds the pipes,
+    stop waiting, release them, and say so in stderr."""
+    try:
+        out, err = proc.communicate(timeout=ADAPTER_DRAIN_TIMEOUT)
+        return out or "", err or ""
+    except subprocess.TimeoutExpired as exc:
+        # POSIX communicate() hands back what it read so far; on Windows the
+        # stdlib reader threads keep it until the pipe closes.
+        out, err = _partial_output(exc.output), _partial_output(exc.stderr)
+    if not _on_windows():
+        # communicate() reads with select() on POSIX, so no thread is using these.
+        # On Windows its reader threads hold the file locks; closing would block.
+        for stream in (proc.stdin, proc.stdout, proc.stderr):
+            try:
+                if stream:
+                    stream.close()
+            except OSError:
+                pass
+    if err and not err.endswith("\n"):
+        err += "\n"
+    err += (f"[factory: stopped waiting for adapter output after {ADAPTER_DRAIN_TIMEOUT:g}s; "
+            "a process the adapter started still holds its output pipes]\n")
+    return out, err
+
+
+def _wait_bounded(proc) -> None:
+    try:
+        proc.wait(timeout=ADAPTER_DRAIN_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        pass
 
 
 def _process_start_time(pid: int):
@@ -752,7 +978,7 @@ def _process_start_time(pid: int):
         return _windows_process(pid)[1]
     if Path("/proc/self/stat").exists():
         try:
-            stat = Path(f"/proc/{pid}/stat").read_text()
+            stat = Path(f"/proc/{pid}/stat").read_text(encoding="utf-8")
             return int(stat.rsplit(")", 1)[1].split()[19])  # field 22: starttime, clock ticks since boot
         except (OSError, ValueError, IndexError):
             return None
@@ -824,7 +1050,7 @@ def _process_group_running(pgid: int) -> bool:
     if (proc_root / "self" / "stat").exists():
         for stat in proc_root.glob("[0-9]*/stat"):
             try:
-                fields = stat.read_text().rsplit(")", 1)[1].split()
+                fields = stat.read_text(encoding="utf-8").rsplit(")", 1)[1].split()
             except (OSError, IndexError):
                 continue
             if len(fields) > 2 and fields[2] == str(pgid) and fields[0] not in ("Z", "X"):
@@ -839,26 +1065,72 @@ def _process_group_running(pgid: int) -> bool:
     return True
 
 
+def _start_adapter(command: str, env: dict):
+    """Start the adapter: (process, Windows job or None).
+
+    On Windows the shell starts suspended, joins a kill-on-close job, and only
+    then resumes, so no process it starts can be outside the job. If that
+    fails, the suspended shell, which has run no code, is discarded and the
+    adapter starts without a job; taskkill and the bounded drain cover it."""
+    popen = dict(shell=True, cwd=ROOT, env=env, text=True, encoding="utf-8", errors="replace",
+                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    options = adapter_popen_options()
+    if not _on_windows():
+        return subprocess.Popen(command, **popen, **options), None
+    proc = subprocess.Popen(command, **popen, creationflags=options["creationflags"] | CREATE_SUSPENDED)
+    job = None
+    try:
+        job = WindowsJob.create()
+        handle = getattr(proc, "_handle", None)  # Popen keeps the process handle; not public API
+        if job is not None and handle is not None and job.assign(int(handle)) and _resume_process(int(handle)):
+            return proc, job
+    except BaseException:
+        _discard_suspended(proc, job)
+        raise
+    _discard_suspended(proc, job)
+    return subprocess.Popen(command, **popen, **options), None
+
+
+def _discard_suspended(proc, job) -> None:
+    """End a suspended adapter shell that never ran, and its job."""
+    if job is not None:
+        job.close()
+    try:
+        proc.kill()
+    except OSError:
+        pass
+    try:
+        proc.communicate(timeout=ADAPTER_DRAIN_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        pass
+
+
 def _run_adapter(command: str, prompt: str, env: dict, timeout: float,
                  on_start=None) -> tuple[int, str, str, bool]:
-    """Run the adapter in its own process group so a timeout or a stop ends all of it."""
-    proc = subprocess.Popen(command, shell=True, cwd=ROOT, env=env, text=True,
-                            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, start_new_session=True)
+    """Run the adapter in its own process group so a timeout or a stop ends all of it.
+
+    Waiting after a timeout or stop is bounded too, so a child that outlives the
+    kill and keeps the output pipes open cannot hold the factory."""
+    proc, job = _start_adapter(command, env)
     try:
         if on_start:
             on_start(proc)
         out, err = proc.communicate(prompt, timeout=timeout)
         return proc.returncode, out, err, False
     except subprocess.TimeoutExpired:
-        _kill_group(proc)
-        out, err = proc.communicate()
+        kill_adapter_tree(proc, job)
+        out, err = drain_adapter_output(proc)
+        _wait_bounded(proc)
         return ADAPTER_TIMEOUT_EXIT, out, err, True
     except BaseException:
         # An operator stop must not leave the adapter running on its own.
-        _kill_group(proc)
-        proc.wait()
+        kill_adapter_tree(proc, job)
+        _wait_bounded(proc)
         raise
+    finally:
+        # Kill-on-close: on Windows nothing the adapter started outlives the dispatch.
+        if job is not None:
+            job.close()
 
 
 IN_FLIGHT_DIR_NAME = "in-flight"
@@ -912,10 +1184,6 @@ class DispatchLock:
             self.handle = None
 
 
-def _on_windows() -> bool:
-    return os.name == "nt"
-
-
 def dispatch_lock() -> DispatchLock:
     return DispatchLock(chain_anchor_path().with_suffix("") / "dispatch.lock")
 
@@ -938,7 +1206,7 @@ def mark_in_flight(task_id: str, run_info: dict) -> None:
         # Who owns the dispatch; recovery refuses a marker it can't prove is orphaned.
         "owner": {"pid": os.getpid(), "host": socket.gethostname(), "token": FACTORY_TOKEN,
                   "started_at_utc": FACTORY_STARTED_UTC},
-    }, indent=2) + "\n")
+    }, indent=2) + "\n", encoding="utf-8")
     run_info["_in_flight"] = str(path)
 
 
@@ -946,10 +1214,10 @@ def record_adapter_started(run_info: dict, proc) -> None:
     """Add the running adapter's identity to the in-flight marker, so recovery
     after a killed factory can see the adapter outlived it."""
     path = Path(run_info["_in_flight"])
-    info = json.loads(path.read_text())
+    info = json.loads(path.read_text(encoding="utf-8"))
     info["adapter_process"] = adapter_identity(proc)
     tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(info, indent=2) + "\n")
+    tmp.write_text(json.dumps(info, indent=2) + "\n", encoding="utf-8")
     os.replace(tmp, path)
 
 
@@ -959,7 +1227,7 @@ def live_adapter_markers() -> list[str]:
     live = []
     for marker in sorted(directory.glob("*.json")) if directory.is_dir() else []:
         try:
-            identity = json.loads(marker.read_text()).get("adapter_process")
+            identity = json.loads(marker.read_text(encoding="utf-8")).get("adapter_process")
         except (OSError, json.JSONDecodeError, AttributeError):
             continue
         if isinstance(identity, dict) and adapter_still_running(identity):
@@ -974,7 +1242,7 @@ def foreign_in_flight_markers() -> list[str]:
     foreign = []
     for marker in sorted(directory.glob("*.json")) if directory.is_dir() else []:
         try:
-            host = (json.loads(marker.read_text()).get("owner") or {}).get("host")
+            host = (json.loads(marker.read_text(encoding="utf-8")).get("owner") or {}).get("host")
         except (OSError, json.JSONDecodeError, AttributeError):
             host = None
         if host and host != here:
@@ -987,7 +1255,7 @@ def _recorded_packet_seals() -> list[dict]:
     seals = []
     for path in _chain_records():
         try:
-            seal = json.loads(path.read_text()).get("task_packet")
+            seal = json.loads(path.read_text(encoding="utf-8")).get("task_packet")
         except (OSError, json.JSONDecodeError, AttributeError):
             continue
         if isinstance(seal, dict):
@@ -1007,7 +1275,7 @@ def recover_interrupted_dispatches() -> list[str]:
     recorded = None
     for marker in sorted(directory.glob("*.json")) if directory.is_dir() else []:
         try:
-            info = json.loads(marker.read_text())
+            info = json.loads(marker.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             info = {}
         if not isinstance(info, dict):
@@ -1112,7 +1380,7 @@ def dispatch(packet: dict, adapter: str, run_info: dict | None = None) -> int:
 def _read_usage(path: Path) -> dict | None:
     """Usage the adapter reported in FACTORY_USAGE_FILE: {"tokens": n, "cost_usd": x}."""
     try:
-        data = json.loads(path.read_text())
+        data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return None
     usage = {}
@@ -1244,7 +1512,7 @@ def verify_run_chain() -> list[str]:
     head_path = LOG_DIR / CHAIN_HEAD
     if chained or head_path.exists():
         try:
-            head = json.loads(head_path.read_text())
+            head = json.loads(head_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             problems.append(f"{CHAIN_HEAD} missing or unreadable")
         else:
@@ -1254,7 +1522,7 @@ def verify_run_chain() -> list[str]:
             elif previous and head.get("latest_result_sha256") != previous[1]:
                 problems.append(f"{previous[0]}: content changed after it was recorded")
     try:
-        anchor = json.loads(chain_anchor_path().read_text())
+        anchor = json.loads(chain_anchor_path().read_text(encoding="utf-8"))
     except FileNotFoundError:
         anchor = None
     except (OSError, json.JSONDecodeError):
@@ -1406,10 +1674,10 @@ def write_run_result(task: dict, result: dict) -> Path:
         "latest_result_sha256": hashlib.sha256(raw).hexdigest(),
     }, indent=2) + "\n"
     (LOG_DIR / CHAIN_HEAD).parent.mkdir(exist_ok=True)
-    (LOG_DIR / CHAIN_HEAD).write_text(head)
+    (LOG_DIR / CHAIN_HEAD).write_text(head, encoding="utf-8")
     anchor = chain_anchor_path()
     anchor.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    anchor.write_text(head)
+    anchor.write_text(head, encoding="utf-8")
     return path
 
 
@@ -1604,7 +1872,7 @@ def post_dispatch_checks(task: dict, state: dict, before,
         print(f"STOP: required evidence missing or empty after dispatch for {task['Task ID']}: " + ", ".join(missing))
         violation("missing evidence")
     result["evidence_sha256"] = {p: _fingerprint(p) for p in declared}
-    refreshed = {t["Task ID"]: t for t in parse_tasks(TASKS_FILE.read_text())}
+    refreshed = {t["Task ID"]: t for t in parse_tasks(TASKS_FILE.read_text(encoding="utf-8"))}
     status_after = str(refreshed.get(task["Task ID"], {}).get("Status", "")).strip()
     result["status_after_dispatch"] = status_after or None
     still_open = status_kind(status_after) in open_kinds
@@ -1682,7 +1950,10 @@ def post_dispatch_checks(task: dict, state: dict, before,
 
 def adapter_signal(returncode: int) -> int:
     """The signal that stopped the adapter, or 0. The adapter runs through the
-    shell, which reports a child killed by signal N as exit status 128 + N."""
+    shell, which reports a child killed by signal N as exit status 128 + N.
+    Windows has no such convention, so an exit status is only an exit status."""
+    if _on_windows():
+        return 0
     if returncode < 0:
         return -returncode
     if 128 < returncode < 128 + signal.NSIG:
@@ -1738,10 +2009,10 @@ def record_assisted_dispatch(task: dict, state: dict, packet_seal: dict | None =
         "dispatch_phase": "plan" if task.get("_plan_only") else "implement",
         **({"task_packet": packet_seal} if packet_seal else {}),
     }, indent=2) + "\n"
-    path.write_text(raw)
+    path.write_text(raw, encoding="utf-8")
     seal = _pending_seal_path(task["Task ID"])
     seal.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    seal.write_text(hashlib.sha256(raw.encode()).hexdigest() + "\n")
+    seal.write_text(hashlib.sha256(raw.encode()).hexdigest() + "\n", encoding="utf-8")
     print(f"ASSISTED MODE: detective checks run when {task['Task ID']} leaves Ready; "
           f"rerun the factory after completing it ({path.relative_to(ROOT)})")
     return path
@@ -1753,7 +2024,7 @@ def readvertise_pending(task: dict, packet: dict) -> int:
     Only the packet sealed in the pending baseline is checked at completion, so
     a second invocation re-advertises that packet instead of emitting another.
     """
-    record = json.loads((_pending_dir() / f"{task['Task ID']}.json").read_text())
+    record = json.loads((_pending_dir() / f"{task['Task ID']}.json").read_text(encoding="utf-8"))
     seal = record.get("task_packet")
     if seal is None:
         print(packet_to_prompt(packet))
@@ -1763,7 +2034,7 @@ def readvertise_pending(task: dict, packet: dict) -> int:
     if problem:
         print(f"STOP: {problem}; the completion checks for {task['Task ID']} will record it")
         return 3
-    print(packet_to_prompt(json.loads((ROOT / seal["path"]).read_text())))
+    print(packet_to_prompt(json.loads((ROOT / seal["path"]).read_text(encoding="utf-8"))))
     print(f"\nASSISTED MODE: {task['Task ID']} is still pending; its task packet is {seal['path']}")
     return 0
 
@@ -1780,10 +2051,10 @@ def check_assisted_completions(tasks: list[dict]) -> tuple[int, set[str]]:
     if not directory.is_dir():
         return 0, still_pending
     for path in sorted(directory.glob("*.json")):
-        raw = path.read_text()
+        raw = path.read_text(encoding="utf-8")
         seal = _pending_seal_path(path.stem)
         try:
-            sealed = seal.read_text().strip()
+            sealed = seal.read_text(encoding="utf-8").strip()
         except OSError:
             sealed = None
         if sealed != hashlib.sha256(raw.encode()).hexdigest():
@@ -1808,7 +2079,7 @@ def check_assisted_completions(tasks: list[dict]) -> tuple[int, set[str]]:
         operator_records = frozenset()
         plan = str(task.get("Plan", "")).strip().strip("`")
         if planning and plan and not gatekeeper.plan_approval_error(task["Task ID"], plan):
-            operator_records = frozenset({str(gatekeeper.plan_approval_path(task["Task ID"]).relative_to(ROOT))})
+            operator_records = frozenset({gatekeeper.plan_approval_path(task["Task ID"]).relative_to(ROOT).as_posix()})
         print(f"ASSISTED MODE: checking completed {'planning for' if planning else 'task'} {task['Task ID']}")
         code = post_dispatch_checks(dict(task, _plan_only=True) if planning else task,
                                     record.get("gate_state") or {}, record.get("working_tree"),
@@ -1881,7 +2152,7 @@ def _once(adapter: str) -> int:
         return DISPATCH_IN_PROGRESS_EXIT
     if recover_interrupted_dispatches():
         return 3
-    tasks = parse_tasks(TASKS_FILE.read_text())
+    tasks = parse_tasks(TASKS_FILE.read_text(encoding="utf-8"))
     code, pending = check_assisted_completions(tasks)
     if code != 0:
         return code
@@ -1939,7 +2210,7 @@ def task_board_unreviewed() -> str:
     A loop runs on whatever the board says, and the board is agent-writable,
     so the operator reviews and commits it first. Uncommitted edits stop the loop.
     """
-    rel_board = str(TASKS_FILE.relative_to(ROOT))
+    rel_board = TASKS_FILE.relative_to(ROOT).as_posix()
     tracked = subprocess.run(["git", "ls-files", "--error-unmatch", rel_board], cwd=ROOT, capture_output=True)
     if tracked.returncode != 0:
         return f"{rel_board} is not committed (or git is unavailable); review and commit it first"
@@ -1959,8 +2230,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-wall-seconds", type=int, default=None,
                         help="stop the loop after this much wall-clock time (default from factory config)")
     args = parser.parse_args(argv)
-    # SIGTERM stops the factory like Ctrl-C: the dispatch in progress is recorded as interrupted.
-    signal.signal(signal.SIGTERM, _raise_interrupted)
+    install_stop_handlers()
     if args.loop:
         unreviewed = task_board_unreviewed()
         if unreviewed:
@@ -1986,4 +2256,9 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    # Survive a console that is not UTF-8, e.g. cp1252 on Windows (AI-1151).
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    sys.dont_write_bytecode = True  # leave no __pycache__ behind in the project
+    import safe_console
+    safe_console.make_console_safe()
     sys.exit(main())

@@ -33,9 +33,9 @@ class FactoryMetricsTests(unittest.TestCase):
     def test_violation_outcomes_are_counted_not_hidden(self):
         with tempfile.TemporaryDirectory() as d:
             runs = pathlib.Path(d)
-            (runs / "a-T1-result.json").write_text(json.dumps(record("pass")))
+            (runs / "a-T1-result.json").write_text(json.dumps(record("pass")), encoding="utf-8")
             (runs / "b-T2-result.json").write_text(
-                json.dumps(record("violation: unauthorized writes")))
+                json.dumps(record("violation: unauthorized writes")), encoding="utf-8")
             summary = factory_metrics.summarize(factory_metrics.collect(runs))
         self.assertEqual(summary["runs_recorded"], 2)
         self.assertEqual(summary["runs_with_violations"], 1)
@@ -46,9 +46,9 @@ class FactoryMetricsTests(unittest.TestCase):
         # AI-1163: an interrupted dispatch is recorded, and it is not a pass.
         with tempfile.TemporaryDirectory() as d:
             runs = pathlib.Path(d)
-            (runs / "a-T1-result.json").write_text(json.dumps(record("pass")))
+            (runs / "a-T1-result.json").write_text(json.dumps(record("pass")), encoding="utf-8")
             (runs / "b-T2-result.json").write_text(
-                json.dumps(record("interrupted: operator stop (SIGINT) during dispatch")))
+                json.dumps(record("interrupted: operator stop (SIGINT) during dispatch")), encoding="utf-8")
             summary = factory_metrics.summarize(factory_metrics.collect(runs))
         self.assertEqual(summary["runs_passed"], 1)
         self.assertEqual(summary["runs_with_violations"], 1)
@@ -58,7 +58,7 @@ class FactoryMetricsTests(unittest.TestCase):
     def test_unreadable_record_is_surfaced(self):
         with tempfile.TemporaryDirectory() as d:
             runs = pathlib.Path(d)
-            (runs / "bad-T3-result.json").write_text("{not json")
+            (runs / "bad-T3-result.json").write_text("{not json", encoding="utf-8")
             summary = factory_metrics.summarize(factory_metrics.collect(runs))
         self.assertEqual(summary["unreadable_records"], ["bad-T3-result.json"])
 
