@@ -110,6 +110,30 @@ class LockedLabelTests(unittest.TestCase):
         problems = governed_factory.lock0_problems(governed_factory.lock0_spec_paths(redirected))
         self.assertFalse([p for p in problems if not p.startswith(spec + ":")], problems)
 
+    def test_quoted_validator_commands_keep_their_paths(self):
+        # Codex P2 on #29/#30: stripping the script prefix from a quoted
+        # command left a stray quote, shlex.split failed, and the fallback
+        # returned quote-bearing paths that lock0_problems reported missing.
+        spec = "orchestration/system_spec.md"
+        detect = governed_factory.lock0_spec_paths
+        cases = {
+            f'python3 "automation/validate_spec.py" --mode locked "{spec}"': [spec],
+            f"python3 'automation/validate_spec.py' --mode 'locked' '{spec}'": [spec],
+            f"python3 automation/validate_spec.py --mode locked {spec}": [spec],
+            f'`python3 "automation/validate_spec.py" --mode locked "{spec}"`': [spec],
+            f'python3 "automation/validate_spec.py" --mode=locked "{spec}" > "docs/v.md"': [spec],
+            'python3 automation/validate_spec.py --mode locked "docs/my spec.md"': ["docs/my spec.md", spec],
+            f'python3 "automation/validate_spec.py" --mode locked "{spec}"; echo "done"': [spec],
+            f"python3 'automation/validate_spec.py' --mode 'template' '{spec}'": [],
+        }
+        for command, expected in cases.items():
+            with self.subTest(command=command):
+                self.assertEqual(detect({"Verification Command or Method": command}), expected)
+        for command in list(cases)[:3]:
+            with self.subTest(problems=command):
+                problems = governed_factory.lock0_problems(detect({"Verification Command or Method": command}))
+                self.assertFalse([p for p in problems if not p.startswith(spec + ":")], problems)
+
 
 class DispatcherLock0Tests(ShellAdapterFixture, unittest.TestCase):
     def lock0_board(self, status="Ready", follower=False):
