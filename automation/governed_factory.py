@@ -1368,7 +1368,9 @@ def post_dispatch_checks(task: dict, state: dict, before,
                          run_info: dict | None = None,
                          git_before=NOT_AUDITED,
                          verified_before: dict | None = None,
-                         interrupted: tuple[str, int] | None = None) -> int:
+                         interrupted: tuple[str, int] | None = None,
+                         open_kinds=DISPATCHABLE,
+                         operator_records: frozenset = frozenset()) -> int:
     """Record every adapter outcome and all applicable detective checks.
 
     A nonzero adapter exit retains its exit code and primary failure outcome.
@@ -1415,8 +1417,11 @@ def post_dispatch_checks(task: dict, state: dict, before,
         violation("write audit unavailable")
     else:
         # Committed files are audited exactly like working-tree changes.
-        viol = sorted(set(unauthorized_writes(before, after, state))
-                      | {p for p in committed if not gatekeeper.check_action("write", p, state)[0]})
+        viol = sorted((set(unauthorized_writes(before, after, state))
+                       | {p for p in committed if not gatekeeper.check_action("write", p, state)[0]})
+                      - operator_records)
+        if operator_records:
+            result["checks"]["operator_records"] = sorted(operator_records)
         result["checks"]["write_audit"] = {"violations": viol} if viol else "pass"
         if viol:
             print("STOP: unauthorized writes detected after dispatch: " + ", ".join(viol))
@@ -1460,7 +1465,7 @@ def post_dispatch_checks(task: dict, state: dict, before,
     refreshed = {t["Task ID"]: t for t in parse_tasks(TASKS_FILE.read_text())}
     status_after = str(refreshed.get(task["Task ID"], {}).get("Status", "")).strip()
     result["status_after_dispatch"] = status_after or None
-    still_open = status_kind(status_after) in DISPATCHABLE
+    still_open = status_kind(status_after) in open_kinds
     if evidence_before is not None and declared and not missing:
         unchanged = all(evidence_before.get(p) == result["evidence_sha256"][p] for p in declared)
         result["checks"]["evidence_changed"] = "fail: no evidence changed" if unchanged else "pass"
@@ -1586,6 +1591,9 @@ def record_assisted_dispatch(task: dict, state: dict, packet_seal: dict | None =
         "gate_state": state,
         "working_tree": working_tree_snapshot(),
         "evidence_before": evidence_fingerprints(task),
+        # Planning and implementation of a Human Gate task are separate dispatches;
+        # the baseline is reused only while the task is still in the same phase.
+        "dispatch_phase": "plan" if task.get("_plan_only") else "implement",
         **({"task_packet": packet_seal} if packet_seal else {}),
     }, indent=2) + "\n"
     path.write_text(raw)
@@ -1645,12 +1653,25 @@ def check_assisted_completions(tasks: list[dict]) -> tuple[int, set[str]]:
         if task is None:
             print(f"STOP: assisted task {record.get('task_id')} was removed from the board before its checks ran")
             return 3, still_pending
-        if status_kind(task.get("Status", "")) in DISPATCHABLE:
+        # A planning dispatch is still open only while the task is Ready; once the
+        # Director has approved the plan (Plan Approved), planning is done and the
+        # task is dispatched afresh for implementation.
+        planning = record.get("dispatch_phase") == "plan"
+        open_kinds = {"open"} if planning else DISPATCHABLE
+        if status_kind(task.get("Status", "")) in open_kinds:
             still_pending.add(task["Task ID"])
             continue
-        print(f"ASSISTED MODE: checking completed task {task['Task ID']}")
-        code = post_dispatch_checks(task, record.get("gate_state") or {}, record.get("working_tree"),
-                                    evidence_before=record.get("evidence_before"),
+        # The Director's signed approval of this exact plan is the operator's record,
+        # written during the planning window; anything else under .governance/ is not.
+        operator_records = frozenset()
+        plan = str(task.get("Plan", "")).strip().strip("`")
+        if planning and plan and not gatekeeper.plan_approval_error(task["Task ID"], plan):
+            operator_records = frozenset({str(gatekeeper.plan_approval_path(task["Task ID"]).relative_to(ROOT))})
+        print(f"ASSISTED MODE: checking completed {'planning for' if planning else 'task'} {task['Task ID']}")
+        code = post_dispatch_checks(dict(task, _plan_only=True) if planning else task,
+                                    record.get("gate_state") or {}, record.get("working_tree"),
+                                    evidence_before=record.get("evidence_before"), open_kinds=open_kinds,
+                                    operator_records=operator_records,
                                     run_info={"adapter": "assisted",
                                               "dispatched_at_utc": record.get("dispatched_at_utc"),
                                               **({"task_packet": record["task_packet"]}

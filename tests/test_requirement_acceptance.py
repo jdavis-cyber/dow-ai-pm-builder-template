@@ -811,6 +811,51 @@ class RequirementAcceptanceTests(unittest.TestCase):
                                         "operator_signature": {"alg": "hmac-sha256", "value": "00" * 32}}))
         self.expect(self.cli("governed_factory", "--adapter", "assisted"), 2, "not signed by the operator")
 
+    def test_assisted_plan_approved_before_rerun_dispatches_implementation(self):
+        # Codex P2 on #28: the Director approved the plan before the next run, so the
+        # task went Ready -> Plan Approved while its planning baseline was still
+        # pending; the factory replayed the PLAN ONLY packet instead of implementing.
+        self.operator_key()
+        self.plan_board()
+        self.init_git()
+        self.expect(self.assisted(), 0, "PLAN ONLY")
+        pending = self.repo / "docs/verification/factory-runs/pending-assisted/TASK-901.json"
+        self.assertEqual(json.loads(pending.read_text())["dispatch_phase"], "plan")
+        plan = self.repo / "docs/verification/TASK-901/plan.md"
+        plan.parent.mkdir(parents=True, exist_ok=True)
+        plan.write_text("# Plan\nFiles: docs/verification/fixture.md\n")
+        self.expect(self.cli("gatekeeper", "approve-plan", "TASK-901", "docs/verification/TASK-901/plan.md"), 0)
+        board = self.repo / "orchestration/tasks.md"
+        board.write_text(board.read_text().replace("**Status**: Ready", "**Status**: Plan Approved"))
+        # The planning run passes: the signed approval is the operator's record, not
+        # a planning write. Like any authority record it is committed before dispatch.
+        result = self.assisted()
+        self.expect(result, 2, "dirty_unexpected_state")
+        self.assertIn("checking completed planning for TASK-901", result.stdout)
+        record = self.result()
+        self.assertEqual(record["outcome"], "pass", record)
+        self.assertEqual(record["checks"]["operator_records"], [".governance/plan-approvals/TASK-901.json"])
+        self.assertFalse(pending.exists())
+        for args in [("add", ".governance/plan-approvals/TASK-901.json"), ("commit", "-qm", "approve plan")]:
+            self.expect(self.run_command("git", *args), 0)
+        result = self.assisted()
+        self.expect(result, 0, "NEXT GOVERNED FACTORY TASK: TASK-901")
+        self.assertNotIn("PLAN ONLY", result.stdout)
+        self.assertEqual(json.loads(pending.read_text())["dispatch_phase"], "implement")
+        # The implementation packet is the one re-advertised while the task is open.
+        again = self.assisted()
+        self.expect(again, 0, "still pending")
+        self.assertNotIn("PLAN ONLY", again.stdout)
+
+    def test_assisted_planning_still_open_stays_pending(self):
+        self.plan_board()
+        self.init_git()
+        self.expect(self.assisted(), 0, "PLAN ONLY")
+        again = self.assisted()
+        self.expect(again, 0, "still pending")
+        self.assertIn("PLAN ONLY", again.stdout)
+        self.assertFalse(list((self.repo / "docs/verification/factory-runs").glob("*-result.json")))
+
     def test_plan_gate_schema_rules(self):
         self.board(**{"Human Gate": "yes"})
         self.expect(self.cli("validate_tasks", "orchestration/tasks.md"), 1, "no Plan path")
