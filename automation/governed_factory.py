@@ -744,6 +744,95 @@ def adapter_changes(before, after) -> set[str]:
     return changed
 
 
+NOT_AUDITED = object()  # post_dispatch_checks: no git-history baseline was taken
+RECORDED_COMMITS = 50  # commit ids kept in a run result; the count is always kept
+
+
+def _git(*args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(["git", *args], capture_output=True, cwd=ROOT)
+
+
+def git_state() -> dict | None:
+    """HEAD and local refs, so commits and history rewrites are visible after a run.
+
+    ``head`` is "" on an unborn branch. Remote-tracking refs are left out: a
+    fetch is not a write to this repository. None when git is unusable.
+    """
+    if _git("rev-parse", "--git-dir").returncode != 0:
+        return None
+    r = _git("rev-parse", "--verify", "-q", "HEAD^{commit}")
+    head = r.stdout.decode().strip() if r.returncode == 0 else ""
+    r = _git("for-each-ref", "--format=%(refname)%00%(objectname)")
+    if r.returncode != 0:
+        return None
+    refs = {}
+    for line in r.stdout.decode("utf-8", "surrogateescape").splitlines():
+        name, _, sha = line.partition("\0")
+        if name and not name.startswith("refs/remotes/"):
+            refs[name] = sha
+    return {"head": head, "refs": refs}
+
+
+def _empty_tree() -> str | None:
+    r = subprocess.run(["git", "hash-object", "-t", "tree", "--stdin"], input=b"",
+                       capture_output=True, cwd=ROOT)
+    return r.stdout.decode().strip() if r.returncode == 0 else None
+
+
+def commit_audit(before, after) -> tuple[object, list[str], set[str]]:
+    """What the adapter did to git history: (check record, violation kinds, paths).
+
+    No task authority grants an adapter the right to commit, so any new commit
+    is a violation. HEAD moving to a commit that does not descend from the
+    pre-dispatch HEAD (reset, amend, rebase, checkout) is a history rewrite.
+    Any other local ref created, moved or deleted (a side branch, a stash, a
+    tag) is flagged too. The paths that differ between the two HEADs are
+    returned so the write audit applies its usual rules to them.
+    """
+    if before is None or after is None:
+        return "fail: git history unavailable", ["commit audit unavailable"], set()
+    head_before, head_after = before["head"], after["head"]
+    refs_before, refs_after = before["refs"], after["refs"]
+    # The checked-out branch following HEAD is judged by the HEAD checks below.
+    refs_changed = sorted(
+        name for name in set(refs_before) | set(refs_after)
+        if refs_before.get(name) != refs_after.get(name)
+        and not (refs_before.get(name) == head_before and refs_after.get(name) == head_after
+                 and head_after))
+    if head_before == head_after and not refs_changed:
+        return "pass", [], set()
+    kinds: list[str] = []
+    record: dict = {"head_before": head_before or None, "head_after": head_after or None}
+    paths: set[str] = set()
+    if head_before != head_after:
+        if not head_after:
+            rewritten, new_commits = True, []
+        elif not head_before:
+            r = _git("rev-list", head_after)
+            rewritten, new_commits = False, (r.stdout.decode().split() if r.returncode == 0 else None)
+        else:
+            # Exit 1 means not a descendant; any other failure also fails closed.
+            rewritten = _git("merge-base", "--is-ancestor", head_before, head_after).returncode != 0
+            r = _git("rev-list", f"{head_before}..{head_after}")
+            new_commits = r.stdout.decode().split() if r.returncode == 0 else None
+        empty = _empty_tree() if not (head_before and head_after) else ""
+        diff = _git("diff", "--name-only", "-z", "--no-renames",
+                    head_before or empty or "", head_after or empty or "")
+        if empty is None or new_commits is None or diff.returncode != 0:
+            return "fail: git history unreadable", ["commit audit unavailable"], set()
+        paths = {p for p in diff.stdout.decode("utf-8", "surrogateescape").split("\0") if p}
+        record.update(new_commit_count=len(new_commits), new_commits=new_commits[:RECORDED_COMMITS],
+                      history_rewritten=rewritten, changed_paths=sorted(paths))
+        if new_commits:
+            kinds.append("adapter commit")
+        if rewritten:
+            kinds.append("history rewritten")
+    if refs_changed:
+        record["refs_changed"] = refs_changed
+        kinds.append("git refs changed")
+    return record, kinds, paths
+
+
 def unauthorized_writes(before, after, state: dict) -> list[str]:
     """Adapter-changed paths the gatekeeper would not allow it to write.
 
@@ -792,12 +881,18 @@ USAGE_TOTALS = {"tokens": 0, "cost_usd": 0.0}
 def post_dispatch_checks(task: dict, state: dict, before,
                          adapter_returncode: int = 0,
                          evidence_before: dict | None = None,
-                         run_info: dict | None = None) -> int:
+                         run_info: dict | None = None,
+                         git_before=NOT_AUDITED) -> int:
     """Record every adapter outcome and all applicable detective checks.
 
     A nonzero adapter exit retains its exit code and primary failure outcome.
     Simultaneous detective violations are recorded without masking that failure.
     For a successful adapter, the first detective violation retains exit code 3.
+
+    ``git_before`` is the pre-dispatch ``git_state()``; when given, commits and
+    ref changes the run made are audited and committed paths go through the
+    write audit. Assisted completions leave it out: the human finishing the
+    task may commit, so only the working tree is compared for them.
     """
     result = {
         "record_type": "factory-run-result",
@@ -819,17 +914,28 @@ def post_dispatch_checks(task: dict, state: dict, before,
             result["outcome"] = "violation: " + kind
         code = 3
 
+    git_kinds: list[str] = []
+    committed: set[str] = set()
+    if git_before is not NOT_AUDITED:
+        result["checks"]["commit_audit"], git_kinds, committed = commit_audit(git_before, git_state())
     after = working_tree_changes()
     if before is None or after is None:
         print("STOP: post-run write audit unavailable (git not usable here); a control that cannot run does not pass")
         result["checks"]["write_audit"] = "fail: git unavailable"
         violation("write audit unavailable")
     else:
-        viol = unauthorized_writes(before, after, state)
+        # Committed files are audited exactly like working-tree changes.
+        viol = sorted(set(unauthorized_writes(before, after, state))
+                      | {p for p in committed if not gatekeeper.check_action("write", p, state)[0]})
         result["checks"]["write_audit"] = {"violations": viol} if viol else "pass"
         if viol:
             print("STOP: unauthorized writes detected after dispatch: " + ", ".join(viol))
             violation("unauthorized writes")
+    if git_kinds:
+        print("STOP: the adapter changed git history (" + ", ".join(git_kinds) + "); "
+              "no task authority permits an adapter to commit, move refs or rewrite history")
+    for kind in git_kinds:
+        violation(kind)
     trail = verify_run_chain()
     if trail:
         result["checks"]["evidence_trail"] = {"problems": trail}
@@ -1031,6 +1137,7 @@ def once(adapter: str) -> int:
             record_assisted_dispatch(task, state)
         return code
     if adapter.lower().strip() == "shell":
+        git_before = git_state()
         before = working_tree_snapshot()
         problem = dirty_outside_scope(state, before)
         if problem:
@@ -1040,7 +1147,8 @@ def once(adapter: str) -> int:
         run_info: dict = {}
         code = dispatch(packet, adapter, run_info)
         return post_dispatch_checks(task, state, before, adapter_returncode=code,
-                                    evidence_before=evidence_before, run_info=run_info)
+                                    evidence_before=evidence_before, run_info=run_info,
+                                    git_before=git_before)
     return dispatch(packet, adapter)
 
 
