@@ -84,6 +84,35 @@ class VerifiedLabelTests(Records, unittest.TestCase):
         self.assertEqual(record["checks"]["verified_labels"], "pass")
 
 
+class VerifiedNoteTests(Records, unittest.TestCase):
+    """Codex P2 on #29: only status declarations are human-only; factual notes pass."""
+
+    def write_fixture(self, text):
+        return f"pathlib.Path('docs/verification/fixture.md').write_text({text!r})\n"
+
+    def test_factual_verified_notes_pass(self):
+        # The shape directives/templates/verify.md suggests for an Evidence/Notes cell.
+        text = ("| Acceptance Criterion | Result (Pass/Fail) | Evidence/Notes |\n"
+                "| :--- | :--- | :--- |\n"
+                "| AC 2: schema field | Pass | Verified field Z exists in schema |\n"
+                "\nNotes: Verified the export opens in the viewer.\n")
+        result, record = self.run_adapter(self.write_fixture(text))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(record["checks"]["verified_labels"], "pass")
+
+    def test_verified_in_a_status_column_is_flagged(self):
+        text = "| Item | Gate Status |\n|---|---|\n| schema review | Verified |\n"
+        result, record = self.run_adapter(self.write_fixture(text))
+        self.assertEqual(result.returncode, 3, result.stdout + result.stderr)
+        self.assertEqual(record["checks"]["verified_labels"]["added"],
+                         [{"path": "docs/verification/fixture.md", "line": "| schema review | Verified |"}])
+
+    def test_verified_status_field_line_is_flagged(self):
+        result, record = self.run_adapter(self.write_fixture("Status: Verified\n"))
+        self.assertEqual(result.returncode, 3, result.stdout + result.stderr)
+        self.assertIn("unreviewed evidence labelled verified", record["violations"])
+
+
 class InterruptionTests(Records, unittest.TestCase):
     """DEF-022: an operator stop mid-dispatch left a packet with no run result."""
 

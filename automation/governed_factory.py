@@ -1275,21 +1275,59 @@ def write_run_result(task: dict, result: dict) -> Path:
 USAGE_TOTALS = {"tokens": 0, "cost_usd": 0.0}
 
 
-# A Verified label in a table cell ("| Verified task evidence |") or a status
-# field ("Evidence Type: Verified"). Column headings such as "Verified By" and
-# words such as "unverified" are not labels.
+# A Verified label is a status declaration: a status-bearing table column
+# ("| ... | Status |" holding "Verified task evidence"), a status field row
+# ("| Evidence Type | Verified |") or a status field line ("Status: Verified").
+# Factual notes ("Verified field Z exists in schema") in other columns pass, as do
+# column headings such as "Verified By" and words such as "unverified".
 VERIFIED_CELL_RE = re.compile(r"^(?:\*\*|__)?\s*verified\b(?!\s+(?:by|date|on)\b)", re.IGNORECASE)
 VERIFIED_FIELD_RE = re.compile(
     r"^\s*(?:[-*+]\s+)?(?:\*\*|__)?(?:status|evidence type|evidence status|verification status)(?:\*\*|__)?"
     r"\s*:\s*(?:\*\*|__)?\s*verified\b", re.IGNORECASE)
+STATUS_FIELD_NAMES = {"status", "state", "gate", "evidence type"}
+TABLE_SEPARATOR_RE = re.compile(r"^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)*\|?\s*$")
+
+
+def _status_field(name: str) -> bool:
+    """A column or field whose value is a status: Status, State, Gate, Evidence Type,
+    or any "... Status" / "... State" name."""
+    name = re.sub(r"[*_`]", "", name).strip().lower()
+    return name in STATUS_FIELD_NAMES or name.endswith((" status", " state"))
+
+
+def _table_cells(line: str) -> list[str]:
+    return [c.strip() for c in line.strip().strip("|").split("|")]
 
 
 def verified_label_lines(text: str) -> set[str]:
-    """Lines that label evidence as Verified."""
+    """Lines that label evidence as Verified.
+
+    A table row's columns are named by its table's header row; a row with no
+    header of its own (one appended after the table) takes the latest header
+    in the file with the same number of columns.
+    """
     lines = set()
-    for line in text.splitlines():
-        cells = [c.strip() for c in line.strip().strip("|").split("|")] if line.lstrip().startswith("|") else []
-        if any(VERIFIED_CELL_RE.match(cell) for cell in cells) or VERIFIED_FIELD_RE.match(line):
+    rows = text.splitlines()
+    headers_by_width: dict[int, list[str]] = {}
+    header: list[str] | None = None
+    for i, line in enumerate(rows):
+        if not line.lstrip().startswith("|"):
+            header = None
+            if VERIFIED_FIELD_RE.match(line):
+                lines.add(line.rstrip())
+            continue
+        if TABLE_SEPARATOR_RE.match(line):
+            continue
+        cells = _table_cells(line)
+        if header is None and i + 1 < len(rows) and TABLE_SEPARATOR_RE.match(rows[i + 1]):
+            header = cells
+            headers_by_width[len(cells)] = cells
+            continue
+        names = header if header is not None and len(header) == len(cells) else headers_by_width.get(len(cells), [])
+        status_column = any(_status_field(name) and VERIFIED_CELL_RE.match(cell)
+                            for name, cell in zip(names, cells))
+        status_row = len(cells) >= 2 and _status_field(cells[0]) and bool(VERIFIED_CELL_RE.match(cells[1]))
+        if status_column or status_row:
             lines.add(line.rstrip())
     return lines
 
