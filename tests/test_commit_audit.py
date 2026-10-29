@@ -53,17 +53,18 @@ class ShellAdapterFixture:
         return subprocess.run(["git", *args], cwd=self.repo, env=self.env,
                               capture_output=True, text=True, check=True).stdout.strip()
 
-    def run_adapter(self, body, extra_commits=0):
+    def run_adapter(self, body, extra_commits=0, complete=True):
         """Commit the fixture, then dispatch one task to a shell adapter running ``body``.
 
-        The adapter writes the task's evidence and closes it first, so a run
-        that does nothing else passes.
+        Unless ``complete`` is false, the adapter writes the task's evidence and
+        closes it first, so a run that does nothing else passes.
         """
-        code = ("import pathlib\n" + GIT
-                + "pathlib.Path('docs/verification/fixture.md').write_text('Synthetic verification only\\n')\n"
-                + "p = pathlib.Path('orchestration/tasks.md')\n"
-                + "p.write_text(p.read_text().replace('**Status**: Ready', '**Status**: Done'))\n"
-                + body)
+        code = "import pathlib\n" + GIT
+        if complete:
+            code += ("pathlib.Path('docs/verification/fixture.md').write_text('Synthetic verification only\\n')\n"
+                     "p = pathlib.Path('orchestration/tasks.md')\n"
+                     "p.write_text(p.read_text().replace('**Status**: Ready', '**Status**: Done'))\n")
+        code += body
         (self.repo / "adapter.py").write_text(code)
         self.git("init", "-q")
         self.git("add", "-A")

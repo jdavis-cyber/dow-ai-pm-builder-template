@@ -30,8 +30,9 @@ def summarize(records):
     parse_errors = [r for r in records if 'parse_error' in r]
     results = [r for r in records if 'parse_error' not in r
                and r.get('record_type') == 'factory-run-result']
-    violated = [r for r in results
-                if str(r.get('outcome', '')).startswith('violation')]
+    # Anything but a pass counts against the pass rate: a violation, or an
+    # interrupted dispatch (AI-1163).
+    violated = [r for r in results if str(r.get('outcome', '')) != 'pass']
     by_type = {}
     for r in violated:
         by_type[r['outcome']] = by_type.get(r['outcome'], 0) + 1

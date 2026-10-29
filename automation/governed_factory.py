@@ -14,8 +14,10 @@ import hashlib
 import json
 import os
 import re
+import secrets
 import shlex
 import signal
+import socket
 import subprocess
 import sys
 import time
@@ -724,21 +726,327 @@ def _tail(text: str) -> str:
     return redact(text[-OUTPUT_TAIL_CHARS:])
 
 
-def _run_adapter(command: str, prompt: str, env: dict, timeout: float) -> tuple[int, str, str, bool]:
-    """Run the adapter in its own process group so a timeout stops all of it."""
+class FactoryInterrupted(BaseException):
+    """The operator stopped the factory with a signal (SIGTERM; SIGINT is KeyboardInterrupt)."""
+
+    def __init__(self, signum: int):
+        super().__init__(signum)
+        self.signum = signum
+
+
+def _raise_interrupted(signum, _frame):
+    raise FactoryInterrupted(signum)
+
+
+def _kill_group(proc: subprocess.Popen) -> None:
+    try:
+        os.killpg(proc.pid, signal.SIGKILL)
+    except OSError:
+        proc.kill()
+
+
+def _process_start_time(pid: int):
+    """When the process started, as the OS reports it, or None if that can't be
+    read cheaply. Used only to tell a recorded adapter from a reused pid."""
+    if _on_windows():
+        return _windows_process(pid)[1]
+    if Path("/proc/self/stat").exists():
+        try:
+            stat = Path(f"/proc/{pid}/stat").read_text()
+            return int(stat.rsplit(")", 1)[1].split()[19])  # field 22: starttime, clock ticks since boot
+        except (OSError, ValueError, IndexError):
+            return None
+    try:  # macOS and other BSDs: no /proc
+        shown = subprocess.run(["ps", "-o", "lstart=", "-p", str(pid)], capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return shown.stdout.strip() or None
+
+
+def _windows_process(pid: int) -> tuple[bool, int | None]:
+    """(running, creation time) of a Windows process, without psutil."""
+    import ctypes
+    from ctypes import wintypes
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+    kernel32.OpenProcess.restype = wintypes.HANDLE
+    kernel32.GetExitCodeProcess.argtypes = (wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD))
+    kernel32.GetProcessTimes.argtypes = (wintypes.HANDLE,) + (ctypes.POINTER(wintypes.FILETIME),) * 4
+    kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
+    handle = kernel32.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+    if not handle:
+        return ctypes.get_last_error() == 5, None  # access denied: it exists but isn't ours to inspect
+    try:
+        code = wintypes.DWORD()
+        running = bool(kernel32.GetExitCodeProcess(handle, ctypes.byref(code))) and code.value == 259  # STILL_ACTIVE
+        times = [wintypes.FILETIME() for _ in range(4)]
+        if not kernel32.GetProcessTimes(handle, *(ctypes.byref(t) for t in times)):
+            return running, None
+        return running, (times[0].dwHighDateTime << 32) | times[0].dwLowDateTime
+    finally:
+        kernel32.CloseHandle(handle)
+
+
+def adapter_identity(proc) -> dict:
+    """What recovery needs to tell whether this adapter is still running."""
+    return {"pid": proc.pid, "pgid": None if _on_windows() else proc.pid,
+            "start_time": _process_start_time(proc.pid)}
+
+
+def adapter_still_running(identity: dict) -> bool:
+    """True if the recorded adapter, or anything left in its process group, still runs.
+
+    POSIX: the adapter leads its own session, so its group id is its pid, and any
+    running member of that group counts (zombies don't). A group id can't be reused while
+    the group exists, so a live leader whose start time differs is a new process
+    that only reused the number. Windows: the adapter process itself is checked.
+    """
+    pid = identity.get("pid")
+    if not isinstance(pid, int) or isinstance(pid, bool) or pid <= 0:
+        return False
+    recorded = identity.get("start_time")
+    if _on_windows():
+        running, started = _windows_process(pid)
+        return running and (recorded is None or started is None or started == recorded)
+    pgid = identity.get("pgid")
+    pgid = pgid if isinstance(pgid, int) and not isinstance(pgid, bool) and pgid > 0 else pid
+    if not _process_group_running(pgid):
+        return False
+    started = _process_start_time(pid)
+    return recorded is None or started is None or started == recorded
+
+
+def _process_group_running(pgid: int) -> bool:
+    """Whether any process in the group is running. A zombie waiting to be reaped
+    has stopped, so it doesn't count; Linux shows that in /proc, elsewhere signal
+    0 to the group is the cheap check."""
+    proc_root = Path("/proc")
+    if (proc_root / "self" / "stat").exists():
+        for stat in proc_root.glob("[0-9]*/stat"):
+            try:
+                fields = stat.read_text().rsplit(")", 1)[1].split()
+            except (OSError, IndexError):
+                continue
+            if len(fields) > 2 and fields[2] == str(pgid) and fields[0] not in ("Z", "X"):
+                return True
+        return False
+    try:
+        os.killpg(pgid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        pass  # it exists, under another user
+    return True
+
+
+def _run_adapter(command: str, prompt: str, env: dict, timeout: float,
+                 on_start=None) -> tuple[int, str, str, bool]:
+    """Run the adapter in its own process group so a timeout or a stop ends all of it."""
     proc = subprocess.Popen(command, shell=True, cwd=ROOT, env=env, text=True,
                             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE, start_new_session=True)
     try:
+        if on_start:
+            on_start(proc)
         out, err = proc.communicate(prompt, timeout=timeout)
         return proc.returncode, out, err, False
     except subprocess.TimeoutExpired:
-        try:
-            os.killpg(proc.pid, signal.SIGKILL)
-        except OSError:
-            proc.kill()
+        _kill_group(proc)
         out, err = proc.communicate()
         return ADAPTER_TIMEOUT_EXIT, out, err, True
+    except BaseException:
+        # An operator stop must not leave the adapter running on its own.
+        _kill_group(proc)
+        proc.wait()
+        raise
+
+
+IN_FLIGHT_DIR_NAME = "in-flight"
+DISPATCH_IN_PROGRESS_EXIT = 75  # another invocation holds this project's dispatch lock
+FACTORY_STARTED_UTC = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+FACTORY_TOKEN = secrets.token_hex(8)
+
+
+class DispatchLock:
+    """Per-project exclusive lock, held for a whole factory invocation.
+
+    The operating system drops it when the holder exits or is killed, so a
+    free lock proves no invocation is still dispatching. fcntl on POSIX,
+    msvcrt on Windows.
+    """
+
+    def __init__(self, path: Path):
+        self.path = path
+        self.handle = None
+
+    def acquire(self) -> bool:
+        self.path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        handle = open(self.path, "a+b")
+        try:
+            if _on_windows():
+                import msvcrt
+                handle.seek(0)
+                msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            handle.close()
+            return False
+        self.handle = handle
+        return True
+
+    def release(self) -> None:
+        if self.handle is None:
+            return
+        try:
+            if _on_windows():
+                import msvcrt
+                self.handle.seek(0)
+                msvcrt.locking(self.handle.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(self.handle.fileno(), fcntl.LOCK_UN)
+        finally:
+            self.handle.close()
+            self.handle = None
+
+
+def _on_windows() -> bool:
+    return os.name == "nt"
+
+
+def dispatch_lock() -> DispatchLock:
+    return DispatchLock(chain_anchor_path().with_suffix("") / "dispatch.lock")
+
+
+def _in_flight_dir() -> Path:
+    """Operator-side markers for dispatches that have started but not been recorded."""
+    return chain_anchor_path().with_suffix("") / IN_FLIGHT_DIR_NAME
+
+
+def mark_in_flight(task_id: str, run_info: dict) -> None:
+    seal = run_info.get("task_packet") or {}
+    name = Path(seal.get("path") or f"{now_id()}-{task_id}.json").stem
+    path = _in_flight_dir() / f"{name}.json"
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    path.write_text(json.dumps({
+        "task_id": task_id,
+        "dispatched_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "adapter": "shell",
+        "task_packet": seal or None,
+        # Who owns the dispatch; recovery refuses a marker it can't prove is orphaned.
+        "owner": {"pid": os.getpid(), "host": socket.gethostname(), "token": FACTORY_TOKEN,
+                  "started_at_utc": FACTORY_STARTED_UTC},
+    }, indent=2) + "\n")
+    run_info["_in_flight"] = str(path)
+
+
+def record_adapter_started(run_info: dict, proc) -> None:
+    """Add the running adapter's identity to the in-flight marker, so recovery
+    after a killed factory can see the adapter outlived it."""
+    path = Path(run_info["_in_flight"])
+    info = json.loads(path.read_text())
+    info["adapter_process"] = adapter_identity(proc)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(info, indent=2) + "\n")
+    os.replace(tmp, path)
+
+
+def live_adapter_markers() -> list[str]:
+    """Markers whose adapter is still running: its dispatch has not ended."""
+    directory = _in_flight_dir()
+    live = []
+    for marker in sorted(directory.glob("*.json")) if directory.is_dir() else []:
+        try:
+            identity = json.loads(marker.read_text()).get("adapter_process")
+        except (OSError, json.JSONDecodeError, AttributeError):
+            continue
+        if isinstance(identity, dict) and adapter_still_running(identity):
+            live.append(f"{marker.name} (adapter pid {identity.get('pid')})")
+    return live
+
+
+def foreign_in_flight_markers() -> list[str]:
+    """Markers owned by another host: their owner can't be proven gone from here."""
+    directory = _in_flight_dir()
+    here = socket.gethostname()
+    foreign = []
+    for marker in sorted(directory.glob("*.json")) if directory.is_dir() else []:
+        try:
+            host = (json.loads(marker.read_text()).get("owner") or {}).get("host")
+        except (OSError, json.JSONDecodeError, AttributeError):
+            host = None
+        if host and host != here:
+            foreign.append(f"{marker.name} (host {host})")
+    return foreign
+
+
+def _recorded_packet_seals() -> list[dict]:
+    """Sealed task packets that chained run results already account for."""
+    seals = []
+    for path in _chain_records():
+        try:
+            seal = json.loads(path.read_text()).get("task_packet")
+        except (OSError, json.JSONDecodeError, AttributeError):
+            continue
+        if isinstance(seal, dict):
+            seals.append(seal)
+    return seals
+
+
+def recover_interrupted_dispatches() -> list[str]:
+    """Record a run result for every dispatch the factory never finished recording.
+
+    Call only while holding the dispatch lock: then no other invocation on this
+    host is dispatching, so a marker left behind means its owner was killed or
+    crashed between dispatch and its run result.
+    """
+    directory = _in_flight_dir()
+    recovered = []
+    recorded = None
+    for marker in sorted(directory.glob("*.json")) if directory.is_dir() else []:
+        try:
+            info = json.loads(marker.read_text())
+        except (OSError, json.JSONDecodeError):
+            info = {}
+        if not isinstance(info, dict):
+            info = {}
+        task_id = str(info.get("task_id") or "UNKNOWN")
+        seal = info.get("task_packet")
+        # Idempotent: a stop between writing the run result and removing the
+        # marker leaves a marker for a dispatch that is already recorded.
+        recorded = _recorded_packet_seals() if recorded is None else recorded
+        if isinstance(seal, dict) and seal.get("path") and any(
+                r.get("path") == seal["path"] and r.get("sha256") == seal.get("sha256") for r in recorded):
+            marker.unlink()
+            print(f"NOTE: the dispatch of {task_id} with task packet {seal['path']} was already recorded; "
+                  "removed its leftover in-flight marker")
+            continue
+        result = {
+            "record_type": "factory-run-result",
+            "task_id": task_id,
+            "checked_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "dispatched_at_utc": info.get("dispatched_at_utc"),
+            "adapter": info.get("adapter"),
+            "dispatch_owner": info.get("owner"),
+            "adapter_process": info.get("adapter_process"),
+            "checks": {},
+            "outcome": ("interrupted: dispatch did not complete; the factory stopped before "
+                        "recording a result (orphan task packet)"),
+            "adapter_returncode": None,
+            "violations": ["dispatch interrupted"],
+        }
+        if seal:
+            result["task_packet"] = seal
+            problem = packet_seal_problem(seal)
+            result["checks"]["task_packet"] = "fail: " + problem if problem else "pass"
+        path = write_run_result({"Task ID": task_id}, result)
+        marker.unlink()
+        print(f"STOP: an earlier dispatch of {task_id} did not complete and left no run result; "
+              f"recorded it as interrupted in {path.relative_to(ROOT)}. Review it before continuing.")
+        recovered.append(task_id)
+    return recovered
 
 
 def dispatch(packet: dict, adapter: str, run_info: dict | None = None) -> int:
@@ -779,7 +1087,9 @@ def dispatch(packet: dict, adapter: str, run_info: dict | None = None) -> int:
         env["FACTORY_TASK_PROMPT"] = prompt
         env["FACTORY_USAGE_FILE"] = str(usage_path)
         timeout = factory_limits(cfg)["adapter_timeout_seconds"]
-        code, out, err, timed_out = _run_adapter(command, prompt, env, timeout)
+        mark_in_flight(packet["task"]["Task ID"], run_info)
+        code, out, err, timed_out = _run_adapter(command, prompt, env, timeout,
+                                                 on_start=lambda proc: record_adapter_started(run_info, proc))
         sys.stdout.write(out)
         sys.stderr.write(err)
         run_info.update({
@@ -1107,11 +1417,101 @@ def write_run_result(task: dict, result: dict) -> Path:
 USAGE_TOTALS = {"tokens": 0, "cost_usd": 0.0}
 
 
+# A Verified label is a status declaration: a status-bearing table column
+# ("| ... | Status |" holding "Verified task evidence"), a status field row
+# ("| Evidence Type | Verified |") or a status field line ("Status: Verified").
+# Factual notes ("Verified field Z exists in schema") in other columns pass, as do
+# column headings such as "Verified By" and words such as "unverified".
+VERIFIED_CELL_RE = re.compile(r"^(?:\*\*|__)?\s*verified\b(?!\s+(?:by|date|on)\b)", re.IGNORECASE)
+VERIFIED_FIELD_RE = re.compile(
+    r"^\s*(?:[-*+]\s+)?(?:\*\*|__)?(?:status|evidence type|evidence status|verification status)(?:\*\*|__)?"
+    r"\s*:\s*(?:\*\*|__)?\s*verified\b", re.IGNORECASE)
+STATUS_FIELD_NAMES = {"status", "state", "gate", "evidence type"}
+TABLE_SEPARATOR_RE = re.compile(r"^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)*\|?\s*$")
+
+
+def _status_field(name: str) -> bool:
+    """A column or field whose value is a status: Status, State, Gate, Evidence Type,
+    or any "... Status" / "... State" name."""
+    name = re.sub(r"[*_`]", "", name).strip().lower()
+    return name in STATUS_FIELD_NAMES or name.endswith((" status", " state"))
+
+
+def _table_cells(line: str) -> list[str]:
+    return [c.strip() for c in line.strip().strip("|").split("|")]
+
+
+def verified_label_lines(text: str) -> set[str]:
+    """Lines that label evidence as Verified.
+
+    A table row's columns are named by its table's header row; a row with no
+    header of its own (one appended after the table) takes the latest header
+    in the file with the same number of columns.
+    """
+    lines = set()
+    rows = text.splitlines()
+    headers_by_width: dict[int, list[str]] = {}
+    header: list[str] | None = None
+    for i, line in enumerate(rows):
+        if not line.lstrip().startswith("|"):
+            header = None
+            if VERIFIED_FIELD_RE.match(line):
+                lines.add(line.rstrip())
+            continue
+        if TABLE_SEPARATOR_RE.match(line):
+            continue
+        cells = _table_cells(line)
+        if header is None and i + 1 < len(rows) and TABLE_SEPARATOR_RE.match(rows[i + 1]):
+            header = cells
+            headers_by_width[len(cells)] = cells
+            continue
+        names = header if header is not None and len(header) == len(cells) else headers_by_width.get(len(cells), [])
+        status_column = any(_status_field(name) and VERIFIED_CELL_RE.match(cell)
+                            for name, cell in zip(names, cells))
+        status_row = len(cells) >= 2 and _status_field(cells[0]) and bool(VERIFIED_CELL_RE.match(cells[1]))
+        if status_column or status_row:
+            lines.add(line.rstrip())
+    return lines
+
+
+def _read_text(path: str) -> str:
+    try:
+        return (ROOT / path).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
+
+
+def verified_labels_baseline(snapshot) -> dict[str, list[str]]:
+    """Verified-labelled lines in already-dirty Markdown before dispatch; committed
+    files are read back from the pre-dispatch HEAD instead."""
+    return {p: sorted(verified_label_lines(_read_text(p))) for p in (snapshot or {}) if p.endswith(".md")}
+
+
+def added_verified_labels(paths, baseline: dict, head: str) -> list[dict]:
+    """Verified labels the run added. Only the Human Director's review marks
+    evidence Verified, so an adapter adding one is a violation (DEF-021)."""
+    added = []
+    for path in sorted(p for p in paths if p.endswith(".md")):
+        if path in baseline:
+            before = set(baseline[path])
+        elif head:
+            shown = _git("show", f"{head}:{path}")
+            before = verified_label_lines(shown.stdout.decode("utf-8", "replace")) if shown.returncode == 0 else set()
+        else:
+            before = set()
+        added.extend({"path": path, "line": line}
+                     for line in sorted(verified_label_lines(_read_text(path)) - before))
+    return added
+
+
 def post_dispatch_checks(task: dict, state: dict, before,
                          adapter_returncode: int = 0,
                          evidence_before: dict | None = None,
                          run_info: dict | None = None,
-                         git_before=NOT_AUDITED, open_kinds=DISPATCHABLE,
+                         git_before=NOT_AUDITED,
+                         verified_before: dict | None = None,
+                         interrupted: tuple[str, int] | None = None,
+                         open_kinds=DISPATCHABLE,
                          operator_records: frozenset = frozenset()) -> int:
     """Record every adapter outcome and all applicable detective checks.
 
@@ -1123,6 +1523,10 @@ def post_dispatch_checks(task: dict, state: dict, before,
     ref changes the run made are audited and committed paths go through the
     write audit. Assisted completions leave it out: the human finishing the
     task may commit, so only the working tree is compared for them.
+
+    ``verified_before`` (shell runs) turns on the Verified-label check.
+    ``interrupted`` is (reason, exit code) when an operator stop cut the
+    dispatch short; the checks still run and the outcome says it was interrupted.
     """
     result = {
         "record_type": "factory-run-result",
@@ -1164,6 +1568,15 @@ def post_dispatch_checks(task: dict, state: dict, before,
         if viol:
             print("STOP: unauthorized writes detected after dispatch: " + ", ".join(viol))
             violation("unauthorized writes")
+    if verified_before is not None and before is not None and after is not None:
+        head = git_before["head"] if isinstance(git_before, dict) else ""
+        added = added_verified_labels(adapter_changes(before, after) | committed, verified_before, head)
+        result["checks"]["verified_labels"] = {"added": added} if added else "pass"
+        if added:
+            print("STOP: the run labelled evidence Verified before any Human Director review: "
+                  + ", ".join(sorted({a["path"] for a in added}))
+                  + "; record agent output as Generated — awaiting Human Director review")
+            violation("unreviewed evidence labelled verified")
     if git_kinds:
         print("STOP: the adapter changed git history (" + ", ".join(git_kinds) + "); "
               "no task authority permits an adapter to commit, move refs or rewrite history")
@@ -1191,20 +1604,28 @@ def post_dispatch_checks(task: dict, state: dict, before,
         print(f"STOP: required evidence missing or empty after dispatch for {task['Task ID']}: " + ", ".join(missing))
         violation("missing evidence")
     result["evidence_sha256"] = {p: _fingerprint(p) for p in declared}
+    refreshed = {t["Task ID"]: t for t in parse_tasks(TASKS_FILE.read_text())}
+    status_after = str(refreshed.get(task["Task ID"], {}).get("Status", "")).strip()
+    result["status_after_dispatch"] = status_after or None
+    still_open = status_kind(status_after) in open_kinds
     if evidence_before is not None and declared and not missing:
         unchanged = all(evidence_before.get(p) == result["evidence_sha256"][p] for p in declared)
         result["checks"]["evidence_changed"] = "fail: no evidence changed" if unchanged else "pass"
         if unchanged:
-            print(f"STOP: {task['Task ID']} changed status but produced no new evidence.")
+            # Say what was observed: DEF-019 reported a status change that never happened.
+            if still_open:
+                print(f"STOP: {task['Task ID']} is still {status_after} and produced no new evidence.")
+            elif status_after:
+                print(f"STOP: {task['Task ID']} changed status to {status_after} but produced no new evidence.")
+            else:
+                print(f"STOP: {task['Task ID']} is no longer on the board and produced no new evidence.")
             violation("evidence unchanged")
-    refreshed = {t["Task ID"]: t for t in parse_tasks(TASKS_FILE.read_text())}
-    still_open = status_kind(refreshed.get(task["Task ID"], {}).get("Status", "")) in open_kinds
     result["checks"]["status_transitioned"] = "pass" if not still_open else "fail: task still open"
     if still_open:
         print(f"STOP: {task['Task ID']} is still open after dispatch; halting to prevent a redispatch loop. The adapter must update task status and evidence.")
         violation("no status transition")
     lock0 = lock0_spec_paths(task)
-    if lock0 and status_kind(refreshed.get(task["Task ID"], {}).get("Status", "")) == "complete":
+    if lock0 and status_kind(status_after) == "complete":
         # Lock 0 completes only when the dispatcher's own locked validation passes.
         problems = lock0_problems(lock0)
         result["checks"]["lock0_spec"] = {"problems": problems} if problems else "pass"
@@ -1230,7 +1651,20 @@ def post_dispatch_checks(task: dict, state: dict, before,
             if over:
                 print("STOP: spend ceiling reached (" + ", ".join(over) + "); human review required before more runs.")
                 violation("budget ceiling reached")
-    if adapter_returncode != 0:
+    if interrupted:
+        reason, code = interrupted
+        print(f"STOP: dispatch interrupted ({reason}); detective checks and the interruption are recorded.")
+        result["violations"].insert(0, "dispatch interrupted")
+        result["outcome"] = "interrupted: " + reason
+        result["adapter_returncode"] = None
+    elif adapter_signal(adapter_returncode):
+        signum = adapter_signal(adapter_returncode)
+        name = _signal_name(signum)
+        print(f"STOP: the adapter was stopped by {name}; detective checks and failure evidence retained.")
+        result["violations"].append("adapter interrupted")
+        result["outcome"] = f"interrupted: adapter stopped by {name}"
+        code = 128 + signum
+    elif adapter_returncode != 0:
         print(f"STOP: adapter failed with exit code {adapter_returncode}; detective checks and failure evidence retained.")
         result["violations"].append("adapter failure")
         result["outcome"] = "violation: adapter failure"
@@ -1238,9 +1672,29 @@ def post_dispatch_checks(task: dict, state: dict, before,
     if code != 0:
         print("Fail-closed halt. Any exception requires explicit human authorization recorded in "
               ".governance/security-compliance/override-register.md; this message grants no override or authority.")
+    in_flight = result.pop("_in_flight", None)
     path = write_run_result(task, result)
+    if in_flight:
+        Path(in_flight).unlink(missing_ok=True)
     print(f"factory run result recorded: {path.relative_to(ROOT)}")
     return code
+
+
+def adapter_signal(returncode: int) -> int:
+    """The signal that stopped the adapter, or 0. The adapter runs through the
+    shell, which reports a child killed by signal N as exit status 128 + N."""
+    if returncode < 0:
+        return -returncode
+    if 128 < returncode < 128 + signal.NSIG:
+        return returncode - 128
+    return 0
+
+
+def _signal_name(signum: int) -> str:
+    try:
+        return signal.Signals(signum).name
+    except ValueError:
+        return f"signal {signum}"
 
 
 PENDING_DIR_NAME = "pending-assisted"
@@ -1374,6 +1828,19 @@ def check_assisted_completions(tasks: list[dict]) -> tuple[int, set[str]]:
 
 
 def once(adapter: str) -> int:
+    """One factory step, holding the project's dispatch lock throughout."""
+    lock = dispatch_lock()
+    if not lock.acquire():
+        print("STOP: dispatch in progress: another factory invocation for this project is still running; "
+              "nothing was recorded. Wait for it to finish, then run again.")
+        return DISPATCH_IN_PROGRESS_EXIT
+    try:
+        return _once(adapter)
+    finally:
+        lock.release()
+
+
+def _once(adapter: str) -> int:
     if not TASKS_FILE.exists():
         print(f"REFUSAL: missing task board {TASKS_FILE}")
         return 2
@@ -1400,6 +1867,20 @@ def once(adapter: str) -> int:
         for problem in chain:
             print("STOP: evidence trail broken: " + problem)
         return 2
+    foreign = foreign_in_flight_markers()
+    if foreign:
+        print("STOP: dispatch in progress or unproven: in-flight markers from another host can't be "
+              "checked from here: " + ", ".join(foreign) + "; nothing was recorded. A human must confirm "
+              "that dispatch ended before removing the marker.")
+        return DISPATCH_IN_PROGRESS_EXIT
+    live = live_adapter_markers()
+    if live:
+        print("STOP: adapter from interrupted dispatch still running: " + ", ".join(live) + "; nothing was "
+              "recorded. The factory that started it was stopped; wait for the adapter to exit, or stop it, "
+              "then run again.")
+        return DISPATCH_IN_PROGRESS_EXIT
+    if recover_interrupted_dispatches():
+        return 3
     tasks = parse_tasks(TASKS_FILE.read_text())
     code, pending = check_assisted_completions(tasks)
     if code != 0:
@@ -1434,11 +1915,21 @@ def once(adapter: str) -> int:
             print(problem)
             return 2
         evidence_before = evidence_fingerprints(task)
+        verified_before = verified_labels_baseline(before)
         run_info: dict = {}
-        code = dispatch(packet, adapter, run_info)
+        interrupted = None
+        try:
+            code = dispatch(packet, adapter, run_info)
+        except KeyboardInterrupt:
+            code, interrupted = 0, ("operator stop (SIGINT) during dispatch", 128 + signal.SIGINT)
+        except FactoryInterrupted as stop:
+            code, interrupted = 0, (f"operator stop ({_signal_name(stop.signum)}) during dispatch",
+                                    128 + stop.signum)
+        # A crash here leaves the in-flight marker; the next run records it.
         return post_dispatch_checks(task, state, before, adapter_returncode=code,
                                     evidence_before=evidence_before, run_info=run_info,
-                                    git_before=git_before)
+                                    git_before=git_before, verified_before=verified_before,
+                                    interrupted=interrupted)
     return dispatch(packet, adapter)
 
 
@@ -1468,6 +1959,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-wall-seconds", type=int, default=None,
                         help="stop the loop after this much wall-clock time (default from factory config)")
     args = parser.parse_args(argv)
+    # SIGTERM stops the factory like Ctrl-C: the dispatch in progress is recorded as interrupted.
+    signal.signal(signal.SIGTERM, _raise_interrupted)
     if args.loop:
         unreviewed = task_board_unreviewed()
         if unreviewed:
