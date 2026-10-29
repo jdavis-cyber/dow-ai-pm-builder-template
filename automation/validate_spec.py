@@ -6,20 +6,33 @@ GAP_LABELS = ['Draft','Gap','Reference Needed','Not Authoritatively Mapped','Pen
 # Where a status label sits: the start of a line, list item, field value,
 # table cell, bracket or slash-separated choice (optionally in bold).
 LABEL_START = r'(?:^|[:|(\[/])\s*(?:[-*+]\s+)?(?:\*\*|__)?\s*'
-# What may follow a label that stands alone as the whole value.
+# What may follow a label that is the whole value: the end of the line or of
+# the cell, a closing bracket, another slash choice, or trailing punctuation.
 BARE_END = r'(?:\*\*|__)?\s*(?:$|[|)\]/.,;])'
+# What may follow a status label that carries a qualifier rather than prose:
+# a separator and a reason ("Draft — awaiting review"), a version ("Draft
+# v0.3") or a date ("Draft (2026-10-01)").
+QUALIFIED_END = (r'(?:\*\*|__)?\s*(?:[:—–]|\s-\s|v\d+(?:\.\d+)*\b|\d+\.\d+(?:\.\d+)*\b|\(?\s*\d{4}-\d{2}-\d{2})')
+
+
+def _status_label(words):
+    """A label that counts only as the whole value or with a qualifier, never as
+    the first word of a sentence ("Draft user stories from ...")."""
+    return re.compile(LABEL_START + words + r'(?=' + BARE_END + '|' + QUALIFIED_END + ')', re.IGNORECASE)
+
+
+# Words that keep "Gap <noun> ..." a placeholder ("Gap owner unknown").
+GAP_UNRESOLVED_WORDS = r'(?:unknown|outstanding|open|unresolved|pending|missing|tbd|needed|undecided|unassigned)'
 # Explicit unresolved labels, not ordinary prose such as "air gap", "gap
-# analysis", "the drafting team" or "N/A because the system has no UI".
+# analysis", "Draft user stories", "the drafting team" or "N/A because the
+# system has no UI".
 UNRESOLVED_LABEL_RES = [
     # "Gap" followed by a separator or closing bracket, in any case.
     re.compile(r'(?<!\w)(?<!air )gap(?:\s*[:—–-]|\s*\]|\s*\)|\s*$)', re.IGNORECASE),
-    # A value that starts with "Gap" ("Gap owner unknown"), other than gap analysis/assessment.
-    re.compile(LABEL_START + r'gap\b(?!\s+(?:analysis|analyses|assessment)\b)', re.IGNORECASE),
-    # "Draft" in a label position, or a whole value that is just "draft".
-    re.compile(LABEL_START + r'Draft\b'),
-    re.compile(LABEL_START + r'draft' + BARE_END, re.IGNORECASE),
-    re.compile(r'\bNot Approved\b'),
-    re.compile(LABEL_START + r'not approved\b', re.IGNORECASE),
+    # A value that starts with "Gap" and says the gap is still open ("Gap owner unknown").
+    re.compile(LABEL_START + r'gap\b(?:\s+\w+){0,3}?\s+' + GAP_UNRESOLVED_WORDS + r'\b', re.IGNORECASE),
+    _status_label(r'draft'),
+    _status_label(r'not\s+approved'),
     # "N/A" left as the whole answer. "N/A — reason" or "N/A because ..." is resolved.
     re.compile(r'(?<![\w/])N/A' + BARE_END, re.IGNORECASE),
     re.compile(r'Reference Needed|Not Authoritatively Mapped|Pending'),

@@ -32,6 +32,9 @@ class LockedLabelTests(unittest.TestCase):
         "N/A", "Deadline: N/A", "- **Deadline**: n/a", "| Export controls | N/A |",
         "gap - owner decision outstanding", "Purpose: gap: owner decision outstanding",
         "Purpose: Gap owner unknown", "Gap owner unknown",
+        "Draft v0.3", "Status: Draft v2", "Status: Draft 1.2", "Status: Draft (2026-10-01)", "Status: Draft 2026-10-01",
+        "Status: Validated / Draft", "Status: Draft — awaiting review", "[Draft]", "| Status | Draft |",
+        "Approval: Not Approved", "Approval: Not Approved (2026-10-01)", "Purpose: Gap — decision outstanding",
     ]
     RESOLVED = [
         "Deadline: N/A — continuous delivery, no contractual date",
@@ -41,6 +44,11 @@ class LockedLabelTests(unittest.TestCase):
         "The drafting committee reviewed scope", "A draft of the report is reviewed weekly",
         "Data not approved for release is excluded from training",
         "Approved by the Director on 2026-10-01", "**Status**: Validated",
+        # Codex P2 on #28: an imperative "Draft" is an instruction, not a status.
+        "- **Output Contract**: Draft user stories from approved requirements.",
+        "Purpose: Draft legislation tracking for counsel", "Draft the release notes after Gate 2.",
+        "Not Approved requests return to the requester with reasons.",
+        "Gap closure plan approved by the Director", "Gap owner: Requirements BA (resolved 2026-10-01)", "Draft 3 user stories per sprint",
     ]
 
     def check(self, text):
