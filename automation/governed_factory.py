@@ -902,6 +902,19 @@ def foreign_in_flight_markers() -> list[str]:
     return foreign
 
 
+def _recorded_packet_seals() -> list[dict]:
+    """Sealed task packets that chained run results already account for."""
+    seals = []
+    for path in _chain_records():
+        try:
+            seal = json.loads(path.read_text()).get("task_packet")
+        except (OSError, json.JSONDecodeError, AttributeError):
+            continue
+        if isinstance(seal, dict):
+            seals.append(seal)
+    return seals
+
+
 def recover_interrupted_dispatches() -> list[str]:
     """Record a run result for every dispatch the factory never finished recording.
 
@@ -911,6 +924,7 @@ def recover_interrupted_dispatches() -> list[str]:
     """
     directory = _in_flight_dir()
     recovered = []
+    recorded = None
     for marker in sorted(directory.glob("*.json")) if directory.is_dir() else []:
         try:
             info = json.loads(marker.read_text())
@@ -919,6 +933,16 @@ def recover_interrupted_dispatches() -> list[str]:
         if not isinstance(info, dict):
             info = {}
         task_id = str(info.get("task_id") or "UNKNOWN")
+        seal = info.get("task_packet")
+        # Idempotent: a stop between writing the run result and removing the
+        # marker leaves a marker for a dispatch that is already recorded.
+        recorded = _recorded_packet_seals() if recorded is None else recorded
+        if isinstance(seal, dict) and seal.get("path") and any(
+                r.get("path") == seal["path"] and r.get("sha256") == seal.get("sha256") for r in recorded):
+            marker.unlink()
+            print(f"NOTE: the dispatch of {task_id} with task packet {seal['path']} was already recorded; "
+                  "removed its leftover in-flight marker")
+            continue
         result = {
             "record_type": "factory-run-result",
             "task_id": task_id,
@@ -933,7 +957,6 @@ def recover_interrupted_dispatches() -> list[str]:
             "adapter_returncode": None,
             "violations": ["dispatch interrupted"],
         }
-        seal = info.get("task_packet")
         if seal:
             result["task_packet"] = seal
             problem = packet_seal_problem(seal)
