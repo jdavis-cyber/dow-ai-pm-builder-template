@@ -132,6 +132,21 @@ def test_source_path_inside_quoted_prose_is_refused(project):
     assert_refused(project, cli(project), "src/early.py")
 
 
+@pytest.mark.parametrize("marker", ["**", "__", "*", "_"])
+def test_markdown_source_reference_is_refused(project, marker):
+    board(project, **{"Acceptance Criteria": f"Create {marker}src/early.py{marker}"})
+    assert_refused(project, cli(project), "src/early.py")
+
+
+@pytest.mark.parametrize("field,value", [
+    ("Plan", "Makefile"), ("Evidence Required", "Makefile"),
+    ("Evidence Required", "Makefile; docs/notes.md"),
+])
+def test_bare_declared_output_is_refused(project, field, value):
+    board(project, **{"Human Gate": "yes", "Plan": "docs/plan.md", field: value})
+    assert_refused(project, cli(project), "Makefile")
+
+
 @pytest.mark.parametrize("script", ["governed_factory", "run_factory"])
 def test_plan_only_and_legacy_entry_points_cannot_bypass_refusal(project, script):
     board(project, **{"Human Gate": "yes", "Plan": "docs/plan.md",

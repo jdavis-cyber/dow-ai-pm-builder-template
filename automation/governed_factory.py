@@ -273,7 +273,16 @@ def denied_task_paths(task: dict, state: dict) -> list[dict]:
     paths = {path for path in gatekeeper.paths_in_text(text)
              if gatekeeper.is_protected_source_path(path)}
     for field in ("Evidence Required", "Plan"):
-        paths.update(gatekeeper.paths_in_text(str(task.get(field, ""))))
+        value = str(task.get(field, ""))
+        if value.strip().lower() in {"", "none", "n/a"}:
+            continue
+        paths.update(gatekeeper.paths_in_text(value))
+        # Output lists also name bare files (Makefile, LICENSE) with no slash
+        # or extension. Prose such as "a short note" is not a declared path.
+        for item in re.split(r"[,;\n]|\band\b", value):
+            item = item.strip()
+            if re.fullmatch(r"[\w.-]+", item):
+                paths.add(item)
     denied = []
     for path in sorted(paths):
         allowed, reason = gatekeeper.check_action("write", path, state)
