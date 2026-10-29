@@ -698,11 +698,66 @@ def adapter_popen_options() -> dict:
     return {"start_new_session": True}
 
 
+JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x2000
+JOB_OBJECT_EXTENDED_LIMIT_INFORMATION_CLASS = 9  # JobObjectExtendedLimitInformation
+
+
+def _job_extended_limit_type():
+    """The JOBOBJECT_EXTENDED_LIMIT_INFORMATION structure, built with ctypes."""
+    import ctypes
+
+    class BasicLimits(ctypes.Structure):
+        _fields_ = [("PerProcessUserTimeLimit", ctypes.c_int64),
+                    ("PerJobUserTimeLimit", ctypes.c_int64),
+                    ("LimitFlags", ctypes.c_uint32),
+                    ("MinimumWorkingSetSize", ctypes.c_size_t),
+                    ("MaximumWorkingSetSize", ctypes.c_size_t),
+                    ("ActiveProcessLimit", ctypes.c_uint32),
+                    ("Affinity", ctypes.c_size_t),
+                    ("PriorityClass", ctypes.c_uint32),
+                    ("SchedulingClass", ctypes.c_uint32)]
+
+    class IoCounters(ctypes.Structure):
+        _fields_ = [(name, ctypes.c_uint64) for name in (
+            "ReadOperationCount", "WriteOperationCount", "OtherOperationCount",
+            "ReadTransferCount", "WriteTransferCount", "OtherTransferCount")]
+
+    class ExtendedLimits(ctypes.Structure):
+        _fields_ = [("BasicLimitInformation", BasicLimits),
+                    ("IoInfo", IoCounters),
+                    ("ProcessMemoryLimit", ctypes.c_size_t),
+                    ("JobMemoryLimit", ctypes.c_size_t),
+                    ("PeakProcessMemoryUsed", ctypes.c_size_t),
+                    ("PeakJobMemoryUsed", ctypes.c_size_t)]
+
+    return ExtendedLimits
+
+
+def _kernel32():
+    """kernel32 with the job-object signatures declared. Raises off Windows."""
+    import ctypes
+    from ctypes import wintypes
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.CreateJobObjectW.argtypes = (wintypes.LPVOID, wintypes.LPCWSTR)
+    kernel32.CreateJobObjectW.restype = wintypes.HANDLE
+    kernel32.SetInformationJobObject.argtypes = (wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD)
+    kernel32.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+    kernel32.OpenProcess.restype = wintypes.HANDLE
+    kernel32.AssignProcessToJobObject.argtypes = (wintypes.HANDLE, wintypes.HANDLE)
+    kernel32.TerminateJobObject.argtypes = (wintypes.HANDLE, wintypes.UINT)
+    kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
+    return kernel32
+
+
 class WindowsJob:
     """A Windows Job Object holding the adapter and the processes it starts.
 
     taskkill /T walks the tree from the adapter's shell, so it misses children
     once that shell has exited. A job tracks them independently of the shell.
+    The job is kill-on-close: when its last handle closes, at the end of the
+    dispatch or because Windows closed it when the factory died, every process
+    still in it ends. So no adapter descendant outlives its factory, and
+    recovery's check of the recorded adapter pid is enough.
     Children the shell starts before the adapter is assigned to the job are not
     in it; taskkill and the bounded output drain still cover them.
     """
@@ -713,22 +768,20 @@ class WindowsJob:
 
     @classmethod
     def for_process(cls, pid: int):
-        """A job holding process ``pid``, or None if one can't be set up."""
+        """A kill-on-close job holding process ``pid``, or None if one can't be set up."""
         try:
             import ctypes
-            from ctypes import wintypes
-            kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-            kernel32.CreateJobObjectW.argtypes = (wintypes.LPVOID, wintypes.LPCWSTR)
-            kernel32.CreateJobObjectW.restype = wintypes.HANDLE
-            kernel32.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
-            kernel32.OpenProcess.restype = wintypes.HANDLE
-            kernel32.AssignProcessToJobObject.argtypes = (wintypes.HANDLE, wintypes.HANDLE)
-            kernel32.TerminateJobObject.argtypes = (wintypes.HANDLE, wintypes.UINT)
-            kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
+            kernel32 = _kernel32()
         except (AttributeError, ImportError, OSError):
             return None
         job = kernel32.CreateJobObjectW(None, None)
         if not job:
+            return None
+        limits = _job_extended_limit_type()()
+        limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+        if not kernel32.SetInformationJobObject(job, JOB_OBJECT_EXTENDED_LIMIT_INFORMATION_CLASS,
+                                                ctypes.byref(limits), ctypes.sizeof(limits)):
+            kernel32.CloseHandle(job)
             return None
         process = kernel32.OpenProcess(0x0101, False, pid)  # PROCESS_SET_QUOTA | PROCESS_TERMINATE
         assigned = bool(process) and bool(kernel32.AssignProcessToJobObject(job, process))
@@ -932,6 +985,7 @@ def _run_adapter(command: str, prompt: str, env: dict, timeout: float,
         _wait_bounded(proc)
         raise
     finally:
+        # Kill-on-close: on Windows nothing the adapter started outlives the dispatch.
         if job is not None:
             job.close()
 

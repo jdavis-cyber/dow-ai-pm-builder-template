@@ -198,6 +198,69 @@ class WindowsJobTests(unittest.TestCase):
             gf.kill_adapter_tree(proc, job)
         run.assert_called_once_with(["taskkill", "/T", "/F", "/PID", "4242"], capture_output=True)
 
+    def _fake_kernel32(self):
+        kernel32 = mock.Mock()
+        kernel32.CreateJobObjectW.return_value = 11
+        kernel32.OpenProcess.return_value = 22
+        kernel32.AssignProcessToJobObject.return_value = 1
+        kernel32.SetInformationJobObject.return_value = 1
+        return kernel32
+
+    def test_job_kills_its_processes_when_its_handle_closes(self):
+        # Review 4410861980: if the factory is force-killed, Windows closes the
+        # job handle; kill-on-close then ends every adapter descendant, so the
+        # recorded shell pid is a sufficient liveness check for recovery.
+        import ctypes
+        kernel32 = self._fake_kernel32()
+        with mock.patch.object(gf, "_kernel32", return_value=kernel32):
+            job = gf.WindowsJob.for_process(4242)
+        self.assertIsNotNone(job)
+        handle, info_class, info, size = kernel32.SetInformationJobObject.call_args.args
+        self.assertEqual(handle, 11)
+        self.assertEqual(info_class, gf.JOB_OBJECT_EXTENDED_LIMIT_INFORMATION_CLASS)
+        limits = info._obj
+        self.assertEqual(size, ctypes.sizeof(limits))
+        self.assertTrue(limits.BasicLimitInformation.LimitFlags & gf.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE)
+        self.assertEqual(gf.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE, 0x2000)
+        self.assertEqual(gf.JOB_OBJECT_EXTENDED_LIMIT_INFORMATION_CLASS, 9)
+        # The limit is in place before the adapter joins the job.
+        names = [name for name, _args, _kw in kernel32.mock_calls]
+        self.assertLess(names.index("SetInformationJobObject"), names.index("AssignProcessToJobObject"))
+
+    def test_no_job_when_kill_on_close_cannot_be_set(self):
+        kernel32 = self._fake_kernel32()
+        kernel32.SetInformationJobObject.return_value = 0
+        with mock.patch.object(gf, "_kernel32", return_value=kernel32):
+            self.assertIsNone(gf.WindowsJob.for_process(4242))
+        kernel32.AssignProcessToJobObject.assert_not_called()
+        kernel32.CloseHandle.assert_any_call(11)
+
+    @unittest.skipUnless(os.name == "nt", "Windows job objects")
+    def test_real_job_is_kill_on_close(self):
+        import ctypes
+        from ctypes import wintypes
+        proc = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"],
+                                creationflags=gf.CREATE_NEW_PROCESS_GROUP)
+        job = gf.WindowsJob.for_process(proc.pid)
+        try:
+            self.assertIsNotNone(job, "could not put the adapter in a job object")
+            kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+            kernel32.QueryInformationJobObject.argtypes = (
+                wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD, ctypes.c_void_p)
+            limits = gf._job_extended_limit_type()()
+            self.assertTrue(kernel32.QueryInformationJobObject(
+                job._handle, gf.JOB_OBJECT_EXTENDED_LIMIT_INFORMATION_CLASS,
+                ctypes.byref(limits), ctypes.sizeof(limits), None), ctypes.get_last_error())
+            self.assertTrue(limits.BasicLimitInformation.LimitFlags & gf.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE)
+            # Closing the last handle, as Windows does when the factory dies, ends the process.
+            job.close()
+            proc.wait(timeout=10)
+        finally:
+            if job is not None:
+                job.close()
+            if proc.poll() is None:
+                proc.kill()
+
     @unittest.skipUnless(os.name == "nt", "Windows job objects")
     def test_real_job_holds_and_terminates_the_process(self):
         proc = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"],
