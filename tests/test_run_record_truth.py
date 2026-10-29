@@ -4,11 +4,13 @@
 - An adapter can't label evidence Verified; only the Human Director's review can.
 - An interrupted dispatch leaves a run result, or is recorded on the next run.
 """
+import hashlib
 import json
 import os
 from pathlib import Path
 import shlex
 import signal
+import socket
 import subprocess
 import sys
 import time
@@ -170,6 +172,27 @@ class InterruptionTests(Records, unittest.TestCase):
         self.assertEqual(result.returncode, 128 + signal.SIGKILL, result.stdout + result.stderr)
         self.assertEqual(record["outcome"], "interrupted: adapter stopped by SIGKILL")
         self.assertIn("adapter interrupted", record["violations"])
+
+    def test_marker_left_after_its_result_was_recorded_is_consumed(self):
+        # Codex P2 on #29: a stop between write_run_result() and the marker delete
+        # left a marker for a dispatch already recorded; recovery appended a second,
+        # false "interrupted" result for the same dispatch.
+        result, record = self.run_adapter("")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        anchor = Path(self.env["FACTORY_CHAIN_ANCHOR_DIR"])
+        in_flight = anchor / hashlib.sha256(str(self.repo.resolve()).encode()).hexdigest()[:24] / "in-flight"
+        self.assertTrue(in_flight.parent.is_dir())
+        in_flight.mkdir(exist_ok=True)
+        marker = in_flight / (Path(record["task_packet"]["path"]).stem + ".json")
+        marker.write_text(json.dumps({
+            "task_id": "TASK-901", "dispatched_at_utc": record.get("dispatched_at_utc"), "adapter": "shell",
+            "task_packet": record["task_packet"],
+            "owner": {"pid": 1, "host": socket.gethostname(), "token": "crashed", "started_at_utc": None}}))
+        later = self.factory("shell")
+        self.assertNotIn("did not complete", later.stdout)
+        self.assertEqual(later.returncode, 0, later.stdout + later.stderr)
+        self.assertEqual(len(self.records()), 1)
+        self.assertFalse(marker.exists())
 
     def test_killed_factory_leaves_a_marker_recorded_on_the_next_run(self):
         proc, pid = self.start(self.SLOW)
