@@ -305,8 +305,25 @@ def select_next_task(tasks: list[dict]) -> tuple[dict | None, str]:
         if required_authorities(task) is None:
             return None, (f"REFUSAL: {task['Task ID']} has no valid Requires Authority field; "
                           "declare none or the authorities it needs (see orchestration/task-schema.md)")
+        if human_gate(task):
+            plan = str(task.get("Plan", "")).strip().strip("`")
+            if kind == "open":
+                # Plan-before-build: a Human Gate task is first dispatched only to
+                # write its plan. The packet carries no authority, so the write
+                # audit flags anything beyond planning scope.
+                if not plan:
+                    return None, f"REFUSAL: {task['Task ID']} has Human Gate: yes but no Plan path"
+                task = dict(task, _plan_only=True)
+            else:
+                problem = gatekeeper.plan_approval_error(task["Task ID"], plan)
+                if problem:
+                    return None, "STOP: " + problem
+        elif kind == "plan-approved":
+            return None, f"REFUSAL: {task['Task ID']} is Plan Approved but has no Human Gate"
+        if not task.get("_plan_only") and task_needs_human(task):
+            return None, f"STOP: {task['Task ID']} appears to require human/PM/PO/gate input"
         state = gatekeeper.effective_state(gatekeeper.load_state())
-        if human_gate(task) and kind == "open":
+        if task.get("_plan_only"):
             state = {}
         denied = denied_task_paths(task, state)
         if denied:
@@ -317,7 +334,7 @@ def select_next_task(tasks: list[dict]) -> tuple[dict | None, str]:
                 "record_type": "factory-run-result",
                 "task_id": task["Task ID"],
                 "checked_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "gate_state_at_check": {key: state.get(key, False) for key in
+                "gate_state_at_check": {key: state.get(key) for key in
                                         ("approval_state", "implementation_authorized", "deployment_authorized")},
                 "checks": {"task_paths": {"denied": denied}},
                 "outcome": "refused: denied task paths",
@@ -325,23 +342,8 @@ def select_next_task(tasks: list[dict]) -> tuple[dict | None, str]:
                 "adapter_dispatched": False,
             })
             return None, reason
-        if human_gate(task):
-            plan = str(task.get("Plan", "")).strip().strip("`")
-            if kind == "open":
-                # Plan-before-build: a Human Gate task is first dispatched only to
-                # write its plan. The packet carries no authority, so the write
-                # audit flags anything beyond planning scope.
-                if not plan:
-                    return None, f"REFUSAL: {task['Task ID']} has Human Gate: yes but no Plan path"
-                task = dict(task, _plan_only=True)
-                return task, "selected for planning"
-            problem = gatekeeper.plan_approval_error(task["Task ID"], plan)
-            if problem:
-                return None, "STOP: " + problem
-        elif kind == "plan-approved":
-            return None, f"REFUSAL: {task['Task ID']} is Plan Approved but has no Human Gate"
-        if task_needs_human(task):
-            return None, f"STOP: {task['Task ID']} appears to require human/PM/PO/gate input"
+        if task.get("_plan_only"):
+            return task, "selected for planning"
         for action, path in infer_required_actions(task):
             allowed, msg = gatekeeper.check_action(action, path)
             if not allowed:

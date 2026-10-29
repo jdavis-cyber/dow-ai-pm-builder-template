@@ -301,11 +301,10 @@ def paths_in_text(text: str) -> list[str]:
                 continue
             paths.update(path for path in embedded if is_protected_source_path(path))
         path = token.replace("\\", "/").rstrip(".!?")
-        for marker in ("**", "__", "*", "_"):
-            if path.startswith(marker) and path.endswith(marker) and len(path) > 2 * len(marker):
-                path = path[len(marker):-len(marker)]
-                break
-        if quoted or "/" in path or re.fullmatch(r"(?:[\w.-]+\.[\w-]+|\.[\w-]+)", path) or is_protected_source_path(path):
+        while len(path) > 2 and path[0] in "*_" and path[-1] == path[0]:
+            path = path[1:-1]
+            quoted = True
+        if quoted or "/" in path or re.fullmatch(r"(?:[\w.-]+\.[\w-]+|\.[\w-]+)", path):
             paths.add(path)
     return sorted(paths)
 

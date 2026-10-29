@@ -92,12 +92,12 @@ def test_quoted_source_path_with_spaces_is_named_in_refusal(project):
 
 @pytest.mark.parametrize("path", [
     "src/early.py", "services/api.py", "packages/lib.py", "database/schema.sql",
-    "infrastructure/main.tf", "execution/run.sh", "src/", "src",
+    "infrastructure/main.tf", "execution/run.sh", "src/", "`src`",
     "./src/early.py", "docs/../src/early.py",
 ])
 def test_protected_paths_in_task_text_are_refused(project, path):
     board(project, **{"Required Inputs": path})
-    assert_refused(project, cli(project), path)
+    assert_refused(project, cli(project), path.strip("`"))
 
 
 @pytest.mark.parametrize("field", [
@@ -132,7 +132,7 @@ def test_source_path_inside_quoted_prose_is_refused(project):
     assert_refused(project, cli(project), "src/early.py")
 
 
-@pytest.mark.parametrize("marker", ["**", "__", "*", "_"])
+@pytest.mark.parametrize("marker", ["**", "__", "*", "_", "***"])
 def test_markdown_source_reference_is_refused(project, marker):
     board(project, **{"Acceptance Criteria": f"Create {marker}src/early.py{marker}"})
     assert_refused(project, cli(project), "src/early.py")
@@ -141,6 +141,7 @@ def test_markdown_source_reference_is_refused(project, marker):
 @pytest.mark.parametrize("field,value", [
     ("Plan", "Makefile"), ("Evidence Required", "Makefile"),
     ("Evidence Required", "Makefile; docs/notes.md"),
+    ("Plan", "**Makefile**"),
 ])
 def test_bare_declared_output_is_refused(project, field, value):
     board(project, **{"Human Gate": "yes", "Plan": "docs/plan.md", field: value})
@@ -156,6 +157,7 @@ def test_plan_only_and_legacy_entry_points_cannot_bypass_refusal(project, script
 
 def test_existing_planning_task_with_read_only_references_still_dispatches(project):
     board(project, **{
+        "Acceptance Criteria": "Discuss infrastructure, database, services, packages and execution",
         "Required Inputs": ".governance/Phase_Gates/Gate1_BusinessUnderstanding/",
         "Verification Command or Method":
             "python3 automation/validate_spec.py --mode locked orchestration/system_spec.md; "
