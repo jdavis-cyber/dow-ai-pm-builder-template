@@ -314,9 +314,57 @@ def denied_task_paths(task: dict, state: dict) -> list[dict]:
 
 
 VALIDATE_SPEC_RE = re.compile(r"validate_spec\.py([^;&|`\n]*)")
+VALIDATE_SPEC_SCRIPT = "validate_spec.py"
+# A command separator inside a shell word: ;, |, || or &&. A single & inside a
+# word is part of a redirection (2>&1, &>out), not a separator.
+SHELL_SEPARATOR_RE = re.compile(r"\|\||&&|[;|]")
 # A shell redirection inside a token: >, >>, <, an fd duplication such as >&1,
 # and any target written straight after the operator.
 SHELL_REDIRECT_RE = re.compile(r"(?:>>?|<)(?P<dup>&(?:\d+|-))?(?P<target>.*)$")
+
+
+def validator_invocations(text: str) -> list[list[str]]:
+    """Arguments of every validate_spec.py invocation in *text*.
+
+    Each backtick span or line is tokenized whole with shlex before the
+    validator is located, so a quoted script path or quoted arguments keep
+    their quoting balanced (Codex P2 on #29/#30). Words after the script are
+    its arguments up to a command separator. A segment shlex cannot tokenize
+    (unbalanced quotes) falls back to whitespace words with quotes stripped.
+    """
+    invocations: list[list[str]] = []
+    for segment in re.split(r"[`\n]", text):
+        if VALIDATE_SPEC_SCRIPT not in segment:
+            continue
+        try:
+            tokens = shlex.split(segment)
+        except ValueError:
+            for match in VALIDATE_SPEC_RE.finditer(segment):
+                words = (word.strip("'\"") for word in match.group(1).split())
+                invocations.append([word for word in words if word])
+            continue
+        args: list[str] | None = None
+        for token in tokens:
+            if args is None:
+                if VALIDATE_SPEC_SCRIPT in token:
+                    args = []
+                    token = token.split(VALIDATE_SPEC_SCRIPT, 1)[1]
+                    if not token:
+                        continue
+                else:
+                    continue
+            separator = SHELL_SEPARATOR_RE.search(token)
+            if separator or token == "&":
+                head = token[:separator.start()] if separator else ""
+                if head:
+                    args.append(head)
+                invocations.append(args)
+                args = None
+                continue
+            args.append(token)
+        if args is not None:
+            invocations.append(args)
+    return invocations
 
 
 def lock0_spec_paths(task: dict) -> list[str]:
@@ -329,11 +377,7 @@ def lock0_spec_paths(task: dict) -> list[str]:
     """
     paths: list[str] = []
     lock0 = "lock 0" in str(task.get("Title", "")).lower()
-    for match in VALIDATE_SPEC_RE.finditer(str(task.get("Verification Command or Method", ""))):
-        try:
-            args = shlex.split(match.group(1))
-        except ValueError:
-            args = match.group(1).split()
+    for args in validator_invocations(str(task.get("Verification Command or Method", ""))):
         mode, named, i = "locked", [], 0
         while i < len(args):
             arg = args[i]
