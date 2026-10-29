@@ -1074,6 +1074,27 @@ def record_assisted_dispatch(task: dict, state: dict, packet_seal: dict | None =
     return path
 
 
+def readvertise_pending(task: dict, packet: dict) -> int:
+    """Show a still-pending assisted task again without writing a new packet.
+
+    Only the packet sealed in the pending baseline is checked at completion, so
+    a second invocation re-advertises that packet instead of emitting another.
+    """
+    record = json.loads((_pending_dir() / f"{task['Task ID']}.json").read_text())
+    seal = record.get("task_packet")
+    if seal is None:
+        print(packet_to_prompt(packet))
+        print(f"\nASSISTED MODE: {task['Task ID']} is still pending; no task packet was recorded when it was dispatched.")
+        return 0
+    problem = packet_seal_problem(seal)
+    if problem:
+        print(f"STOP: {problem}; the completion checks for {task['Task ID']} will record it")
+        return 3
+    print(packet_to_prompt(json.loads((ROOT / seal["path"]).read_text())))
+    print(f"\nASSISTED MODE: {task['Task ID']} is still pending; its task packet is {seal['path']}")
+    return 0
+
+
 def check_assisted_completions(tasks: list[dict]) -> tuple[int, set[str]]:
     """Run post-dispatch checks for assisted tasks a human has since completed.
 
@@ -1166,9 +1187,11 @@ def once(adapter: str) -> int:
             if problem:
                 print(problem)
                 return 2
+        if task["Task ID"] in pending:
+            return readvertise_pending(task, packet)
         run_info: dict = {}
         code = dispatch(packet, adapter, run_info)
-        if code == 0 and task["Task ID"] not in pending:
+        if code == 0:
             record_assisted_dispatch(task, state, run_info.get("task_packet"))
         return code
     if adapter.lower().strip() == "shell":

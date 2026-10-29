@@ -108,6 +108,33 @@ class PacketSealTests(ShellAdapterFixture, unittest.TestCase):
         self.assertEqual(len(records), 1)
         self.assertIn("task packet modified", json.loads(records[0].read_text())["violations"])
 
+    def test_second_assisted_invocation_reuses_the_sealed_packet(self):
+        # Codex P2 on #27: a re-dispatch wrote a second, unsealed packet.
+        (self.repo / "adapter.py").write_text("")
+        self.git("init", "-q")
+        self.git("add", "-A")
+        self.git("commit", "-qm", "synthetic fixture")
+        runs = self.repo / "docs/verification/factory-runs"
+        self.assertEqual(self.factory("assisted").returncode, 0)
+        packets = sorted(runs.glob("*-TASK-901.json"))
+        self.assertEqual(len(packets), 1)
+        again = self.factory("assisted")
+        self.assertEqual(again.returncode, 0, again.stdout + again.stderr)
+        self.assertIn("NEXT GOVERNED FACTORY TASK: TASK-901", again.stdout)
+        self.assertIn(str(packets[0].relative_to(self.repo)), again.stdout)
+        self.assertEqual(sorted(runs.glob("*-TASK-901.json")), packets)
+        # Editing the one advertised packet is caught at re-dispatch and at completion.
+        packets[0].write_text(packets[0].read_text().replace('"implementation_authorized": false',
+                                                             '"implementation_authorized": true'))
+        self.assertEqual(self.factory("assisted").returncode, 3)
+        (self.repo / "docs/verification/fixture.md").write_text("Synthetic verification only\n")
+        board = self.repo / "orchestration/tasks.md"
+        board.write_text(board.read_text().replace("**Status**: Ready", "**Status**: Done"))
+        done = self.factory("assisted")
+        self.assertEqual(done.returncode, 3, done.stdout + done.stderr)
+        result = json.loads(next(runs.glob("*-result.json")).read_text())
+        self.assertIn("task packet modified", result["violations"])
+
 
 if __name__ == "__main__":
     unittest.main()
