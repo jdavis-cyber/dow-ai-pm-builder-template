@@ -64,7 +64,9 @@ class ProcessGroupTests(unittest.TestCase):
 
     def test_posix_kills_the_process_group(self):
         proc = mock.Mock(pid=4242)
+        # Windows has no SIGKILL; supply it so the POSIX branch runs on every CI platform.
         with mock.patch.object(gf, "_on_windows", return_value=False), \
+                mock.patch.object(gf.signal, "SIGKILL", getattr(signal, "SIGKILL", 9), create=True), \
                 mock.patch.object(gf.os, "killpg", create=True) as killpg:
             gf.kill_adapter_tree(proc)
         killpg.assert_called_once_with(4242, getattr(signal, "SIGKILL", 9))
@@ -80,9 +82,10 @@ class ProcessGroupTests(unittest.TestCase):
 
     def test_real_timeout_kills_the_adapter_tree(self):
         # Runs on every CI platform: the adapter starts a child and both are stopped.
-        script = ("import subprocess, sys, time\n"
-                  "subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(60)'])\n"
-                  "time.sleep(60)\n")
+        # One line: cmd.exe ends a command line at a newline.
+        script = ("import subprocess, sys, time; "
+                  "subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(60)']); "
+                  "time.sleep(60)")
         code, _out, _err, timed_out = gf._run_adapter(portable_command(sys.executable, "-c", script),
                                                       "", gf.adapter_environment(), 2)
         self.assertTrue(timed_out)

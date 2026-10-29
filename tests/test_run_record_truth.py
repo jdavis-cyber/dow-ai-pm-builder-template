@@ -296,7 +296,7 @@ class AdapterIdentityTests(unittest.TestCase):
     def test_running_adapter_is_still_running(self):
         proc = self.spawn()
         identity = governed_factory.adapter_identity(proc)
-        self.assertEqual(identity["pgid"], proc.pid)
+        self.assertEqual(identity["pgid"], None if os.name == "nt" else proc.pid)
         self.assertTrue(governed_factory.adapter_still_running(identity))
 
     def test_exited_adapter_is_not_running(self):
