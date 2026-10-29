@@ -317,75 +317,140 @@ def denied_task_paths(task: dict, state: dict) -> list[dict]:
 
 VALIDATE_SPEC_RE = re.compile(r"validate_spec\.py([^;&|`\n]*)")
 VALIDATE_SPEC_SCRIPT = "validate_spec.py"
-# A command separator inside a shell word: ;, |, || or &&. A single & inside a
-# word is part of a redirection (2>&1, &>out), not a separator.
-SHELL_SEPARATOR_RE = re.compile(r"\|\||&&|[;|]")
-# A backslash before a word character or "." is a Windows path separator
-# (automation\validate_spec.py), not a POSIX escape such as "\ " or '\"'.
-WINDOWS_BACKSLASH_RE = re.compile(r"\\[\w.]")
-
-
-def _shell_words(segment: str) -> list[str]:
-    """Split *segment* into shell words, keeping Windows backslash separators.
-
-    POSIX quoting applies either way. When the segment uses backslash path
-    separators the backslash is treated as a literal character instead of an
-    escape (Codex P2 4410860851); otherwise POSIX escapes still apply.
-    Raises ValueError on unbalanced quotes, like shlex.split.
-    """
-    lexer = shlex.shlex(segment, posix=True)
-    lexer.whitespace_split = True
-    lexer.commenters = ""
-    if WINDOWS_BACKSLASH_RE.search(segment):
-        lexer.escape = ""
-    return list(lexer)
 # A shell redirection inside a token: >, >>, <, an fd duplication such as >&1,
 # and any target written straight after the operator.
 SHELL_REDIRECT_RE = re.compile(r"(?:>>?|<)(?P<dup>&(?:\d+|-))?(?P<target>.*)$")
 
 
-def validator_invocations(text: str) -> list[list[str]]:
-    """Arguments of every validate_spec.py invocation in *text*.
+def _split_shell_commands(segment: str) -> list[str]:
+    """Split *segment* into simple commands at ;, &&, ||, | and a lone &.
 
-    Each backtick span or line is tokenized whole with shlex before the
-    validator is located, so a quoted script path or quoted arguments keep
-    their quoting balanced (Codex P2 on #29/#30). Words after the script are
-    its arguments up to a command separator. A segment shlex cannot tokenize
-    (unbalanced quotes) falls back to whitespace words with quotes stripped.
+    Quote-aware: an operator inside '...' or "..." does not split, and a
+    backslash keeps the character after it. The & of a redirection (2>&1,
+    >&2, &>out) does not split either.
     """
-    invocations: list[list[str]] = []
-    for segment in re.split(r"[`\n]", text):
-        if VALIDATE_SPEC_SCRIPT not in segment:
+    commands: list[str] = []
+    current: list[str] = []
+    quote = None
+    i = 0
+    while i < len(segment):
+        ch = segment[i]
+        nxt = segment[i + 1] if i + 1 < len(segment) else ""
+        if quote:
+            current.append(ch)
+            if ch == quote:
+                quote = None
+            elif ch == "\\" and quote == '"' and nxt:
+                current.append(nxt)
+                i += 1
+            i += 1
             continue
-        try:
-            tokens = _shell_words(segment)
-        except ValueError:
-            for match in VALIDATE_SPEC_RE.finditer(segment):
-                words = (word.strip("'\"") for word in match.group(1).split())
-                invocations.append([word for word in words if word])
+        if ch in "'\"":
+            quote = ch
+        elif ch == "\\" and nxt:
+            current.append(ch + nxt)
+            i += 2
             continue
-        args: list[str] | None = None
-        for token in tokens:
-            if args is None:
-                if VALIDATE_SPEC_SCRIPT in token:
-                    args = []
-                    token = token.split(VALIDATE_SPEC_SCRIPT, 1)[1]
-                    if not token:
-                        continue
-                else:
-                    continue
-            separator = SHELL_SEPARATOR_RE.search(token)
-            if separator or token == "&":
-                head = token[:separator.start()] if separator else ""
-                if head:
-                    args.append(head)
-                invocations.append(args)
-                args = None
+        else:
+            prev = current[-1][-1] if current else ""
+            redirect_amp = ch == "&" and nxt != "&" and (nxt == ">" or prev in "<>")
+            if ch in ";|&" and not redirect_amp:
+                commands.append("".join(current))
+                current = []
+                i += 2 if ch in "|&" and nxt == ch else 1
                 continue
-            args.append(token)
-        if args is not None:
-            invocations.append(args)
+        current.append(ch)
+        i += 1
+    commands.append("".join(current))
+    return commands
+
+
+def _shell_words(command: str, posix_escapes: bool) -> list[str]:
+    """Shell words of one simple command; raises ValueError on unbalanced quotes.
+
+    POSIX quoting always applies. With *posix_escapes* off a backslash is an
+    ordinary character, which is how a Windows path separator reads.
+    """
+    lexer = shlex.shlex(command, posix=True)
+    lexer.whitespace_split = True
+    lexer.commenters = ""
+    if not posix_escapes:
+        lexer.escape = ""
+    return list(lexer)
+
+
+def _words_after_validator(words: list[str]) -> list[str] | None:
+    for index, word in enumerate(words):
+        if VALIDATE_SPEC_SCRIPT in word:
+            rest = word.split(VALIDATE_SPEC_SCRIPT, 1)[1]
+            return ([rest] if rest else []) + words[index + 1:]
+    return None
+
+
+def validator_invocations(text: str) -> list[tuple[list[str], list[str] | None]]:
+    """Every validate_spec.py invocation in *text* as (posix_args, windows_args).
+
+    Each backtick span or line is split into simple commands first (quote
+    aware), and only the validator's own command is tokenized, so quoting and
+    escapes elsewhere on the line cannot change how its arguments read (Codex
+    P2 4410497736, 4411206551). posix_args is the POSIX reading; a command
+    shlex cannot tokenize (unbalanced quotes) falls back to whitespace words
+    with quotes stripped. windows_args is the reading with backslashes kept,
+    offered only when the validator's arguments contain a backslash
+    (4410860851); lock0_spec_paths decides which one names real files.
+    """
+    invocations: list[tuple[list[str], list[str] | None]] = []
+    for segment in re.split(r"[`\n]", text):
+        for command in _split_shell_commands(segment):
+            if VALIDATE_SPEC_SCRIPT not in command:
+                continue
+            raw_args = command.split(VALIDATE_SPEC_SCRIPT, 1)[1]
+            try:
+                posix_args = _words_after_validator(_shell_words(command, posix_escapes=True))
+            except ValueError:
+                posix_args = None
+            if posix_args is None:
+                words = (word.strip("'\"") for word in raw_args.split())
+                posix_args = [word for word in words if word]
+            windows_args = None
+            if "\\" in raw_args:
+                try:
+                    windows_args = _words_after_validator(_shell_words(command, posix_escapes=False))
+                except ValueError:
+                    windows_args = None
+            invocations.append((posix_args, windows_args))
     return invocations
+
+
+def _validator_mode_and_paths(args: list[str]) -> tuple[str, list[str]]:
+    """The --mode (default locked) and spec paths named by validator *args*."""
+    mode, named, i = "locked", [], 0
+    while i < len(args):
+        arg = args[i]
+        redirect = SHELL_REDIRECT_RE.search(arg)
+        if redirect:
+            # "spec.md>out" keeps its argument; "2>", ">" or "<" alone take the next token as target.
+            before = arg[:redirect.start()]
+            if before and not re.fullmatch(r"\d+|&", before):
+                named.append(before)
+            if not redirect.group("dup") and not redirect.group("target"):
+                i += 1
+            i += 1
+            continue
+        if arg == "--mode" and i + 1 < len(args):
+            mode, i = args[i + 1], i + 2
+            continue
+        if arg.startswith("--mode="):
+            mode = arg.split("=", 1)[1]
+        elif not arg.startswith("-"):
+            named.append(arg)
+        i += 1
+    return mode, named
+
+
+def _is_project_file(rel_path: str) -> bool:
+    path = (ROOT / rel_path).resolve()
+    return path.is_relative_to(ROOT.resolve()) and path.is_file()
 
 
 def lock0_spec_paths(task: dict) -> list[str]:
@@ -395,35 +460,25 @@ def lock0_spec_paths(task: dict) -> list[str]:
     validate_spec.py in locked mode (its default). The project spec is always
     checked, whatever path the board names, so editing the command can't
     point the lock at an easier file.
+
+    Arguments are read the POSIX way. Only when a POSIX path is not a project
+    file and the arguments contain a backslash is the Windows reading tried
+    (backslashes kept, then "\\" -> "/"), and it is used only if every path
+    it names is a project file. Otherwise the POSIX reading stands, so a spec
+    missing under both readings is still reported missing.
     """
     paths: list[str] = []
     lock0 = "lock 0" in str(task.get("Title", "")).lower()
-    for args in validator_invocations(str(task.get("Verification Command or Method", ""))):
-        mode, named, i = "locked", [], 0
-        while i < len(args):
-            arg = args[i]
-            redirect = SHELL_REDIRECT_RE.search(arg)
-            if redirect:
-                # "spec.md>out" keeps its argument; "2>", ">" or "<" alone take the next token as target.
-                before = arg[:redirect.start()]
-                if before and not re.fullmatch(r"\d+|&", before):
-                    named.append(before)
-                if not redirect.group("dup") and not redirect.group("target"):
-                    i += 1
-                i += 1
-                continue
-            if arg == "--mode" and i + 1 < len(args):
-                mode, i = args[i + 1], i + 2
-                continue
-            if arg.startswith("--mode="):
-                mode = arg.split("=", 1)[1]
-            elif not arg.startswith("-"):
-                named.append(arg)
-            i += 1
+    for posix_args, windows_args in validator_invocations(str(task.get("Verification Command or Method", ""))):
+        mode, named = _validator_mode_and_paths(posix_args)
+        if windows_args is not None and not all(_is_project_file(p) for p in named):
+            windows_mode, windows_named = _validator_mode_and_paths(windows_args)
+            windows_named = [p.replace("\\", "/") for p in windows_named]
+            if windows_named and all(_is_project_file(p) for p in windows_named):
+                mode, named = windows_mode, windows_named
         if mode == "locked":
             lock0 = True
-            # Both separators name the same project file: resolve with "/".
-            paths.extend(path.replace("\\", "/") for path in named)
+            paths.extend(named)
     if not lock0:
         return []
     return sorted({SPEC_REL, *paths})
