@@ -9,6 +9,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest import mock
 
@@ -90,6 +91,131 @@ class ProcessGroupTests(unittest.TestCase):
                                                       "", gf.adapter_environment(), 2)
         self.assertTrue(timed_out)
         self.assertEqual(code, gf.ADAPTER_TIMEOUT_EXIT)
+
+
+def _process_alive(pid: int) -> bool:
+    if os.name == "nt":
+        return gf._windows_process(pid)[0]
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+class DescendantOutlivesShellTests(unittest.TestCase):
+    """The adapter's shell exits first and leaves a child holding stdout/stderr.
+
+    A timeout must still end promptly and be recorded on every OS (review 4410498454).
+    """
+
+    CHILD_SECONDS = 20
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="ai1151-drain-"))
+        self.pid_file = self.tmp / "child.pid"
+        launcher = self.tmp / "launcher.py"
+        launcher.write_text(
+            "import subprocess, sys\n"
+            f"child = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep({self.CHILD_SECONDS})'],\n"
+            "                         stdout=sys.stdout, stderr=sys.stderr)\n"
+            f"open({str(self.pid_file)!r}, 'w', encoding='utf-8').write(str(child.pid))\n"
+            "print('adapter started', flush=True)\n",
+            encoding="utf-8")
+        self.command = portable_command(sys.executable, str(launcher))
+
+    def tearDown(self):
+        try:
+            pid = int(self.pid_file.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            pid = None
+        if pid and _process_alive(pid):
+            try:
+                os.kill(pid, signal.SIGTERM)
+            except OSError:
+                pass
+        import shutil
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _child_pid(self) -> int:
+        return int(self.pid_file.read_text(encoding="utf-8"))
+
+    def test_timeout_stops_a_child_that_outlives_the_shell(self):
+        started = time.monotonic()
+        code, out, _err, timed_out = gf._run_adapter(self.command, "", gf.adapter_environment(), 1)
+        elapsed = time.monotonic() - started
+        self.assertTrue(timed_out)
+        self.assertEqual(code, gf.ADAPTER_TIMEOUT_EXIT)
+        self.assertLess(elapsed, self.CHILD_SECONDS / 2)
+        self.assertIn("adapter started", out)
+        # POSIX: the process-group kill; Windows: the job object, since taskkill
+        # can't walk the tree from a shell that has already exited.
+        pid = self._child_pid()
+        deadline = time.monotonic() + 5
+        while _process_alive(pid) and time.monotonic() < deadline:
+            time.sleep(0.1)
+        self.assertFalse(_process_alive(pid), "the adapter's child survived the timeout")
+
+    def test_drain_is_bounded_when_the_child_survives_the_kill(self):
+        # Models taskkill failing and no job object (or a child that left the
+        # process group): nothing stops the child, so only the bounded drain helps.
+        with mock.patch.object(gf, "kill_adapter_tree"), \
+                mock.patch.object(gf, "ADAPTER_DRAIN_TIMEOUT", 1.0):
+            started = time.monotonic()
+            code, out, err, timed_out = gf._run_adapter(self.command, "", gf.adapter_environment(), 1)
+            elapsed = time.monotonic() - started
+        self.assertTrue(timed_out)
+        self.assertEqual(code, gf.ADAPTER_TIMEOUT_EXIT)
+        self.assertLess(elapsed, self.CHILD_SECONDS / 2)
+        self.assertIn("stopped waiting for adapter output", err)
+        if os.name != "nt":
+            # POSIX communicate() returns what it read before the drain ran out.
+            self.assertIn("adapter started", out)
+
+
+class WindowsJobTests(unittest.TestCase):
+    def test_a_job_that_terminates_skips_taskkill(self):
+        proc = mock.Mock(pid=4242)
+        job = mock.Mock()
+        job.terminate.return_value = True
+        with mock.patch.object(gf, "_on_windows", return_value=True), \
+                mock.patch.object(gf.subprocess, "run") as run:
+            gf.kill_adapter_tree(proc, job)
+        job.terminate.assert_called_once_with()
+        run.assert_not_called()
+        proc.kill.assert_not_called()
+
+    def test_taskkill_still_runs_when_the_job_cannot_terminate(self):
+        proc = mock.Mock(pid=4242)
+        proc.poll.return_value = None
+        job = mock.Mock()
+        job.terminate.return_value = False
+        done = subprocess.CompletedProcess([], 0)
+        with mock.patch.object(gf, "_on_windows", return_value=True), \
+                mock.patch.object(gf.subprocess, "run", return_value=done) as run:
+            gf.kill_adapter_tree(proc, job)
+        run.assert_called_once_with(["taskkill", "/T", "/F", "/PID", "4242"], capture_output=True)
+
+    @unittest.skipUnless(os.name == "nt", "Windows job objects")
+    def test_real_job_holds_and_terminates_the_process(self):
+        proc = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"],
+                                creationflags=gf.CREATE_NEW_PROCESS_GROUP)
+        job = gf.WindowsJob.for_process(proc.pid)
+        try:
+            self.assertIsNotNone(job, "could not put the adapter in a job object")
+            self.assertTrue(job.terminate())
+            self.assertEqual(proc.wait(timeout=10), gf.ADAPTER_TIMEOUT_EXIT)
+        finally:
+            if job is not None:
+                job.close()
+            if proc.poll() is None:
+                proc.kill()
+
+    @unittest.skipIf(os.name == "nt", "the POSIX fallback")
+    def test_no_job_off_windows(self):
+        self.assertIsNone(gf.WindowsJob.for_process(os.getpid()))
 
 
 class AdapterEnvironmentTests(unittest.TestCase):
