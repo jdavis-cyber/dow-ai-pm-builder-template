@@ -134,6 +134,30 @@ class LockedLabelTests(unittest.TestCase):
                 problems = governed_factory.lock0_problems(detect({"Verification Command or Method": command}))
                 self.assertFalse([p for p in problems if not p.startswith(spec + ":")], problems)
 
+    def test_windows_backslash_paths_survive(self):
+        # Codex P2 on #28 round 2 (4410860851): POSIX shlex dropped the
+        # backslashes, so orchestration\system_spec.md became
+        # orchestrationsystem_spec.md and Lock 0 reported the spec missing.
+        spec = "orchestration/system_spec.md"
+        detect = governed_factory.lock0_spec_paths
+        cases = {
+            r"python automation\validate_spec.py --mode locked orchestration\system_spec.md": [spec],
+            r'python "C:\repo\automation\validate_spec.py" --mode locked "docs\my spec.md"':
+                ["docs/my spec.md", spec],
+            r"py 'automation\validate_spec.py' --mode 'locked' 'orchestration\system_spec.md'": [spec],
+            r"python automation/validate_spec.py --mode locked orchestration\sub/x.md": ["orchestration/sub/x.md", spec],
+            r"python automation\validate_spec.py --mode locked docs/a\b.md > docs\v.md 2>&1": ["docs/a/b.md", spec],
+            r"`python automation\validate_spec.py --mode template orchestration\system_spec.md`": [],
+            # A POSIX escaped space is still an escape, not a path separator.
+            r"python3 automation/validate_spec.py --mode locked docs/my\ spec.md": ["docs/my spec.md", spec],
+        }
+        for command, expected in cases.items():
+            with self.subTest(command=command):
+                self.assertEqual(detect({"Verification Command or Method": command}), expected)
+        windows = r"python automation\validate_spec.py --mode locked orchestration\system_spec.md"
+        problems = governed_factory.lock0_problems(detect({"Verification Command or Method": windows}))
+        self.assertFalse([p for p in problems if not p.startswith(spec + ":")], problems)
+
 
 class DispatcherLock0Tests(ShellAdapterFixture, unittest.TestCase):
     def lock0_board(self, status="Ready", follower=False):
