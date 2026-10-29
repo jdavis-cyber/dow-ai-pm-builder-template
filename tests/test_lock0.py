@@ -6,7 +6,9 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import tempfile
 import unittest
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -134,10 +136,24 @@ class LockedLabelTests(unittest.TestCase):
                 problems = governed_factory.lock0_problems(detect({"Verification Command or Method": command}))
                 self.assertFalse([p for p in problems if not p.startswith(spec + ":")], problems)
 
+    def _project_root(self, *files):
+        """A temporary project root holding *files*, used as governed_factory.ROOT."""
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        for rel in ("orchestration/system_spec.md", *files):
+            (root / rel).parent.mkdir(parents=True, exist_ok=True)
+            (root / rel).write_text("spec\n", encoding="utf-8")
+        patcher = mock.patch.object(governed_factory, "ROOT", root)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        return root
+
     def test_windows_backslash_paths_survive(self):
         # Codex P2 on #28 round 2 (4410860851): POSIX shlex dropped the
         # backslashes, so orchestration\system_spec.md became
         # orchestrationsystem_spec.md and Lock 0 reported the spec missing.
+        self._project_root("docs/my spec.md", "orchestration/sub/x.md", "docs/a/b.md", "docs/specs/lock.md")
         spec = "orchestration/system_spec.md"
         detect = governed_factory.lock0_spec_paths
         cases = {
@@ -148,7 +164,11 @@ class LockedLabelTests(unittest.TestCase):
             r"python automation/validate_spec.py --mode locked orchestration\sub/x.md": ["orchestration/sub/x.md", spec],
             r"python automation\validate_spec.py --mode locked docs/a\b.md > docs\v.md 2>&1": ["docs/a/b.md", spec],
             r"`python automation\validate_spec.py --mode template orchestration\system_spec.md`": [],
-            # A POSIX escaped space is still an escape, not a path separator.
+            # Windows path with no POSIX ambiguity.
+            r"python automation\validate_spec.py --mode locked docs\specs\lock.md": ["docs/specs/lock.md", spec],
+            # A Windows command followed by another command.
+            r"python automation\validate_spec.py --mode locked orchestration\system_spec.md && echo done": [spec],
+            # A POSIX escaped space with no other backslash is still an escape.
             r"python3 automation/validate_spec.py --mode locked docs/my\ spec.md": ["docs/my spec.md", spec],
         }
         for command, expected in cases.items():
@@ -156,7 +176,30 @@ class LockedLabelTests(unittest.TestCase):
                 self.assertEqual(detect({"Verification Command or Method": command}), expected)
         windows = r"python automation\validate_spec.py --mode locked orchestration\system_spec.md"
         problems = governed_factory.lock0_problems(detect({"Verification Command or Method": windows}))
-        self.assertFalse([p for p in problems if not p.startswith(spec + ":")], problems)
+        self.assertEqual(problems, [])
+
+    def test_backslash_in_a_later_command_keeps_posix_escapes(self):
+        # Codex P2 on #28 round 3 (4411206551): the \n in a later printf
+        # switched the whole line to Windows mode and split docs/my\ spec.md.
+        spec = "orchestration/system_spec.md"
+        command = r"python3 automation/validate_spec.py --mode locked docs/my\ spec.md && printf '\nDone\n'"
+        detect = governed_factory.lock0_spec_paths
+        for files in [("docs/my spec.md",), ()]:
+            with self.subTest(spec_exists=bool(files)):
+                self._project_root(*files)
+                self.assertEqual(detect({"Verification Command or Method": command}), ["docs/my spec.md", spec])
+        self._project_root()
+        quoted_operator = 'python3 automation/validate_spec.py --mode locked "docs/a && b.md"; echo "x | y"'
+        self.assertEqual(detect({"Verification Command or Method": quoted_operator}), ["docs/a && b.md", spec])
+
+    def test_spec_missing_under_both_readings_is_reported(self):
+        self._project_root()
+        spec = "orchestration/system_spec.md"
+        command = r"python automation\validate_spec.py --mode locked docs\gone.md"
+        paths = governed_factory.lock0_spec_paths({"Verification Command or Method": command})
+        self.assertEqual(paths, ["docsgone.md", spec])
+        problems = governed_factory.lock0_problems(paths)
+        self.assertEqual(problems, ["docsgone.md: spec missing or outside the project"])
 
 
 class DispatcherLock0Tests(ShellAdapterFixture, unittest.TestCase):
