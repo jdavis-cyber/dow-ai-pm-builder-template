@@ -335,8 +335,9 @@ class RequirementAcceptanceTests(unittest.TestCase):
         self.assertEqual(result["adapter_returncode"], 7)
         self.assertEqual(result["outcome"], "violation: adapter failure")
         self.assertEqual(result["violations"], ["adapter failure"])
-        self.assertEqual(result["checks"], {"commit_audit": "pass", "write_audit": "pass", "evidence_exists": "pass",
-                                            "evidence_changed": "pass", "status_transitioned": "pass"})
+        self.assertEqual(result["checks"], {"commit_audit": "pass", "write_audit": "pass", "task_packet": "pass",
+                                            "evidence_exists": "pass", "evidence_changed": "pass",
+                                            "status_transitioned": "pass"})
         metrics = self.cli("factory_metrics")
         self.expect(metrics, 0)
         summary = json.loads(metrics.stdout)

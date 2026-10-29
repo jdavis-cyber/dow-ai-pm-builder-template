@@ -380,10 +380,7 @@ def build_packet(task: dict, state: dict) -> dict:
         "gate_state": {
             "approval_state": state.get("approval_state", "draft"),
             "current_phase": state.get("current_phase", state.get("next_allowed_phase", "unknown")),
-            "implementation_authorized": bool(state.get("implementation_authorized", False)),
-            "source_admission_authorized": bool(state.get("source_admission_authorized", False)),
-            "external_tracker_writes_authorized": bool(state.get("external_tracker_writes_authorized", False)),
-            "deployment_authorized": bool(state.get("deployment_authorized", False)),
+            **{flag: bool(state.get(flag, False)) for flag in gatekeeper.AUTHORITY_FLAGS},
         },
         "task": {k: task.get(k, "") for k in ["Task ID", "Title", *FIELDS]},
         "required_actions_checked": infer_required_actions(task),
@@ -480,11 +477,32 @@ def adapter_environment() -> dict:
     return {k: v for k, v in os.environ.items() if k in names}
 
 
-def write_packet(packet: dict) -> Path:
+def write_packet(packet: dict, run_info: dict | None = None) -> Path:
+    """Write the packet and, before any adapter starts, seal its digest in ``run_info``.
+
+    The packet lives in the agent-writable evidence folder; the digest goes into
+    the chained run result, so a rewrite during or after the run is detected.
+    """
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     path = LOG_DIR / f"{now_id()}-{packet['task']['Task ID']}.json"
-    path.write_text(json.dumps(packet, indent=2, ensure_ascii=False) + "\n")
+    while path.exists():  # two dispatches in one second must not overwrite a sealed packet
+        time.sleep(1)
+        path = LOG_DIR / f"{now_id()}-{packet['task']['Task ID']}.json"
+    raw = (json.dumps(packet, indent=2, ensure_ascii=False) + "\n").encode()
+    path.write_bytes(raw)
+    if run_info is not None:
+        run_info["task_packet"] = {"path": str(path.relative_to(ROOT)),
+                                   "sha256": hashlib.sha256(raw).hexdigest()}
     return path
+
+
+def packet_seal_problem(seal) -> str:
+    """Why a sealed packet no longer matches its digest; empty when it does."""
+    if not isinstance(seal, dict) or not isinstance(seal.get("path"), str):
+        return "task packet seal is malformed"
+    if _fingerprint(seal["path"]) != seal.get("sha256"):
+        return f"task packet {seal['path']} was changed or removed after dispatch"
+    return ""
 
 
 def redact(text: str) -> str:
@@ -530,7 +548,7 @@ def dispatch(packet: dict, adapter: str, run_info: dict | None = None) -> int:
         decision = dispatch_classification(packet, cfg)
         packet["dispatch_classification"] = decision
         run_info["dispatch_classification"] = decision
-    packet_path = write_packet(packet) if record_packets else None
+    packet_path = write_packet(packet, run_info) if record_packets else None
     if adapter == "assisted":
         print(prompt)
         if packet_path:
@@ -549,7 +567,7 @@ def dispatch(packet: dict, adapter: str, run_info: dict | None = None) -> int:
                   f"for {decision['adapter_ceiling']} (factory.dispatch.adapter_ceiling); nothing was sent")
             return 2
         if not packet_path:
-            packet_path = write_packet(packet)
+            packet_path = write_packet(packet, run_info)
         usage_path = packet_path.with_name(packet_path.stem + "-usage.json")
         prompt = packet_to_prompt(packet, include_gate_state=False)
         env = adapter_environment()
@@ -701,6 +719,13 @@ def verify_run_chain() -> list[str]:
             chained = True
         elif chained:
             problems.append(f"{path.name}: unchained result after the chain started")
+        # A packet already recorded as modified is a known, chained violation;
+        # every other sealed packet must still match its digest.
+        packet_check = (record.get("checks") or {}).get("task_packet")
+        if "task_packet" in record and not str(packet_check).startswith("fail"):
+            problem = packet_seal_problem(record["task_packet"])
+            if problem:
+                problems.append(f"{path.name}: {problem}")
         previous = (path.name, hashlib.sha256(raw).hexdigest())
     head_path = LOG_DIR / CHAIN_HEAD
     if chained or head_path.exists():
@@ -941,6 +966,12 @@ def post_dispatch_checks(task: dict, state: dict, before,
         result["checks"]["evidence_trail"] = {"problems": trail}
         print("STOP: earlier run results were changed or removed during dispatch: " + "; ".join(trail))
         violation("evidence trail modified")
+    if "task_packet" in result:
+        problem = packet_seal_problem(result["task_packet"])
+        result["checks"]["task_packet"] = "fail: " + problem if problem else "pass"
+        if problem:
+            print("STOP: " + problem + "; the dispatched packet is evidence and must not change")
+            violation("task packet modified")
     declared = evidence_paths(task)
     if not declared:
         result["checks"]["evidence_declared"] = "fail: Evidence Required names no paths"
@@ -1021,7 +1052,7 @@ def _pending_seal_path(task_id: str) -> Path:
     return anchor.with_suffix("") / "pending" / f"{task_id}.sha256"
 
 
-def record_assisted_dispatch(task: dict, state: dict) -> Path:
+def record_assisted_dispatch(task: dict, state: dict, packet_seal: dict | None = None) -> Path:
     """Remember what the tree looked like when a task went to a human, so the
     same detective checks run when the human finishes it (JER-46)."""
     path = _pending_dir() / f"{task['Task ID']}.json"
@@ -1032,6 +1063,7 @@ def record_assisted_dispatch(task: dict, state: dict) -> Path:
         "gate_state": state,
         "working_tree": working_tree_snapshot(),
         "evidence_before": evidence_fingerprints(task),
+        **({"task_packet": packet_seal} if packet_seal else {}),
     }, indent=2) + "\n"
     path.write_text(raw)
     seal = _pending_seal_path(task["Task ID"])
@@ -1076,7 +1108,9 @@ def check_assisted_completions(tasks: list[dict]) -> tuple[int, set[str]]:
         code = post_dispatch_checks(task, record.get("gate_state") or {}, record.get("working_tree"),
                                     evidence_before=record.get("evidence_before"),
                                     run_info={"adapter": "assisted",
-                                              "dispatched_at_utc": record.get("dispatched_at_utc")})
+                                              "dispatched_at_utc": record.get("dispatched_at_utc"),
+                                              **({"task_packet": record["task_packet"]}
+                                                 if "task_packet" in record else {})})
         # Like an autonomous run, a violation halts this invocation and is kept
         # in the chained result record; the baseline is consumed either way.
         path.unlink()
@@ -1132,9 +1166,10 @@ def once(adapter: str) -> int:
             if problem:
                 print(problem)
                 return 2
-        code = dispatch(packet, adapter)
+        run_info: dict = {}
+        code = dispatch(packet, adapter, run_info)
         if code == 0 and task["Task ID"] not in pending:
-            record_assisted_dispatch(task, state)
+            record_assisted_dispatch(task, state, run_info.get("task_packet"))
         return code
     if adapter.lower().strip() == "shell":
         git_before = git_state()

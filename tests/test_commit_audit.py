@@ -24,7 +24,9 @@ GIT = "import subprocess\ndef git(*a):\n    subprocess.run(['git', *a], check=Tr
 COMMIT_ALL = "git('add', '-A'); git('commit', '-qm', 'adapter work')\n"
 
 
-class AdapterCommitAuditTests(unittest.TestCase):
+class ShellAdapterFixture:
+    """A disposable copy of the template with one Ready task for a shell adapter."""
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(prefix="dow-commit-audit-")
         self.repo = Path(self.tmp.name) / "fixture"
@@ -52,7 +54,11 @@ class AdapterCommitAuditTests(unittest.TestCase):
                               capture_output=True, text=True, check=True).stdout.strip()
 
     def run_adapter(self, body, extra_commits=0):
-        """Commit the fixture, then dispatch one task to a shell adapter running ``body``."""
+        """Commit the fixture, then dispatch one task to a shell adapter running ``body``.
+
+        The adapter writes the task's evidence and closes it first, so a run
+        that does nothing else passes.
+        """
         code = ("import pathlib\n" + GIT
                 + "pathlib.Path('docs/verification/fixture.md').write_text('Synthetic verification only\\n')\n"
                 + "p = pathlib.Path('orchestration/tasks.md')\n"
@@ -66,19 +72,24 @@ class AdapterCommitAuditTests(unittest.TestCase):
             (self.repo / "docs" / f"history-{n}.md").write_text(f"history {n}\n")
             self.git("add", "-A")
             self.git("commit", "-qm", f"history {n}")
-        command = shlex.join([sys.executable, "adapter.py"])
-        result = subprocess.run([sys.executable, "automation/governed_factory.py", "--adapter", "shell"],
-                                cwd=self.repo, env={**self.env, "FACTORY_ADAPTER_COMMAND": command},
-                                capture_output=True, text=True, timeout=60)
+        result = self.factory("shell")
         records = list((self.repo / "docs/verification/factory-runs").glob("*-result.json"))
         self.assertEqual(len(records), 1, result.stdout + result.stderr)
         return result, json.loads(records[0].read_text())
+
+    def factory(self, adapter):
+        command = shlex.join([sys.executable, "adapter.py"])
+        return subprocess.run([sys.executable, "automation/governed_factory.py", "--adapter", adapter],
+                              cwd=self.repo, env={**self.env, "FACTORY_ADAPTER_COMMAND": command},
+                              capture_output=True, text=True, timeout=60)
 
     def assert_violation(self, result, record, kind):
         self.assertEqual(result.returncode, 3, result.stdout + result.stderr)
         self.assertNotEqual(record["outcome"], "pass")
         self.assertIn(kind, record["violations"])
 
+
+class AdapterCommitAuditTests(ShellAdapterFixture, unittest.TestCase):
     def assert_committed_write_flagged(self, path, body):
         result, record = self.run_adapter(body + COMMIT_ALL)
         self.assert_violation(result, record, "unauthorized writes")
