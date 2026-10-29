@@ -159,6 +159,49 @@ class InterruptionTests(Records, unittest.TestCase):
         self.assertEqual(again.returncode, 0, again.stdout + again.stderr)
         self.assertNotIn("did not complete", again.stdout)
 
+    def in_flight_markers(self):
+        return list(Path(self.env["FACTORY_CHAIN_ANCHOR_DIR"]).rglob("in-flight/*.json"))
+
+    def test_second_invocation_during_a_live_dispatch_is_refused(self):
+        # Codex P2 on #29: a concurrent run read the live marker as a crash.
+        proc, pid = self.start(self.SLOW)
+        try:
+            for adapter in ("shell", "assisted"):
+                with self.subTest(adapter=adapter):
+                    second = self.factory(adapter)
+                    self.assertEqual(second.returncode, 75, second.stdout + second.stderr)
+                    self.assertIn("dispatch in progress", second.stdout)
+                    self.assertEqual(self.records(), [])
+                    self.assertEqual(len(self.in_flight_markers()), 1)
+            marker = json.loads(self.in_flight_markers()[0].read_text())
+            self.assertEqual(marker["owner"]["pid"], proc.pid)
+            self.assertTrue(marker["owner"]["host"] and marker["owner"]["token"])
+        finally:
+            proc.send_signal(signal.SIGINT)
+            proc.communicate(timeout=30)
+        self.assert_adapter_gone(pid)
+        [record] = self.records()
+        self.assertTrue(record["outcome"].startswith("interrupted: operator stop"))
+        self.assertEqual(self.in_flight_markers(), [])
+
+    def test_marker_from_another_host_is_not_recovered(self):
+        (self.repo / "adapter.py").write_text("")
+        self.git("init", "-q")
+        self.git("add", "-A")
+        self.git("commit", "-qm", "synthetic fixture")
+        anchor = Path(self.env["FACTORY_CHAIN_ANCHOR_DIR"])
+        self.assertEqual(self.factory("assisted").returncode, 0)  # creates the operator-side folders
+        in_flight = next(anchor.rglob("pending")).parent / "in-flight"
+        in_flight.mkdir(exist_ok=True)
+        marker = in_flight / "20261029T000000Z-TASK-901.json"
+        marker.write_text(json.dumps({"task_id": "TASK-901", "owner": {
+            "pid": 1, "host": "some-other-host.invalid", "token": "abc", "started_at_utc": None}}))
+        result = self.factory("assisted")
+        self.assertEqual(result.returncode, 75, result.stdout + result.stderr)
+        self.assertIn("some-other-host.invalid", result.stdout)
+        self.assertTrue(marker.exists())
+        self.assertEqual(self.records(), [])
+
 
 if __name__ == "__main__":
     unittest.main()

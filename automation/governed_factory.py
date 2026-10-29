@@ -14,8 +14,10 @@ import hashlib
 import json
 import os
 import re
+import secrets
 import shlex
 import signal
+import socket
 import subprocess
 import sys
 import time
@@ -644,6 +646,62 @@ def _run_adapter(command: str, prompt: str, env: dict, timeout: float) -> tuple[
 
 
 IN_FLIGHT_DIR_NAME = "in-flight"
+DISPATCH_IN_PROGRESS_EXIT = 75  # another invocation holds this project's dispatch lock
+FACTORY_STARTED_UTC = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+FACTORY_TOKEN = secrets.token_hex(8)
+
+
+class DispatchLock:
+    """Per-project exclusive lock, held for a whole factory invocation.
+
+    The operating system drops it when the holder exits or is killed, so a
+    free lock proves no invocation is still dispatching. fcntl on POSIX,
+    msvcrt on Windows.
+    """
+
+    def __init__(self, path: Path):
+        self.path = path
+        self.handle = None
+
+    def acquire(self) -> bool:
+        self.path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        handle = open(self.path, "a+b")
+        try:
+            if _on_windows():
+                import msvcrt
+                handle.seek(0)
+                msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            handle.close()
+            return False
+        self.handle = handle
+        return True
+
+    def release(self) -> None:
+        if self.handle is None:
+            return
+        try:
+            if _on_windows():
+                import msvcrt
+                self.handle.seek(0)
+                msvcrt.locking(self.handle.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(self.handle.fileno(), fcntl.LOCK_UN)
+        finally:
+            self.handle.close()
+            self.handle = None
+
+
+def _on_windows() -> bool:
+    return os.name == "nt"
+
+
+def dispatch_lock() -> DispatchLock:
+    return DispatchLock(chain_anchor_path().with_suffix("") / "dispatch.lock")
 
 
 def _in_flight_dir() -> Path:
@@ -661,15 +719,34 @@ def mark_in_flight(task_id: str, run_info: dict) -> None:
         "dispatched_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "adapter": "shell",
         "task_packet": seal or None,
+        # Who owns the dispatch; recovery refuses a marker it can't prove is orphaned.
+        "owner": {"pid": os.getpid(), "host": socket.gethostname(), "token": FACTORY_TOKEN,
+                  "started_at_utc": FACTORY_STARTED_UTC},
     }, indent=2) + "\n")
     run_info["_in_flight"] = str(path)
+
+
+def foreign_in_flight_markers() -> list[str]:
+    """Markers owned by another host: their owner can't be proven gone from here."""
+    directory = _in_flight_dir()
+    here = socket.gethostname()
+    foreign = []
+    for marker in sorted(directory.glob("*.json")) if directory.is_dir() else []:
+        try:
+            host = (json.loads(marker.read_text()).get("owner") or {}).get("host")
+        except (OSError, json.JSONDecodeError, AttributeError):
+            host = None
+        if host and host != here:
+            foreign.append(f"{marker.name} (host {host})")
+    return foreign
 
 
 def recover_interrupted_dispatches() -> list[str]:
     """Record a run result for every dispatch the factory never finished recording.
 
-    A marker left behind means the factory was killed or crashed between
-    dispatch and its run result; the packet would otherwise be an orphan.
+    Call only while holding the dispatch lock: then no other invocation on this
+    host is dispatching, so a marker left behind means its owner was killed or
+    crashed between dispatch and its run result.
     """
     directory = _in_flight_dir()
     recovered = []
@@ -678,6 +755,8 @@ def recover_interrupted_dispatches() -> list[str]:
             info = json.loads(marker.read_text())
         except (OSError, json.JSONDecodeError):
             info = {}
+        if not isinstance(info, dict):
+            info = {}
         task_id = str(info.get("task_id") or "UNKNOWN")
         result = {
             "record_type": "factory-run-result",
@@ -685,6 +764,7 @@ def recover_interrupted_dispatches() -> list[str]:
             "checked_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "dispatched_at_utc": info.get("dispatched_at_utc"),
             "adapter": info.get("adapter"),
+            "dispatch_owner": info.get("owner"),
             "checks": {},
             "outcome": ("interrupted: dispatch did not complete; the factory stopped before "
                         "recording a result (orphan task packet)"),
@@ -1423,6 +1503,19 @@ def check_assisted_completions(tasks: list[dict]) -> tuple[int, set[str]]:
 
 
 def once(adapter: str) -> int:
+    """One factory step, holding the project's dispatch lock throughout."""
+    lock = dispatch_lock()
+    if not lock.acquire():
+        print("STOP: dispatch in progress: another factory invocation for this project is still running; "
+              "nothing was recorded. Wait for it to finish, then run again.")
+        return DISPATCH_IN_PROGRESS_EXIT
+    try:
+        return _once(adapter)
+    finally:
+        lock.release()
+
+
+def _once(adapter: str) -> int:
     if not TASKS_FILE.exists():
         print(f"REFUSAL: missing task board {TASKS_FILE}")
         return 2
@@ -1449,6 +1542,12 @@ def once(adapter: str) -> int:
         for problem in chain:
             print("STOP: evidence trail broken: " + problem)
         return 2
+    foreign = foreign_in_flight_markers()
+    if foreign:
+        print("STOP: dispatch in progress or unproven: in-flight markers from another host can't be "
+              "checked from here: " + ", ".join(foreign) + "; nothing was recorded. A human must confirm "
+              "that dispatch ended before removing the marker.")
+        return DISPATCH_IN_PROGRESS_EXIT
     if recover_interrupted_dispatches():
         return 3
     tasks = parse_tasks(TASKS_FILE.read_text())
