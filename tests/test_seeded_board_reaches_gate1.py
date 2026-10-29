@@ -37,6 +37,11 @@ class SeededBoardReachesGate1Tests(unittest.TestCase):
             path = self.project / rel
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(f"Synthetic evidence for {task_id}\n")
+        if task_id == "TASK-009":
+            # Lock 0: the dispatcher runs locked validation itself, so answer the spec.
+            spec = self.project / "orchestration/system_spec.md"
+            answered = spec.read_text().replace("[Draft / Validated]", "Validated")
+            spec.write_text(re.sub(r"(?<![!])\[[^\]]+\](?!\()", "synthetic value", answered))
         done = re.sub(r"\*\*Status\*\*: \w+", "**Status**: Done", block, count=1)
         text = text.replace(block, done)
         # Dependent tasks become Ready once everything they wait on is Done.

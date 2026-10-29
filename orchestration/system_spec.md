@@ -36,7 +36,7 @@ This document is the **Single Source of Truth** for the project. When operating 
 
 *Define measurable success and hard constraints.*
 
-- **Deadline**: [Date or N/A]
+- **Deadline**: [Date, or N/A with the reason]
 - **Core KPIs**: [E.g., < 2s page load, OCR accuracy > 95%]
 - **Compliance Restrictions**: [E.g., HIPAA compliant, data must reside in US-East]
 

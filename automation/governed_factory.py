@@ -14,6 +14,7 @@ import hashlib
 import json
 import os
 import re
+import shlex
 import signal
 import subprocess
 import sys
@@ -22,10 +23,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import gatekeeper
+import validate_spec
 
 ROOT = Path.cwd()
 TASKS_FILE = ROOT / "orchestration" / "tasks.md"
 LOG_DIR = ROOT / "docs" / "verification" / "factory-runs"
+SPEC_REL = "orchestration/system_spec.md"
 CHAIN_HEAD = "chain/head.json"  # kept apart from the per-run records
 CONFIG_FILES = ("factory.config.json", "factory.config.example.json")
 # Every stop condition is mandatory: stop_on documents them and the dispatcher
@@ -310,6 +313,200 @@ def denied_task_paths(task: dict, state: dict) -> list[dict]:
     return denied
 
 
+VALIDATE_SPEC_RE = re.compile(r"validate_spec\.py([^;&|`\n]*)")
+VALIDATE_SPEC_SCRIPT = "validate_spec.py"
+# A shell redirection inside a token: >, >>, <, an fd duplication such as >&1,
+# and any target written straight after the operator.
+SHELL_REDIRECT_RE = re.compile(r"(?:>>?|<)(?P<dup>&(?:\d+|-))?(?P<target>.*)$")
+
+
+def _split_shell_commands(segment: str) -> list[str]:
+    """Split *segment* into simple commands at ;, &&, ||, | and a lone &.
+
+    Quote-aware: an operator inside '...' or "..." does not split, and a
+    backslash keeps the character after it. The & of a redirection (2>&1,
+    >&2, &>out) does not split either.
+    """
+    commands: list[str] = []
+    current: list[str] = []
+    quote = None
+    i = 0
+    while i < len(segment):
+        ch = segment[i]
+        nxt = segment[i + 1] if i + 1 < len(segment) else ""
+        if quote:
+            current.append(ch)
+            if ch == quote:
+                quote = None
+            elif ch == "\\" and quote == '"' and nxt:
+                current.append(nxt)
+                i += 1
+            i += 1
+            continue
+        if ch in "'\"":
+            quote = ch
+        elif ch == "\\" and nxt:
+            current.append(ch + nxt)
+            i += 2
+            continue
+        else:
+            prev = current[-1][-1] if current else ""
+            redirect_amp = ch == "&" and nxt != "&" and (nxt == ">" or prev in "<>")
+            if ch in ";|&" and not redirect_amp:
+                commands.append("".join(current))
+                current = []
+                i += 2 if ch in "|&" and nxt == ch else 1
+                continue
+        current.append(ch)
+        i += 1
+    commands.append("".join(current))
+    return commands
+
+
+def _shell_words(command: str, posix_escapes: bool) -> list[str]:
+    """Shell words of one simple command; raises ValueError on unbalanced quotes.
+
+    POSIX quoting always applies. With *posix_escapes* off a backslash is an
+    ordinary character, which is how a Windows path separator reads.
+    """
+    lexer = shlex.shlex(command, posix=True)
+    lexer.whitespace_split = True
+    lexer.commenters = ""
+    if not posix_escapes:
+        lexer.escape = ""
+    return list(lexer)
+
+
+def _words_after_validator(words: list[str]) -> list[str] | None:
+    for index, word in enumerate(words):
+        if VALIDATE_SPEC_SCRIPT in word:
+            rest = word.split(VALIDATE_SPEC_SCRIPT, 1)[1]
+            return ([rest] if rest else []) + words[index + 1:]
+    return None
+
+
+def validator_invocations(text: str) -> list[tuple[list[str], list[str] | None]]:
+    """Every validate_spec.py invocation in *text* as (posix_args, windows_args).
+
+    Each backtick span or line is split into simple commands first (quote
+    aware), and only the validator's own command is tokenized, so quoting and
+    escapes elsewhere on the line cannot change how its arguments read (Codex
+    P2 4410497736, 4411206551). posix_args is the POSIX reading; a command
+    shlex cannot tokenize (unbalanced quotes) falls back to whitespace words
+    with quotes stripped. windows_args is the reading with backslashes kept,
+    offered only when the validator's arguments contain a backslash
+    (4410860851); lock0_spec_paths decides which one names real files.
+    """
+    invocations: list[tuple[list[str], list[str] | None]] = []
+    for segment in re.split(r"[`\n]", text):
+        for command in _split_shell_commands(segment):
+            if VALIDATE_SPEC_SCRIPT not in command:
+                continue
+            raw_args = command.split(VALIDATE_SPEC_SCRIPT, 1)[1]
+            try:
+                posix_args = _words_after_validator(_shell_words(command, posix_escapes=True))
+            except ValueError:
+                posix_args = None
+            if posix_args is None:
+                words = (word.strip("'\"") for word in raw_args.split())
+                posix_args = [word for word in words if word]
+            windows_args = None
+            if "\\" in raw_args:
+                try:
+                    windows_args = _words_after_validator(_shell_words(command, posix_escapes=False))
+                except ValueError:
+                    windows_args = None
+            invocations.append((posix_args, windows_args))
+    return invocations
+
+
+def _validator_mode_and_paths(args: list[str]) -> tuple[str, list[str]]:
+    """The --mode (default locked) and spec paths named by validator *args*."""
+    mode, named, i = "locked", [], 0
+    while i < len(args):
+        arg = args[i]
+        redirect = SHELL_REDIRECT_RE.search(arg)
+        if redirect:
+            # "spec.md>out" keeps its argument; "2>", ">" or "<" alone take the next token as target.
+            before = arg[:redirect.start()]
+            if before and not re.fullmatch(r"\d+|&", before):
+                named.append(before)
+            if not redirect.group("dup") and not redirect.group("target"):
+                i += 1
+            i += 1
+            continue
+        if arg == "--mode" and i + 1 < len(args):
+            mode, i = args[i + 1], i + 2
+            continue
+        if arg.startswith("--mode="):
+            mode = arg.split("=", 1)[1]
+        elif not arg.startswith("-"):
+            named.append(arg)
+        i += 1
+    return mode, named
+
+
+def _is_project_file(rel_path: str) -> bool:
+    path = (ROOT / rel_path).resolve()
+    return path.is_relative_to(ROOT.resolve()) and path.is_file()
+
+
+def lock0_spec_paths(task: dict) -> list[str]:
+    """Specs a Lock 0 task must leave lock-ready; empty when it is not a Lock 0 task.
+
+    A Lock 0 task is one titled "Lock 0" or whose verification runs
+    validate_spec.py in locked mode (its default). The project spec is always
+    checked, whatever path the board names, so editing the command can't
+    point the lock at an easier file.
+
+    Arguments are read the POSIX way. Only when a POSIX path is not a project
+    file and the arguments contain a backslash is the Windows reading tried
+    (backslashes kept, then "\\" -> "/"), and it is used only if every path
+    it names is a project file. Otherwise the POSIX reading stands, so a spec
+    missing under both readings is still reported missing.
+    """
+    paths: list[str] = []
+    lock0 = "lock 0" in str(task.get("Title", "")).lower()
+    for posix_args, windows_args in validator_invocations(str(task.get("Verification Command or Method", ""))):
+        mode, named = _validator_mode_and_paths(posix_args)
+        if windows_args is not None and not all(_is_project_file(p) for p in named):
+            windows_mode, windows_named = _validator_mode_and_paths(windows_args)
+            windows_named = [p.replace("\\", "/") for p in windows_named]
+            if windows_named and all(_is_project_file(p) for p in windows_named):
+                mode, named = windows_mode, windows_named
+        if mode == "locked":
+            lock0 = True
+            paths.extend(named)
+    if not lock0:
+        return []
+    return sorted({SPEC_REL, *paths})
+
+
+def lock0_problems(paths: list[str]) -> list[str]:
+    """Locked-mode validation run by the dispatcher itself; empty when every spec passes."""
+    problems = []
+    for rel_path in paths:
+        path = (ROOT / rel_path).resolve()
+        if not path.is_relative_to(ROOT.resolve()) or not path.is_file():
+            problems.append(f"{rel_path}: spec missing or outside the project")
+            continue
+        problems.extend(f"{rel_path}: {p}" for p in validate_spec.locked_problems(path.read_text(encoding="utf-8")))
+    return problems
+
+
+def upstream_tasks(task: dict, by_id: dict[str, dict]) -> list[dict]:
+    """Every task the given task depends on, directly or through other tasks."""
+    seen: dict[str, dict] = {}
+    queue = re.findall(r"TASK-\d+", str(task.get("Dependencies", "")))
+    while queue:
+        task_id = queue.pop()
+        if task_id in seen or task_id not in by_id:
+            continue
+        seen[task_id] = by_id[task_id]
+        queue.extend(re.findall(r"TASK-\d+", str(by_id[task_id].get("Dependencies", ""))))
+    return list(seen.values())
+
+
 def select_next_task(tasks: list[dict]) -> tuple[dict | None, str]:
     for task in tasks:
         kind = status_kind(task.get("Status", ""))
@@ -321,6 +518,13 @@ def select_next_task(tasks: list[dict]) -> tuple[dict | None, str]:
         ok, missing = deps_complete(task, tasks)
         if not ok:
             return None, f"STOP: dependencies incomplete for {task['Task ID']}: {', '.join(missing)}"
+        # Nothing downstream of Lock 0 runs unless the spec still passes locked validation.
+        by_id = {t["Task ID"]: t for t in tasks}
+        lock0 = sorted({p for up in upstream_tasks(task, by_id) for p in lock0_spec_paths(up)})
+        problems = lock0_problems(lock0) if lock0 else []
+        if problems:
+            return None, (f"STOP: {task['Task ID']} follows Lock 0, but the spec no longer passes locked "
+                          "validation: " + "; ".join(problems))
         if required_authorities(task) is None:
             return None, (f"REFUSAL: {task['Task ID']} has no valid Requires Authority field; "
                           "declare none or the authorities it needs (see orchestration/task-schema.md)")
@@ -907,7 +1111,8 @@ def post_dispatch_checks(task: dict, state: dict, before,
                          adapter_returncode: int = 0,
                          evidence_before: dict | None = None,
                          run_info: dict | None = None,
-                         git_before=NOT_AUDITED) -> int:
+                         git_before=NOT_AUDITED, open_kinds=DISPATCHABLE,
+                         operator_records: frozenset = frozenset()) -> int:
     """Record every adapter outcome and all applicable detective checks.
 
     A nonzero adapter exit retains its exit code and primary failure outcome.
@@ -950,8 +1155,11 @@ def post_dispatch_checks(task: dict, state: dict, before,
         violation("write audit unavailable")
     else:
         # Committed files are audited exactly like working-tree changes.
-        viol = sorted(set(unauthorized_writes(before, after, state))
-                      | {p for p in committed if not gatekeeper.check_action("write", p, state)[0]})
+        viol = sorted((set(unauthorized_writes(before, after, state))
+                       | {p for p in committed if not gatekeeper.check_action("write", p, state)[0]})
+                      - operator_records)
+        if operator_records:
+            result["checks"]["operator_records"] = sorted(operator_records)
         result["checks"]["write_audit"] = {"violations": viol} if viol else "pass"
         if viol:
             print("STOP: unauthorized writes detected after dispatch: " + ", ".join(viol))
@@ -990,11 +1198,19 @@ def post_dispatch_checks(task: dict, state: dict, before,
             print(f"STOP: {task['Task ID']} changed status but produced no new evidence.")
             violation("evidence unchanged")
     refreshed = {t["Task ID"]: t for t in parse_tasks(TASKS_FILE.read_text())}
-    still_open = status_kind(refreshed.get(task["Task ID"], {}).get("Status", "")) in DISPATCHABLE
+    still_open = status_kind(refreshed.get(task["Task ID"], {}).get("Status", "")) in open_kinds
     result["checks"]["status_transitioned"] = "pass" if not still_open else "fail: task still open"
     if still_open:
         print(f"STOP: {task['Task ID']} is still open after dispatch; halting to prevent a redispatch loop. The adapter must update task status and evidence.")
         violation("no status transition")
+    lock0 = lock0_spec_paths(task)
+    if lock0 and status_kind(refreshed.get(task["Task ID"], {}).get("Status", "")) == "complete":
+        # Lock 0 completes only when the dispatcher's own locked validation passes.
+        problems = lock0_problems(lock0)
+        result["checks"]["lock0_spec"] = {"problems": problems} if problems else "pass"
+        if problems:
+            print(f"STOP: {task['Task ID']} is Lock 0 but the spec fails locked validation: " + "; ".join(problems))
+            violation("lock 0 spec validation failed")
     usage = (run_info or {}).get("usage")
     limits = factory_limits(load_factory_config())
     # Adapter-reported usage is self-attested; the dispatcher-enforced
@@ -1063,6 +1279,9 @@ def record_assisted_dispatch(task: dict, state: dict, packet_seal: dict | None =
         "gate_state": state,
         "working_tree": working_tree_snapshot(),
         "evidence_before": evidence_fingerprints(task),
+        # Planning and implementation of a Human Gate task are separate dispatches;
+        # the baseline is reused only while the task is still in the same phase.
+        "dispatch_phase": "plan" if task.get("_plan_only") else "implement",
         **({"task_packet": packet_seal} if packet_seal else {}),
     }, indent=2) + "\n"
     path.write_text(raw)
@@ -1122,12 +1341,25 @@ def check_assisted_completions(tasks: list[dict]) -> tuple[int, set[str]]:
         if task is None:
             print(f"STOP: assisted task {record.get('task_id')} was removed from the board before its checks ran")
             return 3, still_pending
-        if status_kind(task.get("Status", "")) in DISPATCHABLE:
+        # A planning dispatch is still open only while the task is Ready; once the
+        # Director has approved the plan (Plan Approved), planning is done and the
+        # task is dispatched afresh for implementation.
+        planning = record.get("dispatch_phase") == "plan"
+        open_kinds = {"open"} if planning else DISPATCHABLE
+        if status_kind(task.get("Status", "")) in open_kinds:
             still_pending.add(task["Task ID"])
             continue
-        print(f"ASSISTED MODE: checking completed task {task['Task ID']}")
-        code = post_dispatch_checks(task, record.get("gate_state") or {}, record.get("working_tree"),
-                                    evidence_before=record.get("evidence_before"),
+        # The Director's signed approval of this exact plan is the operator's record,
+        # written during the planning window; anything else under .governance/ is not.
+        operator_records = frozenset()
+        plan = str(task.get("Plan", "")).strip().strip("`")
+        if planning and plan and not gatekeeper.plan_approval_error(task["Task ID"], plan):
+            operator_records = frozenset({str(gatekeeper.plan_approval_path(task["Task ID"]).relative_to(ROOT))})
+        print(f"ASSISTED MODE: checking completed {'planning for' if planning else 'task'} {task['Task ID']}")
+        code = post_dispatch_checks(dict(task, _plan_only=True) if planning else task,
+                                    record.get("gate_state") or {}, record.get("working_tree"),
+                                    evidence_before=record.get("evidence_before"), open_kinds=open_kinds,
+                                    operator_records=operator_records,
                                     run_info={"adapter": "assisted",
                                               "dispatched_at_utc": record.get("dispatched_at_utc"),
                                               **({"task_packet": record["task_packet"]}
