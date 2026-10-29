@@ -8,13 +8,13 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import shlex
 import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
 from datetime import datetime, timezone
+from portable import portable_command  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 PHRASE = "Start a new project from the DoW AI PM Builder Template and begin Sprint Zero."
@@ -32,6 +32,7 @@ class RequirementAcceptanceTests(unittest.TestCase):
         # Synthetic identity scoped to child processes, no global git config.
         self.env = {k: v for k, v in os.environ.items() if not k.startswith("FACTORY_")}
         self.env["FACTORY_CHAIN_ANCHOR_DIR"] = str(Path(self.tmp.name) / "chain-anchors")
+        self.env["NSR01_SECRET"] = "must-not-reach-the-adapter"
         self.env.update(GIT_AUTHOR_NAME="Requirement Fixture", GIT_AUTHOR_EMAIL="fixture@example.invalid",
                         GIT_COMMITTER_NAME="Requirement Fixture", GIT_COMMITTER_EMAIL="fixture@example.invalid")
 
@@ -95,7 +96,7 @@ class RequirementAcceptanceTests(unittest.TestCase):
                "pathlib.Path('docs/verification/adapter-capture.json').write_text(json.dumps({'packet': str(packet_path), 'task_id': packet['task']['Task ID'], 'stdin': sys.stdin.read()}))\n" + body
         (self.repo / "adapter.py").write_text(code)
         self.init_git()
-        command = shlex.join([sys.executable, "adapter.py"])
+        command = portable_command(sys.executable, "adapter.py")
         return self.cli("governed_factory", "--adapter", "shell", extra={"FACTORY_ADAPTER_COMMAND": command})
 
     def close_task(self):
@@ -497,7 +498,7 @@ class RequirementAcceptanceTests(unittest.TestCase):
         self.board()
         (self.repo / "adapter.py").write_text("import pathlib, sys\nsys.stdin.read()\n" + self.evidence() + self.close_task())
         self.init_git()
-        command = shlex.join([sys.executable, "adapter.py"])
+        command = portable_command(sys.executable, "adapter.py")
         result = self.cli("governed_factory", "--adapter", "shell", "--loop", "--max-iterations", "1",
                           extra={"FACTORY_ADAPTER_COMMAND": command})
         self.expect(result, 4, "max_iterations")
@@ -523,7 +524,7 @@ class RequirementAcceptanceTests(unittest.TestCase):
         self.init_git()
         (self.repo / "src").mkdir(exist_ok=True)
         (self.repo / "src/wip.py").write_text("# operator work in progress\n")
-        command = shlex.join([sys.executable, "adapter.py"])
+        command = portable_command(sys.executable, "adapter.py")
         self.expect(self.cli("governed_factory", "--adapter", "shell", extra={"FACTORY_ADAPTER_COMMAND": command}),
                     2, "dirty_unexpected_state")
         self.assertFalse(list((self.repo / "docs/verification/factory-runs").glob("*-result.json")))
@@ -870,8 +871,24 @@ class RequirementAcceptanceTests(unittest.TestCase):
         self.expect(self.run_command(sys.executable, "-I", "-S", "automation/init_project.py", "stdlib-fixture", str(parent)), 0)
         self.assertTrue((parent / "stdlib-fixture/.codex/agents/runtime-manifest.json").exists())
 
-    @unittest.skip("NOT RUN: Linux/Windows runners and approved real CLI model runtime qualification are unavailable; deterministic local adapter proves only contract")
-    def test_NSR01_cross_platform_and_real_model_runtime_qualification(self):
+    def test_NSR01_cross_platform_adapter_contract(self):
+        # Runs on the Linux, macOS and Windows CI jobs (AI-1151): a shell adapter
+        # starts through the platform shell, gets the environment it needs and
+        # nothing secret, and completes a governed task.
+        self.board()
+        env_dump = ("import json, os\n"
+                    "pathlib.Path('docs/verification/adapter-env.json').write_text(json.dumps(sorted(os.environ)))\n")
+        self.expect(self.adapter(env_dump + self.evidence() + self.close_task()), 0)
+        names = {n.upper() for n in json.loads((self.repo / "docs/verification/adapter-env.json").read_text())}
+        self.assertNotIn("NSR01_SECRET", names)
+        self.assertIn("PATH", names)
+        if os.name == "nt":
+            self.assertTrue({"SYSTEMROOT", "COMSPEC"} <= names, names)
+        self.assertEqual(self.result()["outcome"], "pass")
+
+    @unittest.skip("NOT RUN: approved real CLI model runtime qualification is unavailable; "
+                   "the deterministic local adapter proves only the contract")
+    def test_NSR01_real_model_runtime_qualification(self):
         pass
 
     def test_NSR03_synthetic_evidence_chain_survives_local_clone(self):

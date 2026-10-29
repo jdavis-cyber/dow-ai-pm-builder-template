@@ -117,7 +117,12 @@ TASK_ID_RE = re.compile(r"TASK-\d+")
 CUI_MARKING_RE = re.compile(r"\bCUI\b|controlled\s+unclassified|//\s*(?:SP-|NOFORN)|\bFOUO\b|for\s+official\s+use\s+only", re.IGNORECASE)
 # Environment the adapter always gets; anything else must be opted in by name.
 ADAPTER_ENV_BASE = ("PATH", "HOME", "USER", "LOGNAME", "SHELL", "LANG", "LC_ALL", "LC_CTYPE", "TERM", "TMPDIR", "TZ")
+# What cmd.exe and Windows programs need to start at all (AI-1151).
+ADAPTER_ENV_WINDOWS = ("SYSTEMROOT", "SYSTEMDRIVE", "COMSPEC", "PATHEXT", "WINDIR", "TEMP", "TMP",
+                       "USERPROFILE", "APPDATA", "LOCALAPPDATA")
 ADAPTER_ENV_PASSTHROUGH = "FACTORY_ADAPTER_ENV_PASSTHROUGH"
+# Windows: start the adapter in its own process group (subprocess constant, defined here for POSIX tests).
+CREATE_NEW_PROCESS_GROUP = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0x00000200)
 COMPLETE_PREFIXES = ("done", "complete", "completed", "approved")
 OPEN_PREFIXES = ("ready", "ready to start", "backlog", "pending")
 HUMAN_STOP_PATTERNS = (
@@ -561,6 +566,10 @@ def adapter_environment() -> dict:
     """Minimal environment for the adapter; credentials only by explicit opt-in."""
     names = set(ADAPTER_ENV_BASE)
     names |= {n.strip() for n in os.environ.get(ADAPTER_ENV_PASSTHROUGH, "").split(",") if n.strip()}
+    if _on_windows():
+        # Windows variable names are case-insensitive (Path, SystemRoot).
+        names = {n.upper() for n in names | set(ADAPTER_ENV_WINDOWS)}
+        return {k: v for k, v in os.environ.items() if k.upper() in names}
     return {k: v for k, v in os.environ.items() if k in names}
 
 
@@ -619,7 +628,40 @@ def _raise_interrupted(signum, _frame):
     raise FactoryInterrupted(signum)
 
 
-def _kill_group(proc: subprocess.Popen) -> None:
+def install_stop_handlers() -> list[int]:
+    """Make an operator stop end the dispatch like Ctrl-C, so it is recorded as
+    interrupted: SIGTERM everywhere, and Ctrl-Break (SIGBREAK) on Windows."""
+    signums = [signal.SIGTERM]
+    if _on_windows() and hasattr(signal, "SIGBREAK"):
+        signums.append(signal.SIGBREAK)
+    for signum in signums:
+        signal.signal(signum, _raise_interrupted)
+    return signums
+
+
+def _on_windows() -> bool:
+    return os.name == "nt"
+
+
+def adapter_popen_options() -> dict:
+    """Start the adapter apart from the factory, so a stop or timeout can end
+    everything it started: a new session on POSIX, a new process group on Windows."""
+    if _on_windows():
+        return {"creationflags": CREATE_NEW_PROCESS_GROUP}
+    return {"start_new_session": True}
+
+
+def kill_adapter_tree(proc) -> None:
+    """Stop the adapter and every process it started."""
+    if _on_windows():
+        try:
+            done = subprocess.run(["taskkill", "/T", "/F", "/PID", str(proc.pid)], capture_output=True)
+            killed = done.returncode == 0
+        except OSError:
+            killed = False
+        if not killed and proc.poll() is None:
+            proc.kill()
+        return
     try:
         os.killpg(proc.pid, signal.SIGKILL)
     except OSError:
@@ -724,20 +766,21 @@ def _run_adapter(command: str, prompt: str, env: dict, timeout: float,
                  on_start=None) -> tuple[int, str, str, bool]:
     """Run the adapter in its own process group so a timeout or a stop ends all of it."""
     proc = subprocess.Popen(command, shell=True, cwd=ROOT, env=env, text=True,
+                            encoding="utf-8", errors="replace",
                             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, start_new_session=True)
+                            stderr=subprocess.PIPE, **adapter_popen_options())
     try:
         if on_start:
             on_start(proc)
         out, err = proc.communicate(prompt, timeout=timeout)
         return proc.returncode, out, err, False
     except subprocess.TimeoutExpired:
-        _kill_group(proc)
+        kill_adapter_tree(proc)
         out, err = proc.communicate()
         return ADAPTER_TIMEOUT_EXIT, out, err, True
     except BaseException:
         # An operator stop must not leave the adapter running on its own.
-        _kill_group(proc)
+        kill_adapter_tree(proc)
         proc.wait()
         raise
 
@@ -791,10 +834,6 @@ class DispatchLock:
         finally:
             self.handle.close()
             self.handle = None
-
-
-def _on_windows() -> bool:
-    return os.name == "nt"
 
 
 def dispatch_lock() -> DispatchLock:
@@ -1540,7 +1579,10 @@ def post_dispatch_checks(task: dict, state: dict, before,
 
 def adapter_signal(returncode: int) -> int:
     """The signal that stopped the adapter, or 0. The adapter runs through the
-    shell, which reports a child killed by signal N as exit status 128 + N."""
+    shell, which reports a child killed by signal N as exit status 128 + N.
+    Windows has no such convention, so an exit status is only an exit status."""
+    if _on_windows():
+        return 0
     if returncode < 0:
         return -returncode
     if 128 < returncode < 128 + signal.NSIG:
@@ -1817,8 +1859,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-wall-seconds", type=int, default=None,
                         help="stop the loop after this much wall-clock time (default from factory config)")
     args = parser.parse_args(argv)
-    # SIGTERM stops the factory like Ctrl-C: the dispatch in progress is recorded as interrupted.
-    signal.signal(signal.SIGTERM, _raise_interrupted)
+    install_stop_handlers()
+    # Task-board text and adapter output can hold characters a Windows console
+    # code page can't encode; never let printing them abort a run (AI-1151).
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, ValueError):
+            pass
     if args.loop:
         unreviewed = task_board_unreviewed()
         if unreviewed:

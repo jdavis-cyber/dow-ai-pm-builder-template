@@ -7,7 +7,6 @@
 import json
 import os
 from pathlib import Path
-import shlex
 import signal
 import subprocess
 import sys
@@ -19,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from test_commit_audit import ShellAdapterFixture  # noqa: E402
 import governed_factory  # noqa: E402
+from portable import portable_command  # noqa: E402
 
 INDEX = "docs/verification/evidence-index.md"
 CLOSE = ("p = pathlib.Path('orchestration/tasks.md')\n"
@@ -126,7 +126,7 @@ class InterruptionTests(Records, unittest.TestCase):
         self.git("init", "-q")
         self.git("add", "-A")
         self.git("commit", "-qm", "synthetic fixture")
-        command = shlex.join([sys.executable, "adapter.py"])
+        command = portable_command(sys.executable, "adapter.py")
         proc = subprocess.Popen([sys.executable, "automation/governed_factory.py", "--adapter", "shell"],
                                 cwd=self.repo, env={**self.env, "FACTORY_ADAPTER_COMMAND": command},
                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)

@@ -3,12 +3,12 @@
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-import shlex
 import shutil
 import subprocess
 import sys
 
 import pytest
+from portable import portable_command  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,7 +29,7 @@ def project(tmp_path, monkeypatch):
     monkeypatch.setenv("FACTORY_CHAIN_ANCHOR_DIR", str(tmp_path / "anchors"))
     monkeypatch.setenv("FACTORY_OPERATOR_KEY_FILE", str(tmp_path / "operator.key"))
     (tmp_path / "operator.key").write_text("k" * 64)
-    monkeypatch.setenv("FACTORY_ADAPTER_COMMAND", shlex.join([
+    monkeypatch.setenv("FACTORY_ADAPTER_COMMAND", portable_command(*[
         sys.executable, "-c", "from pathlib import Path; Path('docs/dispatched').touch()",
     ]))
     subprocess.run(["git", "init", "-q"], cwd=root, check=True)
@@ -192,7 +192,7 @@ def test_authorized_source_task_still_dispatches(project, monkeypatch, authority
     signed = cli(project, "gatekeeper", "sign")
     assert signed.returncode == 0, signed.stdout + signed.stderr
     board(project, **{"Acceptance Criteria": "Create src/early.py"})
-    monkeypatch.setenv("FACTORY_ADAPTER_COMMAND", shlex.join([sys.executable, "-c",
+    monkeypatch.setenv("FACTORY_ADAPTER_COMMAND", portable_command(*[sys.executable, "-c",
         "from pathlib import Path; Path('src').mkdir(exist_ok=True); "
         "Path('src/early.py').write_text('# synthetic source\\n'); "
         "Path('docs/verification/notes.md').write_text('Synthetic evidence\\n'); "

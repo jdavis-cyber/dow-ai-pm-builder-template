@@ -7,7 +7,6 @@ These probes run the real shell adapter in a disposable copy of the template.
 import json
 import os
 from pathlib import Path
-import shlex
 import shutil
 import subprocess
 import sys
@@ -19,6 +18,7 @@ sys.path.insert(0, str(ROOT / "automation"))
 os.environ.setdefault("FACTORY_CHAIN_ANCHOR_DIR", tempfile.mkdtemp(prefix="dow-chain-anchor-"))
 
 import governed_factory  # noqa: E402
+from portable import portable_command  # noqa: E402
 
 GIT = "import subprocess\ndef git(*a):\n    subprocess.run(['git', *a], check=True, capture_output=True)\n"
 COMMIT_ALL = "git('add', '-A'); git('commit', '-qm', 'adapter work')\n"
@@ -79,7 +79,7 @@ class ShellAdapterFixture:
         return result, json.loads(records[0].read_text())
 
     def factory(self, adapter):
-        command = shlex.join([sys.executable, "adapter.py"])
+        command = portable_command(sys.executable, "adapter.py")
         return subprocess.run([sys.executable, "automation/governed_factory.py", "--adapter", adapter],
                               cwd=self.repo, env={**self.env, "FACTORY_ADAPTER_COMMAND": command},
                               capture_output=True, text=True, timeout=60)
