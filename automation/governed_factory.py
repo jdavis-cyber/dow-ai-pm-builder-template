@@ -142,7 +142,7 @@ def load_factory_config() -> dict:
     for name in CONFIG_FILES:
         path = ROOT / name
         if path.is_file():
-            return (json.loads(path.read_text()).get("factory") or {})
+            return (json.loads(path.read_text(encoding="utf-8")).get("factory") or {})
     return {}
 
 
@@ -547,7 +547,7 @@ def dispatch_classification(packet: dict, cfg: dict) -> dict:
     dispatch_cfg = cfg.get("dispatch") or {}
     levels = [str(dispatch_cfg.get("content_classification", "public")).lower()]
     try:
-        install = json.loads((ROOT / "subagents" / "install-config.json").read_text())
+        install = json.loads((ROOT / "subagents" / "install-config.json").read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         # Can't tell whether the project is regulated: treat it as CUI.
         install = {"requires_dod_controls": True}
@@ -675,7 +675,7 @@ def _process_start_time(pid: int):
         return _windows_process(pid)[1]
     if Path("/proc/self/stat").exists():
         try:
-            stat = Path(f"/proc/{pid}/stat").read_text()
+            stat = Path(f"/proc/{pid}/stat").read_text(encoding="utf-8")
             return int(stat.rsplit(")", 1)[1].split()[19])  # field 22: starttime, clock ticks since boot
         except (OSError, ValueError, IndexError):
             return None
@@ -747,7 +747,7 @@ def _process_group_running(pgid: int) -> bool:
     if (proc_root / "self" / "stat").exists():
         for stat in proc_root.glob("[0-9]*/stat"):
             try:
-                fields = stat.read_text().rsplit(")", 1)[1].split()
+                fields = stat.read_text(encoding="utf-8").rsplit(")", 1)[1].split()
             except (OSError, IndexError):
                 continue
             if len(fields) > 2 and fields[2] == str(pgid) and fields[0] not in ("Z", "X"):
@@ -858,7 +858,7 @@ def mark_in_flight(task_id: str, run_info: dict) -> None:
         # Who owns the dispatch; recovery refuses a marker it can't prove is orphaned.
         "owner": {"pid": os.getpid(), "host": socket.gethostname(), "token": FACTORY_TOKEN,
                   "started_at_utc": FACTORY_STARTED_UTC},
-    }, indent=2) + "\n")
+    }, indent=2) + "\n", encoding="utf-8")
     run_info["_in_flight"] = str(path)
 
 
@@ -866,10 +866,10 @@ def record_adapter_started(run_info: dict, proc) -> None:
     """Add the running adapter's identity to the in-flight marker, so recovery
     after a killed factory can see the adapter outlived it."""
     path = Path(run_info["_in_flight"])
-    info = json.loads(path.read_text())
+    info = json.loads(path.read_text(encoding="utf-8"))
     info["adapter_process"] = adapter_identity(proc)
     tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(info, indent=2) + "\n")
+    tmp.write_text(json.dumps(info, indent=2) + "\n", encoding="utf-8")
     os.replace(tmp, path)
 
 
@@ -879,7 +879,7 @@ def live_adapter_markers() -> list[str]:
     live = []
     for marker in sorted(directory.glob("*.json")) if directory.is_dir() else []:
         try:
-            identity = json.loads(marker.read_text()).get("adapter_process")
+            identity = json.loads(marker.read_text(encoding="utf-8")).get("adapter_process")
         except (OSError, json.JSONDecodeError, AttributeError):
             continue
         if isinstance(identity, dict) and adapter_still_running(identity):
@@ -894,7 +894,7 @@ def foreign_in_flight_markers() -> list[str]:
     foreign = []
     for marker in sorted(directory.glob("*.json")) if directory.is_dir() else []:
         try:
-            host = (json.loads(marker.read_text()).get("owner") or {}).get("host")
+            host = (json.loads(marker.read_text(encoding="utf-8")).get("owner") or {}).get("host")
         except (OSError, json.JSONDecodeError, AttributeError):
             host = None
         if host and host != here:
@@ -907,7 +907,7 @@ def _recorded_packet_seals() -> list[dict]:
     seals = []
     for path in _chain_records():
         try:
-            seal = json.loads(path.read_text()).get("task_packet")
+            seal = json.loads(path.read_text(encoding="utf-8")).get("task_packet")
         except (OSError, json.JSONDecodeError, AttributeError):
             continue
         if isinstance(seal, dict):
@@ -927,7 +927,7 @@ def recover_interrupted_dispatches() -> list[str]:
     recorded = None
     for marker in sorted(directory.glob("*.json")) if directory.is_dir() else []:
         try:
-            info = json.loads(marker.read_text())
+            info = json.loads(marker.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             info = {}
         if not isinstance(info, dict):
@@ -1032,7 +1032,7 @@ def dispatch(packet: dict, adapter: str, run_info: dict | None = None) -> int:
 def _read_usage(path: Path) -> dict | None:
     """Usage the adapter reported in FACTORY_USAGE_FILE: {"tokens": n, "cost_usd": x}."""
     try:
-        data = json.loads(path.read_text())
+        data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return None
     usage = {}
@@ -1164,7 +1164,7 @@ def verify_run_chain() -> list[str]:
     head_path = LOG_DIR / CHAIN_HEAD
     if chained or head_path.exists():
         try:
-            head = json.loads(head_path.read_text())
+            head = json.loads(head_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             problems.append(f"{CHAIN_HEAD} missing or unreadable")
         else:
@@ -1174,7 +1174,7 @@ def verify_run_chain() -> list[str]:
             elif previous and head.get("latest_result_sha256") != previous[1]:
                 problems.append(f"{previous[0]}: content changed after it was recorded")
     try:
-        anchor = json.loads(chain_anchor_path().read_text())
+        anchor = json.loads(chain_anchor_path().read_text(encoding="utf-8"))
     except FileNotFoundError:
         anchor = None
     except (OSError, json.JSONDecodeError):
@@ -1326,10 +1326,10 @@ def write_run_result(task: dict, result: dict) -> Path:
         "latest_result_sha256": hashlib.sha256(raw).hexdigest(),
     }, indent=2) + "\n"
     (LOG_DIR / CHAIN_HEAD).parent.mkdir(exist_ok=True)
-    (LOG_DIR / CHAIN_HEAD).write_text(head)
+    (LOG_DIR / CHAIN_HEAD).write_text(head, encoding="utf-8")
     anchor = chain_anchor_path()
     anchor.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    anchor.write_text(head)
+    anchor.write_text(head, encoding="utf-8")
     return path
 
 
@@ -1524,7 +1524,7 @@ def post_dispatch_checks(task: dict, state: dict, before,
         print(f"STOP: required evidence missing or empty after dispatch for {task['Task ID']}: " + ", ".join(missing))
         violation("missing evidence")
     result["evidence_sha256"] = {p: _fingerprint(p) for p in declared}
-    refreshed = {t["Task ID"]: t for t in parse_tasks(TASKS_FILE.read_text())}
+    refreshed = {t["Task ID"]: t for t in parse_tasks(TASKS_FILE.read_text(encoding="utf-8"))}
     status_after = str(refreshed.get(task["Task ID"], {}).get("Status", "")).strip()
     result["status_after_dispatch"] = status_after or None
     still_open = status_kind(status_after) in open_kinds
@@ -1661,10 +1661,10 @@ def record_assisted_dispatch(task: dict, state: dict, packet_seal: dict | None =
         "dispatch_phase": "plan" if task.get("_plan_only") else "implement",
         **({"task_packet": packet_seal} if packet_seal else {}),
     }, indent=2) + "\n"
-    path.write_text(raw)
+    path.write_text(raw, encoding="utf-8")
     seal = _pending_seal_path(task["Task ID"])
     seal.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    seal.write_text(hashlib.sha256(raw.encode()).hexdigest() + "\n")
+    seal.write_text(hashlib.sha256(raw.encode()).hexdigest() + "\n", encoding="utf-8")
     print(f"ASSISTED MODE: detective checks run when {task['Task ID']} leaves Ready; "
           f"rerun the factory after completing it ({path.relative_to(ROOT)})")
     return path
@@ -1676,7 +1676,7 @@ def readvertise_pending(task: dict, packet: dict) -> int:
     Only the packet sealed in the pending baseline is checked at completion, so
     a second invocation re-advertises that packet instead of emitting another.
     """
-    record = json.loads((_pending_dir() / f"{task['Task ID']}.json").read_text())
+    record = json.loads((_pending_dir() / f"{task['Task ID']}.json").read_text(encoding="utf-8"))
     seal = record.get("task_packet")
     if seal is None:
         print(packet_to_prompt(packet))
@@ -1686,7 +1686,7 @@ def readvertise_pending(task: dict, packet: dict) -> int:
     if problem:
         print(f"STOP: {problem}; the completion checks for {task['Task ID']} will record it")
         return 3
-    print(packet_to_prompt(json.loads((ROOT / seal["path"]).read_text())))
+    print(packet_to_prompt(json.loads((ROOT / seal["path"]).read_text(encoding="utf-8"))))
     print(f"\nASSISTED MODE: {task['Task ID']} is still pending; its task packet is {seal['path']}")
     return 0
 
@@ -1703,10 +1703,10 @@ def check_assisted_completions(tasks: list[dict]) -> tuple[int, set[str]]:
     if not directory.is_dir():
         return 0, still_pending
     for path in sorted(directory.glob("*.json")):
-        raw = path.read_text()
+        raw = path.read_text(encoding="utf-8")
         seal = _pending_seal_path(path.stem)
         try:
-            sealed = seal.read_text().strip()
+            sealed = seal.read_text(encoding="utf-8").strip()
         except OSError:
             sealed = None
         if sealed != hashlib.sha256(raw.encode()).hexdigest():
@@ -1804,7 +1804,7 @@ def _once(adapter: str) -> int:
         return DISPATCH_IN_PROGRESS_EXIT
     if recover_interrupted_dispatches():
         return 3
-    tasks = parse_tasks(TASKS_FILE.read_text())
+    tasks = parse_tasks(TASKS_FILE.read_text(encoding="utf-8"))
     code, pending = check_assisted_completions(tasks)
     if code != 0:
         return code
@@ -1883,13 +1883,6 @@ def main(argv: list[str] | None = None) -> int:
                         help="stop the loop after this much wall-clock time (default from factory config)")
     args = parser.parse_args(argv)
     install_stop_handlers()
-    # Task-board text and adapter output can hold characters a Windows console
-    # code page can't encode; never let printing them abort a run (AI-1151).
-    for stream in (sys.stdout, sys.stderr):
-        try:
-            stream.reconfigure(errors="replace")
-        except (AttributeError, ValueError):
-            pass
     if args.loop:
         unreviewed = task_board_unreviewed()
         if unreviewed:
@@ -1915,4 +1908,9 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    # Survive a console that is not UTF-8, e.g. cp1252 on Windows (AI-1151).
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    sys.dont_write_bytecode = True  # leave no __pycache__ behind in the project
+    import safe_console
+    safe_console.make_console_safe()
     sys.exit(main())

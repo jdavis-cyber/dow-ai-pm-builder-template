@@ -20,58 +20,58 @@ def template_files(rel='.'):
         paths=[p for p in base.glob('**/*') if not (SKIP_DIRS & set(p.relative_to(ROOT).parts))]
     return sorted(p for p in paths if p.is_file())
 def run(cmd):
-    r=subprocess.run(cmd,cwd=ROOT,capture_output=True,text=True)
+    r=subprocess.run(cmd,cwd=ROOT,capture_output=True,text=True,errors="replace")
     if r.returncode!=0: print(r.stdout+r.stderr)
     return r.returncode==0
 def main():
     ok=True
     souls=sorted(p.stem for p in template_files('.agent/souls') if p.suffix=='.md' and p.parent==ROOT/'.agent/souls')
     if souls!=sorted(ACCOUNTABLE): print('ERROR: SOUL roster mismatch', souls); ok=False
-    roster=(ROOT/'.agent/AGENT-ROSTER.md').read_text()
+    roster=(ROOT/'.agent/AGENT-ROSTER.md').read_text(encoding="utf-8")
     for n in ACCOUNTABLE:
         if n not in roster: print('ERROR: roster missing '+n); ok=False
-    cfg=json.loads((ROOT/'subagents/install-config.json').read_text())
+    cfg=json.loads((ROOT/'subagents/install-config.json').read_text(encoding="utf-8"))
     if cfg.get('accountable_agents')!=ACCOUNTABLE: print('ERROR: install-config accountable_agents mismatch'); ok=False
     if 'security-compliance-officer' not in cfg.get('mandatory_agents',[]): print('ERROR: security not mandatory'); ok=False
     if not (ROOT/'subagents/global/security-compliance-officer.toml').exists() or (ROOT/'subagents/dod-regulated/security-compliance-officer.toml').exists():
         print('ERROR: security-compliance-officer must be a global package (mandatory on every project), not a regulated overlay'); ok=False
     if 'security-compliance-officer' in cfg.get('regulated_overlays',[]): print('ERROR: security-compliance-officer listed as a conditional regulated overlay'); ok=False
-    own=json.loads((ROOT/'subagents/specialization-ownership-map.json').read_text())
+    own=json.loads((ROOT/'subagents/specialization-ownership-map.json').read_text(encoding="utf-8"))
     tomls=sorted(str(p.relative_to(ROOT/'subagents')).replace('\\','/') for p in template_files('subagents/global/voltagent') if p.suffix=='.toml')
     missing=[t for t in tomls if t not in own]
     if missing: print('ERROR: ownership missing '+str(missing[:5])); ok=False
     for f in ['CLAUDE.md','CODEX.md','GEMINI.md']:
-        txt=(ROOT/f).read_text()
+        txt=(ROOT/f).read_text(encoding="utf-8")
         if '15-agent' not in txt and '15 agent' not in txt.lower(): print('ERROR provider lacks 15-agent '+f); ok=False
         if 'Security & Compliance Officer' not in txt: print('ERROR provider lacks security '+f); ok=False
         if 'provider-neutral' not in txt or 'automation/governed_factory.py' not in txt: print('ERROR provider lacks governed factory startup '+f); ok=False
         if 'Protocal' in txt or ('Template Version ' + '3.0') in txt: print('ERROR stale provider text '+f); ok=False
     for rel in ['automation/governed_factory.py','automation/gatekeeper.py','factory.config.example.json']:
         if not (ROOT/rel).exists(): print('ERROR missing provider-neutral factory control '+rel); ok=False
-    factory_sh=(ROOT/'automation/factory.sh').read_text()
+    factory_sh=(ROOT/'automation/factory.sh').read_text(encoding="utf-8")
     if 'LLM_COMMAND' in factory_sh: print('ERROR factory.sh still hardcodes LLM_COMMAND assisted-mode control'); ok=False
     if 'FACTORY_ADAPTER' not in factory_sh or 'automation/governed_factory.py' not in factory_sh: print('ERROR factory.sh missing adapter dispatcher'); ok=False
-    gf=(ROOT/'automation/governed_factory.py').read_text()
+    gf=(ROOT/'automation/governed_factory.py').read_text(encoding="utf-8")
     if 'Provider-neutral' not in gf and 'provider-neutral' not in gf: print('ERROR governed_factory missing provider-neutral contract'); ok=False
     if 'FACTORY_ADAPTER_COMMAND' not in gf: print('ERROR governed_factory missing shell adapter command hook'); ok=False
-    gk=(ROOT/'automation/gatekeeper.py').read_text()
+    gk=(ROOT/'automation/gatekeeper.py').read_text(encoding="utf-8")
     for token in ['implementation_authorized','external_tracker_writes_authorized','deployment_authorized','control_closure_authorized']:
         if token not in gk: print('ERROR gatekeeper missing authority token '+token); ok=False
-    cfg_example=json.loads((ROOT/'factory.config.example.json').read_text())
+    cfg_example=json.loads((ROOT/'factory.config.example.json').read_text(encoding="utf-8"))
     if not cfg_example.get('factory',{}).get('provider_neutral_contract'): print('ERROR factory config missing provider-neutral contract flag'); ok=False
     kickoff=ROOT/'KICKOFF.md'
     if not kickoff.exists():
         print('ERROR missing KICKOFF.md'); ok=False
     else:
-        kt=kickoff.read_text()
+        kt=kickoff.read_text(encoding="utf-8")
         for phrase in ['Start a new project from the DoW AI PM Builder Template and begin Sprint Zero.', 'canonical operator phrase', 'Sprint Zero / Phase 0', 'stop at Gate 1 readiness', 'The interview owns discovery details', 'project name/path', 'files, links', 'authority boundaries']:
             if phrase not in kt: print('ERROR KICKOFF.md missing '+phrase); ok=False
-    provider_bodies={f:(ROOT/f).read_text().split('\n',1)[1] for f in ['CLAUDE.md','CODEX.md','GEMINI.md']}
+    provider_bodies={f:(ROOT/f).read_text(encoding="utf-8").split('\n',1)[1] for f in ['CLAUDE.md','CODEX.md','GEMINI.md']}
     if len(set(provider_bodies.values()))!=1: print('ERROR provider files out of sync (CLAUDE.md/CODEX.md/GEMINI.md must be identical below the title line)'); ok=False
     stale=['14 specialized' + ' agents','complete AI development team - ' + '14','Template Version ' + '3.0']
     for p in template_files():
         if p.suffix in TEXT_SUFFIXES:
-            txt=p.read_text(errors='ignore')
+            txt=p.read_text(errors='ignore', encoding="utf-8")
             for s in stale:
                 if s in txt and p.name!='validate_template.py': print(f'ERROR stale string {s} in {p.relative_to(ROOT)}'); ok=False
     tmp_runtime = pathlib.Path(tempfile.mkdtemp(prefix='dow-template-runtime-'))
@@ -83,7 +83,7 @@ def main():
     ok = run([sys.executable,'automation/vendor_digests.py','check']) and ok
     for p in sorted((ROOT/'subagents').rglob('*.toml')):
         if p.suffix=='.toml':
-            for line in p.read_text(errors='ignore').splitlines():
+            for line in p.read_text(errors='ignore', encoding="utf-8").splitlines():
                 if line.split('=',1)[0].strip() in {'model','model_reasoning_effort'} and '=' in line:
                     print(f'ERROR {p.relative_to(ROOT)} pins {line.strip()}; the operator chooses the model per session'); ok=False
                     break
@@ -93,7 +93,13 @@ def main():
     # reference material, not executable template-integrity requirements.
     if not (ROOT/'automation/factory_metrics.py').exists(): print('ERROR missing factory_metrics.py'); ok=False
     security=ROOT/'SECURITY.md'
-    if not security.exists() or 'Incident communication' not in security.read_text(): print('ERROR SECURITY.md missing incident-communication path'); ok=False
+    if not security.exists() or 'Incident communication' not in security.read_text(encoding="utf-8"): print('ERROR SECURITY.md missing incident-communication path'); ok=False
     print('whole-template validation passed' if ok else 'whole-template validation failed')
     return 0 if ok else 1
-if __name__=='__main__': sys.exit(main())
+if __name__ == '__main__':
+    # Survive a console that is not UTF-8, e.g. cp1252 on Windows (AI-1151).
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    sys.dont_write_bytecode = True  # leave no __pycache__ behind in the project
+    import safe_console
+    safe_console.make_console_safe()
+    sys.exit(main())

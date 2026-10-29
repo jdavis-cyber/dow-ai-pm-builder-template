@@ -89,11 +89,11 @@ def main() -> None:
 
     # Preserve provider parity in generated projects as well as the template.
     # All providers need to know how the operator starts a governed Codex session.
-    codex_guidance = (TEMPLATE_ROOT / "automation/templates/codex-project.md").read_text()
+    codex_guidance = (TEMPLATE_ROOT / "automation/templates/codex-project.md").read_text(encoding="utf-8")
     for provider in ("CLAUDE.md", "CODEX.md", "GEMINI.md"):
         context = target / provider
-        context.write_text(context.read_text() + "\n" + codex_guidance)
-    (target / "AGENTS.md").write_text((target / "CODEX.md").read_text())
+        context.write_text(context.read_text(encoding="utf-8") + "\n" + codex_guidance, encoding="utf-8")
+    (target / "AGENTS.md").write_text((target / "CODEX.md").read_text(encoding="utf-8"), encoding="utf-8")
 
     # ── Orchestration: blank spec + task board from their templates ────────
     orch = target / "orchestration"
@@ -135,7 +135,7 @@ def main() -> None:
     # ── Project memory starts blank ─────────────────────────────────────────
     (target / "memory" / "MEMORY.md").write_text(
         f"# Project Memory — {project_name}\n\n"
-        "Daily logs and agent continuity notes accumulate here.\n"
+        "Daily logs and agent continuity notes accumulate here.\n", encoding="utf-8"
     )
 
     # ── Provenance: which factory version built this project ───────────────
@@ -156,7 +156,7 @@ def main() -> None:
         "| Validation status | Draft / Not Approved |\n\n"
         "The factory process that governs this project (agent roster, directives,\n"
         "phase gates) is pinned to the version above. For accreditation review of the\n"
-        "development process itself, refer to that template version.\n"
+        "development process itself, refer to that template version.\n", encoding="utf-8"
     )
 
     # ── Fresh project README ────────────────────────────────────────────────
@@ -189,7 +189,7 @@ def main() -> None:
         "   Gate 1 clears.\n\n"
         "## Delivery\n\n"
         "This entire repository is the deliverable: deployable source plus the\n"
-        "complete evidence package needed for security accreditation review.\n"
+        "complete evidence package needed for security accreditation review.\n", encoding="utf-8"
     )
 
     # Native Codex permission boundaries exist before the first agent session.
@@ -224,4 +224,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    # Survive a console that is not UTF-8, e.g. cp1252 on Windows (AI-1151).
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    sys.dont_write_bytecode = True  # leave no __pycache__ behind in the project
+    import safe_console
+    safe_console.make_console_safe()
     main()

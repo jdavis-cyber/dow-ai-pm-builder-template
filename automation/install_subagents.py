@@ -23,7 +23,7 @@ def entry(name, reason, mandatory=False):
     tier, p = source_for(name)
     if not p:
         raise SystemExit(f"missing runtime package for {name}")
-    recorded = json.loads((ROOT / "subagents" / "runtime-package-digests.json").read_text()) \
+    recorded = json.loads((ROOT / "subagents" / "runtime-package-digests.json").read_text(encoding="utf-8")) \
         if (ROOT / "subagents" / "runtime-package-digests.json").exists() else {}
     rel = p.relative_to(ROOT / "subagents").as_posix()
     if recorded.get(rel) != sha256_file(p):
@@ -34,7 +34,7 @@ def entry(name, reason, mandatory=False):
 def main():
     config_path = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "subagents/install-config.json"
     runtime_dir = pathlib.Path(sys.argv[2]) if len(sys.argv) > 2 else ROOT / ".codex/agents"
-    config = json.loads(config_path.read_text())
+    config = json.loads(config_path.read_text(encoding="utf-8"))
     if config.get("version") == 1:
         names = list(dict.fromkeys(config.get("baseline_packages", []) + config.get("project_specific_packages", []) + config.get("regulated_packages", [])))
         frameworks = {"iso_42001": "baseline" if config.get("requires_iso42001") else "not-selected"}
@@ -49,7 +49,7 @@ def main():
         raise SystemExit("unknown accountable_agents: " + ", ".join(extra))
     accountable = [entry(n, "accountable-agent", n in config.get("mandatory_agents", []) or n == "security-compliance-officer") for n in ACCOUNTABLE]
     ownership_path = ROOT / "subagents/specialization-ownership-map.json"
-    ownership = json.loads(ownership_path.read_text()) if ownership_path.exists() else {}
+    ownership = json.loads(ownership_path.read_text(encoding="utf-8")) if ownership_path.exists() else {}
     specs = []
     for rel, meta in ownership.items():
         owner = meta.get("accountable_owner")
@@ -72,12 +72,17 @@ def main():
     for existing in existing_entries:
         if existing.is_file() and existing.name != marker.name:
             existing.unlink()
-    marker.write_text("managed by automation/install_subagents.py\n")
+    marker.write_text("managed by automation/install_subagents.py\n", encoding="utf-8")
     for pkg in accountable + overlays:
         shutil.copyfile(ROOT / pkg["source"], runtime_dir / f"{pkg['name']}.toml")
     manifest = {"version": 2, "project_type": config.get("project_type", "factory-governed"), "accountable_agents": accountable, "specialization_packages": specs, "regulated_overlays": overlays, "frameworks": frameworks, "source_commit": git_commit(), "runtime_dir": str(runtime_dir)}
-    (runtime_dir / "runtime-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    (runtime_dir / "runtime-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(manifest, indent=2))
 
 if __name__ == "__main__":
+    # Survive a console that is not UTF-8, e.g. cp1252 on Windows (AI-1151).
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    sys.dont_write_bytecode = True  # leave no __pycache__ behind in the project
+    import safe_console
+    safe_console.make_console_safe()
     main()

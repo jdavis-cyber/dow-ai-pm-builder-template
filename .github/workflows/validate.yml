@@ -59,10 +59,10 @@ jobs:
           git config --global user.name "ci-runner"
           git config --global user.email "ci-runner@users.noreply.github.com"
           python automation/smoke_test_template.py
-      - name: Adapter process, timeout, stop, environment and lock tests
+      - name: Adapter process, timeout, stop, environment, lock and console tests
         run: |
           python -m pip install --require-hashes -r requirements-ci.txt
-          python -m pytest -q tests/test_cross_platform_adapter.py
+          python -m pytest -q tests/test_cross_platform_adapter.py tests/test_console_encoding.py
           python -m pytest -q tests/test_run_record_truth.py -k AdapterIdentityTests
           python -m pytest -q tests/test_requirement_acceptance.py -k "NSR01 or adapter_timeout or SR11 or SR12 or SR16"
       - name: Whole-template validation and full suite (informational)

@@ -35,13 +35,13 @@ def mismatches(ownership):
 
 def main(argv):
     mode = argv[0] if argv else "check"
-    ownership = json.loads(MAP.read_text())
+    ownership = json.loads(MAP.read_text(encoding="utf-8"))
     if mode == "update":
         for rel, meta in ownership.items():
             meta["sha256"] = hashlib.sha256((ROOT / "subagents" / rel).read_bytes()).hexdigest()
-        MAP.write_text(json.dumps(ownership, indent=2) + "\n")
+        MAP.write_text(json.dumps(ownership, indent=2) + "\n", encoding="utf-8")
         runtime = runtime_packages()
-        RUNTIME_DIGESTS.write_text(json.dumps(runtime, indent=2) + "\n")
+        RUNTIME_DIGESTS.write_text(json.dumps(runtime, indent=2) + "\n", encoding="utf-8")
         print(f"recorded sha256 for {len(ownership)} specialization and {len(runtime)} runtime packages")
         return 0
     if mode != "check":
@@ -49,7 +49,7 @@ def main(argv):
         return 2
     bad = mismatches(ownership)
     try:
-        recorded = json.loads(RUNTIME_DIGESTS.read_text())
+        recorded = json.loads(RUNTIME_DIGESTS.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         recorded = {}
     current = runtime_packages()
@@ -62,4 +62,9 @@ def main(argv):
 
 
 if __name__ == "__main__":
+    # Survive a console that is not UTF-8, e.g. cp1252 on Windows (AI-1151).
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    sys.dont_write_bytecode = True  # leave no __pycache__ behind in the project
+    import safe_console
+    safe_console.make_console_safe()
     sys.exit(main(sys.argv[1:]))

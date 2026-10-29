@@ -16,7 +16,7 @@ def task_blocks(txt):
 
 def validate(path):
     p = pathlib.Path(path)
-    txt = p.read_text()
+    txt = p.read_text(encoding="utf-8")
     ok = True
     blocks = task_blocks(txt)
     if not blocks:
@@ -63,4 +63,9 @@ def validate(path):
     return ok
 
 if __name__ == '__main__':
+    # Survive a console that is not UTF-8, e.g. cp1252 on Windows (AI-1151).
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    sys.dont_write_bytecode = True  # leave no __pycache__ behind in the project
+    import safe_console
+    safe_console.make_console_safe()
     sys.exit(0 if validate(sys.argv[1] if len(sys.argv) > 1 else 'orchestration/tasks.md') else 1)
