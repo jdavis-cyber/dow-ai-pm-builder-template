@@ -3,6 +3,7 @@
 The Windows branches are exercised here by patching the platform check and the
 process calls; the Windows and macOS CI jobs run the real thing.
 """
+import hashlib
 import os
 from pathlib import Path
 import signal
@@ -28,16 +29,35 @@ class ProcessGroupTests(unittest.TestCase):
         # On Windows the pipe-reader thread join can block signal handling
         # for the entire adapter timeout. A short join gives control back.
         proc = mock.Mock(returncode=0)
+        read_fd, write_fd = os.pipe()
+        self.addCleanup(os.close, read_fd)
+        proc.stdin = os.fdopen(write_fd, "wb")
+        self.addCleanup(proc.stdin.close)
         proc.communicate.side_effect = [subprocess.TimeoutExpired("adapter", 0.25), ("done", "")]
         with mock.patch.object(gf, "_on_windows", return_value=True), \
                 mock.patch.object(gf, "_start_adapter", return_value=(proc, None)), \
                 mock.patch.object(gf, "kill_adapter_tree") as kill:
             self.assertEqual(gf._run_adapter("cmd", "prompt", {}, 30), (0, "done", "", False))
         first, second = proc.communicate.call_args_list
-        self.assertEqual(first.args, ("prompt",))
+        self.assertIsNone(proc.stdin)
+        self.assertEqual(os.read(read_fd, 100), b"prompt")
+        self.assertEqual(first.args, ())
         self.assertLessEqual(first.kwargs["timeout"], 1)
-        self.assertEqual(second.args, (None,))
+        self.assertEqual(second.args, ())
         kill.assert_not_called()
+
+    def test_large_prompt_and_adapter_output_can_cross_at_the_same_time(self):
+        # The peer fills stdout before it reads stdin. Neither full pipe
+        # should prevent the other one from making progress.
+        prompt = "synthetic input\n" * 12000
+        script = ("import hashlib, sys; print('X' * 200000, flush=True); "
+                  "print(hashlib.sha256(sys.stdin.buffer.read()).hexdigest())")
+        code, out, err, timed_out = gf._run_adapter(
+            portable_command(sys.executable, "-c", script), prompt, gf.adapter_environment(), 15)
+        self.assertFalse(timed_out)
+        self.assertEqual(code, 0, err)
+        data = prompt.replace("\n", os.linesep).encode("utf-8")
+        self.assertEqual(out.splitlines(), ["X" * 200000, hashlib.sha256(data).hexdigest()])
 
     def test_windows_starts_the_adapter_in_a_new_process_group(self):
         with mock.patch.object(gf, "_on_windows", return_value=True):
@@ -322,6 +342,8 @@ class SuspendedWindowsStartTests(unittest.TestCase):
         events.attach_mock(kernel32, "kernel32")
         events.attach_mock(ntdll, "ntdll")
         patches = [mock.patch.object(gf, "_on_windows", return_value=True),
+                   mock.patch.object(gf, "_communicate_adapter",
+                                     side_effect=lambda proc, prompt, timeout: proc.communicate(prompt, timeout=timeout)),
                    mock.patch.object(gf.subprocess, "Popen", side_effect=popen),
                    mock.patch.object(gf, "_kernel32", return_value=kernel32),
                    mock.patch.object(gf, "_ntdll", return_value=ntdll)]

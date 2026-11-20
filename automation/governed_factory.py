@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import errno
 import json
 import os
 import re
@@ -1115,21 +1116,50 @@ def _discard_suspended(proc, job) -> None:
         pass
 
 
+def _set_pipe_nonblocking(fd: int) -> None:
+    if os.name != "nt" or sys.version_info >= (3, 12):
+        os.set_blocking(fd, False)
+        return
+    # os.set_blocking gained Windows pipe support in Python 3.12.
+    import ctypes
+    import msvcrt
+    from ctypes import wintypes
+    handle = wintypes.HANDLE(msvcrt.get_osfhandle(fd))
+    mode = wintypes.DWORD(1)  # PIPE_NOWAIT on this write handle only
+    if not _kernel32().SetNamedPipeHandleState(handle, ctypes.byref(mode), None, None):
+        raise ctypes.WinError(ctypes.get_last_error())
+
+
 def _communicate_adapter(proc, prompt: str, timeout: float):
     if not _on_windows():
         return proc.communicate(prompt, timeout=timeout)
-    # Windows communicate() joins its pipe-reader threads. Give Python's
-    # main thread a chance to deliver console signals during a long dispatch.
+    # Windows communicate(input) writes stdin synchronously before waiting
+    # on its output reader threads. Pump stdin without blocking and bound
+    # every wait so both console stops and timeouts can take effect.
     deadline = time.monotonic() + timeout
-    pending_input = prompt
-    while True:
-        remaining = deadline - time.monotonic()
-        if remaining <= 0:
-            raise subprocess.TimeoutExpired(proc.args, timeout)
-        try:
-            return proc.communicate(pending_input, timeout=min(remaining, 0.25))
-        except subprocess.TimeoutExpired:
-            pending_input = None  # the first call already sent and closed stdin
+    pending = memoryview(prompt.replace("\n", os.linesep).encode("utf-8", errors="replace"))
+    with proc.stdin as stream:
+        proc.stdin = None  # this loop owns stdin; communicate drains stdout and stderr
+        fd = stream.fileno()
+        _set_pipe_nonblocking(fd)
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise subprocess.TimeoutExpired(proc.args, timeout)
+            if pending:
+                try:
+                    pending = pending[os.write(fd, pending[:65536]):]
+                except OSError as exc:
+                    if exc.errno in (errno.EPIPE, errno.EINVAL):
+                        pending = pending[:0]  # the peer closed stdin
+                    elif exc.errno not in (errno.EAGAIN, errno.EWOULDBLOCK, errno.ENOSPC):
+                        raise
+            if not pending and not stream.closed:
+                stream.close()
+            try:
+                return proc.communicate(timeout=min(remaining, 0.01 if pending else 0.25))
+            except subprocess.TimeoutExpired:
+                continue
 
 
 def _run_adapter(command: str, prompt: str, env: dict, timeout: float,

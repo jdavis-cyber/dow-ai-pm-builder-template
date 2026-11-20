@@ -126,7 +126,13 @@ class InterruptionTests(Records, unittest.TestCase):
             "os.replace('starting', 'started')\n"
             "time.sleep(60)\n")
 
-    def start(self, *, without_windows_job=False):
+    def start(self, *, without_windows_job=False, large_prompt=False):
+        if large_prompt:
+            # This adapter never reads stdin. Its prompt exceeds the default
+            # Windows pipe capacity, so a stop must interrupt prompt delivery.
+            board = self.repo / "orchestration/tasks.md"
+            board.write_text(board.read_text(encoding="utf-8").replace(
+                "synthetic request", "synthetic request " * 900), encoding="utf-8")
         (self.repo / "adapter.py").write_text("import pathlib\n" + self.SLOW, encoding="utf-8")
         with (self.repo / ".gitignore").open("a", encoding="utf-8") as f:
             f.write("\nstarting\nstarted\n")
@@ -205,8 +211,8 @@ class InterruptionTests(Records, unittest.TestCase):
             time.sleep(0.1)
         self.assertFalse(self.adapter_alive(pid), "the adapter outlived the interrupted factory")
 
-    def assert_operator_stop_recorded(self, sig, name):
-        proc, pid = self.start()
+    def assert_operator_stop_recorded(self, sig, name, *, large_prompt=False):
+        proc, pid = self.start(large_prompt=large_prompt)
         self.send_stop(proc, sig)
         out, _ = proc.communicate(timeout=30)
         self.assertEqual(proc.returncode, 128 + sig, out)
@@ -218,7 +224,7 @@ class InterruptionTests(Records, unittest.TestCase):
         self.assertIn("write_audit", record["checks"])
 
     def test_ctrl_c_records_an_interrupted_result(self):
-        self.assert_operator_stop_recorded(signal.SIGINT, "SIGINT")
+        self.assert_operator_stop_recorded(signal.SIGINT, "SIGINT", large_prompt=True)
 
     def test_operator_stop_records_an_interrupted_result(self):
         sig = signal.SIGBREAK if os.name == "nt" else signal.SIGTERM
