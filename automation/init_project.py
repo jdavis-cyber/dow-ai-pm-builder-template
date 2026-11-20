@@ -19,6 +19,8 @@ services/, packages/, database/, and infrastructure/), compliance evidence
 handed to the customer for accreditation review and deployment.
 """
 
+import argparse
+import json
 import re
 import shutil
 import subprocess
@@ -66,14 +68,17 @@ def git(args: list[str], cwd: Path) -> str:
 
 
 def main() -> None:
-    if len(sys.argv) < 2:
-        raise SystemExit("Usage: python3 automation/init_project.py <project-name> [target-parent-dir]")
-
-    project_name = sys.argv[1]
+    parser = argparse.ArgumentParser(description="Instantiate a fresh governed project")
+    parser.add_argument("project_name")
+    parser.add_argument("parent", nargs="?", type=Path, default=TEMPLATE_ROOT.parent)
+    parser.add_argument("--smoke-fixture", action="store_true",
+                        help="initialize a disposable validation project without operator records")
+    args = parser.parse_args()
+    project_name = args.project_name
     if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", project_name):
         raise SystemExit(f"ERROR: project name must be lowercase kebab-case (got: {project_name})")
 
-    parent_dir = Path(sys.argv[2]).resolve() if len(sys.argv) > 2 else TEMPLATE_ROOT.parent
+    parent_dir = args.parent.resolve()
     target = parent_dir / project_name
     if target.exists():
         raise SystemExit(f"ERROR: {target} already exists — refusing to overwrite.")
@@ -83,6 +88,8 @@ def main() -> None:
 
     # ── Factory scaffolding (copied verbatim) ──────────────────────────────
     for d in SCAFFOLD_DIRS:
+        if args.smoke_fixture and d in {".governance", "memory"}:
+            continue
         shutil.copytree(TEMPLATE_ROOT / d, target / d)
     for f in SCAFFOLD_FILES:
         shutil.copyfile(TEMPLATE_ROOT / f, target / f)
@@ -109,11 +116,16 @@ def main() -> None:
         (target / d / ".gitkeep").touch()
 
     # ── Authority store + override register start fail-closed ──────────────
-    shutil.copyfile(TEMPLATE_ROOT / ".governance" / "gate_state.json", target / ".governance" / "gate_state.json")
-    shutil.copyfile(
-        TEMPLATE_ROOT / ".governance" / "security-compliance" / "override-register.md",
-        target / ".governance" / "security-compliance" / "override-register.md",
-    )
+    if args.smoke_fixture:
+        import gatekeeper
+        (target / ".governance/gate_state.json").write_text(
+            json.dumps(gatekeeper.initial_state(), indent=2) + "\n", encoding="utf-8")
+        shutil.copyfile(TEMPLATE_ROOT / "automation/templates/override-register.md",
+                        target / gatekeeper.OVERRIDE_REGISTER)
+    else:
+        shutil.copyfile(TEMPLATE_ROOT / ".governance/gate_state.json", target / ".governance/gate_state.json")
+        shutil.copyfile(TEMPLATE_ROOT / ".governance/security-compliance/override-register.md",
+                        target / ".governance/security-compliance/override-register.md")
     shutil.copyfile(
         TEMPLATE_ROOT / "docs" / "architecture" / "adr-template.md",
         target / "docs" / "architecture" / "adr-template.md",
@@ -128,11 +140,14 @@ def main() -> None:
         "docs/verification/evidence-index.md",
     ]:
         src = TEMPLATE_ROOT / rel
+        if args.smoke_fixture and rel == "docs/verification/evidence-index.md":
+            src = TEMPLATE_ROOT / "directives/templates/evidence-index.md"
         dst = target / rel
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(src, dst)
 
     # ── Project memory starts blank ─────────────────────────────────────────
+    (target / "memory").mkdir(exist_ok=True)
     (target / "memory" / "MEMORY.md").write_text(
         f"# Project Memory — {project_name}\n\n"
         "Daily logs and agent continuity notes accumulate here.\n", encoding="utf-8"

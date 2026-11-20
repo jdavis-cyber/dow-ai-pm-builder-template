@@ -34,7 +34,7 @@
       "description": "Pipe the governed task prompt to any configured LLM/agent CLI.",
       "command_env": "FACTORY_ADAPTER_COMMAND",
       "examples": [
-        "codex exec --stdin",
+        "codex exec -",
         "claude -p",
         "gemini -p",
         "opencode run --stdin",

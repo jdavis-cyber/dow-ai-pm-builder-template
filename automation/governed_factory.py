@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import errno
 import json
 import os
 import re
@@ -457,9 +458,10 @@ def _validator_mode_and_paths(args: list[str]) -> tuple[str, list[str]]:
     return mode, named
 
 
-def _is_project_file(rel_path: str) -> bool:
+def _requires_lock0_check(rel_path: str) -> bool:
+    """An existing project file must be validated and an outside path refused."""
     path = (ROOT / rel_path).resolve()
-    return path.is_relative_to(ROOT.resolve()) and path.is_file()
+    return not path.is_relative_to(ROOT.resolve()) or path.is_file()
 
 
 def lock0_spec_paths(task: dict) -> list[str]:
@@ -470,24 +472,25 @@ def lock0_spec_paths(task: dict) -> list[str]:
     checked, whatever path the board names, so editing the command can't
     point the lock at an easier file.
 
-    Arguments are read the POSIX way. Only when a POSIX path is not a project
-    file and the arguments contain a backslash is the Windows reading tried
-    (backslashes kept, then "\\" -> "/"), and it is used only if every path
-    it names is a project file. Otherwise the POSIX reading stands, so a spec
-    missing under both readings is still reported missing.
+    When backslashes allow two readings, keep all arguments of each reading
+    that identifies any project file or out-of-project path. If both readings
+    name only missing files, keep the POSIX reading to report the missing spec.
     """
     paths: list[str] = []
     lock0 = "lock 0" in str(task.get("Title", "")).lower()
     for posix_args, windows_args in validator_invocations(str(task.get("Verification Command or Method", ""))):
-        mode, named = _validator_mode_and_paths(posix_args)
-        if windows_args is not None and not all(_is_project_file(p) for p in named):
+        posix = _validator_mode_and_paths(posix_args)
+        readings = [posix]
+        if windows_args is not None:
             windows_mode, windows_named = _validator_mode_and_paths(windows_args)
             windows_named = [p.replace("\\", "/") for p in windows_named]
-            if windows_named and all(_is_project_file(p) for p in windows_named):
-                mode, named = windows_mode, windows_named
-        if mode == "locked":
-            lock0 = True
-            paths.extend(named)
+            readings.append((windows_mode, windows_named))
+            readings = [(mode, named) for mode, named in readings
+                        if any(_requires_lock0_check(p) for p in named)] or [posix]
+        for mode, named in readings:
+            if mode == "locked":
+                lock0 = True
+                paths.extend(Path(p).as_posix() for p in named)
     if not lock0:
         return []
     return sorted({SPEC_REL, *paths})
@@ -756,6 +759,14 @@ def install_stop_handlers() -> list[int]:
     interrupted: SIGTERM everywhere, and Ctrl-Break (SIGBREAK) on Windows."""
     signums = [signal.SIGTERM]
     if _on_windows() and hasattr(signal, "SIGBREAK"):
+        # A console child can inherit "ignore Ctrl-C" from its launcher.
+        # Restore both console delivery and the ordinary Python Ctrl-C handler.
+        import ctypes
+        signal.signal(signal.SIGINT, signal.default_int_handler)
+        if not _kernel32().SetConsoleCtrlHandler(None, False):
+            error = ctypes.get_last_error()
+            if error != 6:  # ERROR_INVALID_HANDLE: a process with no console
+                raise ctypes.WinError(error)
         signums.append(signal.SIGBREAK)
     for signum in signums:
         signal.signal(signum, _raise_interrupted)
@@ -1105,6 +1116,52 @@ def _discard_suspended(proc, job) -> None:
         pass
 
 
+def _set_pipe_nonblocking(fd: int) -> None:
+    if os.name != "nt" or sys.version_info >= (3, 12):
+        os.set_blocking(fd, False)
+        return
+    # os.set_blocking gained Windows pipe support in Python 3.12.
+    import ctypes
+    import msvcrt
+    from ctypes import wintypes
+    handle = wintypes.HANDLE(msvcrt.get_osfhandle(fd))
+    mode = wintypes.DWORD(1)  # PIPE_NOWAIT on this write handle only
+    if not _kernel32().SetNamedPipeHandleState(handle, ctypes.byref(mode), None, None):
+        raise ctypes.WinError(ctypes.get_last_error())
+
+
+def _communicate_adapter(proc, prompt: str, timeout: float):
+    if not _on_windows():
+        return proc.communicate(prompt, timeout=timeout)
+    # Windows communicate(input) writes stdin synchronously before waiting
+    # on its output reader threads. Pump stdin without blocking and bound
+    # every wait so both console stops and timeouts can take effect.
+    deadline = time.monotonic() + timeout
+    pending = memoryview(prompt.replace("\n", os.linesep).encode("utf-8", errors="replace"))
+    with proc.stdin as stream:
+        proc.stdin = None  # this loop owns stdin; communicate drains stdout and stderr
+        fd = stream.fileno()
+        _set_pipe_nonblocking(fd)
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise subprocess.TimeoutExpired(proc.args, timeout)
+            if pending:
+                try:
+                    pending = pending[os.write(fd, pending[:65536]):]
+                except OSError as exc:
+                    if exc.errno in (errno.EPIPE, errno.EINVAL):
+                        pending = pending[:0]  # the peer closed stdin
+                    elif exc.errno not in (errno.EAGAIN, errno.EWOULDBLOCK, errno.ENOSPC):
+                        raise
+            if not pending and not stream.closed:
+                stream.close()
+            try:
+                return proc.communicate(timeout=min(remaining, 0.01 if pending else 0.25))
+            except subprocess.TimeoutExpired:
+                continue
+
+
 def _run_adapter(command: str, prompt: str, env: dict, timeout: float,
                  on_start=None) -> tuple[int, str, str, bool]:
     """Run the adapter in its own process group so a timeout or a stop ends all of it.
@@ -1115,7 +1172,7 @@ def _run_adapter(command: str, prompt: str, env: dict, timeout: float,
     try:
         if on_start:
             on_start(proc)
-        out, err = proc.communicate(prompt, timeout=timeout)
+        out, err = _communicate_adapter(proc, prompt, timeout)
         return proc.returncode, out, err, False
     except subprocess.TimeoutExpired:
         kill_adapter_tree(proc, job)
@@ -1465,7 +1522,7 @@ def evidence_fingerprints(task: dict) -> dict[str, str | None]:
 
 
 def chain_anchor_path() -> Path:
-    """Operator-side copy of the chain head, outside the agent's write set."""
+    """Location of the persistent operator-side copy of this project's chain head."""
     base = os.environ.get(CHAIN_ANCHOR_ENV, "").strip()
     root = Path(base).expanduser() if base else Path.home() / ".config" / "dow-factory" / "chains"
     return root / (hashlib.sha256(str(ROOT.resolve()).encode()).hexdigest()[:24] + ".json")
@@ -2100,6 +2157,12 @@ def check_assisted_completions(tasks: list[dict]) -> tuple[int, set[str]]:
 
 def once(adapter: str) -> int:
     """One factory step, holding the project's dispatch lock throughout."""
+    anchor = chain_anchor_path()
+    # The chain head and per-project lock/marker directory share this store.
+    if any(path.resolve().is_relative_to(ROOT.resolve())
+           for path in (anchor.parent, anchor, anchor.with_suffix(""))):
+        print("REFUSAL: operator chain store must be outside the project")
+        return 2
     lock = dispatch_lock()
     if not lock.acquire():
         print("STOP: dispatch in progress: another factory invocation for this project is still running; "

@@ -755,7 +755,25 @@ class RequirementAcceptanceTests(unittest.TestCase):
         project = parent / "validate-me"
         self.expect(self.run_command(sys.executable, "automation/validate_template.py", cwd=project), 0,
                     "whole-template validation passed")
+        gate_state = project / ".governance/gate_state.json"
+        state = json.loads(gate_state.read_text(encoding="utf-8"))
+        state.update(approval_state="approved", implementation_authorized=True,
+                     decision="Synthetic smoke fixture")
+        gate_state.write_text(json.dumps(state), encoding="utf-8")
+        self.env["FACTORY_OPERATOR_KEY_FILE"] = str(parent / "fixture-operator.key")
+        for command in ("init-operator-key", "sign"):
+            self.expect(self.run_command(sys.executable, "automation/gatekeeper.py", command, cwd=project), 0)
+        signed = gate_state.read_bytes()
+        parent_record = project / ".governance/plan-approvals/TASK-901.json"
+        parent_record.parent.mkdir(exist_ok=True)
+        parent_record.write_text("parent-only approval", encoding="utf-8")
+        self.expect(self.run_command(sys.executable, "automation/init_project.py", "isolated",
+                                     str(parent), "--smoke-fixture", cwd=project), 0)
+        child = parent / "isolated"
+        self.assertFalse((child / ".governance/plan-approvals").exists())
+        self.assertEqual(json.loads((child / ".governance/gate_state.json").read_text())["approval_state"], "draft")
         self.expect(self.run_command(sys.executable, "automation/smoke_test_template.py", cwd=project), 0)
+        self.assertEqual(gate_state.read_bytes(), signed)
 
     # ---- JER-25 plan-before-build ------------------------------------------
 
@@ -890,6 +908,14 @@ class RequirementAcceptanceTests(unittest.TestCase):
                    "the deterministic local adapter proves only the contract")
     def test_NSR01_real_model_runtime_qualification(self):
         pass
+
+    def test_live_dispatch_refuses_an_anchor_in_the_project(self):
+        self.board()
+        anchor_dir = self.repo / "docs/verification/local-anchors"
+        self.env["FACTORY_CHAIN_ANCHOR_DIR"] = str(anchor_dir)
+        self.expect(self.cli("governed_factory", "--adapter", "assisted"), 2,
+                    "operator chain store must be outside the project")
+        self.assertFalse(anchor_dir.exists())
 
     def test_NSR03_synthetic_evidence_chain_survives_local_clone(self):
         self.board(**{"Required Inputs": "`.governance/synthetic-decision.md`"})

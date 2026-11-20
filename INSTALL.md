@@ -14,6 +14,15 @@ python3 automation/smoke_test_template.py
 python3 -m unittest discover -s tests
 ```
 
+The smoke test creates a disposable Git project and a sibling operator chain
+store inside the checkout. Normal cleanup removes both. A forced stop can leave
+an untracked `.dow-template-smoke-*` directory visible for inspection before staging.
+Real dispatches keep the lock, pending seals, and chain anchor in a persistent
+operator store outside the project. The factory refuses an in-project store.
+Run the factory wrapper from the operator terminal. For a Codex task that
+writes evidence and runs smoke, use a session with the project’s authorized
+workspace-write configuration (see `CODEX.md`).
+
 ## Materialize Runtime Agents
 
 ```bash
@@ -30,7 +39,7 @@ picks them in the adapter command, so a session can move up or down as models
 and prices change, for example:
 
 ```bash
-FACTORY_ADAPTER=shell FACTORY_ADAPTER_COMMAND='codex exec --stdin -m <model> -c model_reasoning_effort=<low|medium|high>' ./automation/factory.sh
+FACTORY_ADAPTER=shell FACTORY_ADAPTER_COMMAND='codex exec -m MODEL -c model_reasoning_effort=medium -' ./automation/factory.sh
 ```
 
 With no flags the runtime CLI uses its own configured default. Set

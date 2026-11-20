@@ -118,40 +118,102 @@ class VerifiedNoteTests(Records, unittest.TestCase):
 class InterruptionTests(Records, unittest.TestCase):
     """DEF-022: an operator stop mid-dispatch left a packet with no run result."""
 
-    SLOW = ("import os, time\n"
-            "pathlib.Path('started').write_text(str(os.getpid()))\n"
+    SLOW = ("import os, signal, time\n"
+            "if os.name == 'nt':\n"
+            "    signal.signal(signal.SIGBREAK, signal.SIG_IGN)\n"
+            "    signal.signal(signal.SIGINT, signal.SIG_IGN)\n"
+            "pathlib.Path('starting').write_text(str(os.getpid()))\n"
+            "os.replace('starting', 'started')\n"
             "time.sleep(60)\n")
 
-    def start(self, body):
-        (self.repo / "adapter.py").write_text("import pathlib\n" + body, encoding="utf-8")
-        (self.repo / ".gitignore").write_text((self.repo / ".gitignore").read_text(encoding="utf-8") + "\nstarted\n", encoding="utf-8")
+    def start(self, *, without_windows_job=False, large_prompt=False):
+        if large_prompt:
+            # This adapter never reads stdin. Its prompt exceeds the default
+            # Windows pipe capacity, so a stop must interrupt prompt delivery.
+            board = self.repo / "orchestration/tasks.md"
+            board.write_text(board.read_text(encoding="utf-8").replace(
+                "synthetic request", "synthetic request " * 900), encoding="utf-8")
+        (self.repo / "adapter.py").write_text("import pathlib\n" + self.SLOW, encoding="utf-8")
+        with (self.repo / ".gitignore").open("a", encoding="utf-8") as f:
+            f.write("\nstarting\nstarted\n")
+        factory = [sys.executable, "automation/governed_factory.py", "--adapter", "shell"]
+        if os.name == "nt" and without_windows_job:
+            # Exercise real recovery in the supported fallback when the OS
+            # won't provide a kill-on-close job. Only job creation is replaced.
+            entry = ("import sys; sys.path.insert(0, 'automation'); import governed_factory as f; "
+                     "import safe_console; safe_console.make_console_safe(); "
+                     "f.WindowsJob.create = lambda: None; sys.exit(f.main())")
+            factory = [sys.executable, "-B", "-c", entry, "--adapter", "shell"]
         self.git("init", "-q")
         self.git("add", "-A")
         self.git("commit", "-qm", "synthetic fixture")
         command = portable_command(sys.executable, "adapter.py")
-        proc = subprocess.Popen([sys.executable, "automation/governed_factory.py", "--adapter", "shell"],
-                                cwd=self.repo, env={**self.env, "FACTORY_ADAPTER_COMMAND": command},
-                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        # A fresh console confines broadcast Ctrl-C/Break to the fixture, even
+        # when the Windows CI runner itself has no console.
+        flags = subprocess.CREATE_NEW_CONSOLE if os.name == "nt" else 0
+        proc = subprocess.Popen(factory, cwd=self.repo,
+                                env={**self.env, "FACTORY_ADAPTER_COMMAND": command},
+                                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT, text=True, creationflags=flags)
+        self.factory_process = proc
         deadline = time.monotonic() + 30
-        while not (self.repo / "started").exists():
+        while True:
+            if (self.repo / "started").exists():
+                self.adapter_pid = int((self.repo / "started").read_text(encoding="utf-8"))
+                [marker] = self.in_flight_markers()
+                if json.loads(marker.read_text(encoding="utf-8")).get("adapter_process"):
+                    return proc, self.adapter_pid
+            if proc.poll() is not None:
+                self.fail(f"factory exited before adapter started: {proc.communicate()[0]}")
             self.assertLess(time.monotonic(), deadline, "adapter never started")
             time.sleep(0.1)
-        return proc, int((self.repo / "started").read_text(encoding="utf-8"))
+
+    def tearDown(self):
+        proc = getattr(self, "factory_process", None)
+        if proc is not None and proc.poll() is None:
+            proc.kill()
+            proc.communicate(timeout=30)
+        pid = getattr(self, "adapter_pid", None)
+        if pid is not None:
+            self.terminate_adapter(pid)
+        super().tearDown()
+
+    @staticmethod
+    def adapter_alive(pid):
+        if os.name == "nt":
+            return governed_factory._windows_process(pid)[0]
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return False
+        return True
+
+    def terminate_adapter(self, pid):
+        if self.adapter_alive(pid):
+            try:
+                os.kill(pid, signal.SIGTERM if os.name == "nt" else signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+
+    @staticmethod
+    def send_stop(proc, sig):
+        if os.name == "nt":
+            event = signal.CTRL_C_EVENT if sig == signal.SIGINT else signal.CTRL_BREAK_EVENT
+            subprocess.run([sys.executable, str(Path(__file__).with_name("windows_console_event.py")),
+                            str(proc.pid), str(int(event))], check=True, timeout=10,
+                           creationflags=subprocess.DETACHED_PROCESS)
+        else:
+            proc.send_signal(sig)
 
     def assert_adapter_gone(self, pid):
         deadline = time.monotonic() + 10
-        while time.monotonic() < deadline:
-            try:
-                os.kill(pid, 0)
-            except ProcessLookupError:
-                return
+        while self.adapter_alive(pid) and time.monotonic() < deadline:
             time.sleep(0.1)
-        os.kill(pid, signal.SIGKILL)
-        self.fail("the adapter outlived the interrupted factory")
+        self.assertFalse(self.adapter_alive(pid), "the adapter outlived the interrupted factory")
 
-    def assert_operator_stop_recorded(self, sig, name):
-        proc, pid = self.start(self.SLOW)
-        proc.send_signal(sig)
+    def assert_operator_stop_recorded(self, sig, name, *, large_prompt=False):
+        proc, pid = self.start(large_prompt=large_prompt)
+        self.send_stop(proc, sig)
         out, _ = proc.communicate(timeout=30)
         self.assertEqual(proc.returncode, 128 + sig, out)
         self.assert_adapter_gone(pid)
@@ -162,16 +224,26 @@ class InterruptionTests(Records, unittest.TestCase):
         self.assertIn("write_audit", record["checks"])
 
     def test_ctrl_c_records_an_interrupted_result(self):
-        self.assert_operator_stop_recorded(signal.SIGINT, "SIGINT")
+        self.assert_operator_stop_recorded(signal.SIGINT, "SIGINT", large_prompt=True)
 
-    def test_sigterm_records_an_interrupted_result(self):
-        self.assert_operator_stop_recorded(signal.SIGTERM, "SIGTERM")
+    def test_operator_stop_records_an_interrupted_result(self):
+        sig = signal.SIGBREAK if os.name == "nt" else signal.SIGTERM
+        self.assert_operator_stop_recorded(sig, sig.name)
 
-    def test_killed_adapter_is_recorded_as_interrupted(self):
-        result, record = self.run_adapter("import os, signal\nos.kill(os.getpid(), signal.SIGKILL)\n", complete=False)
-        self.assertEqual(result.returncode, 128 + signal.SIGKILL, result.stdout + result.stderr)
-        self.assertEqual(record["outcome"], "interrupted: adapter stopped by SIGKILL")
-        self.assertIn("adapter interrupted", record["violations"])
+    def test_killed_adapter_leaves_an_unsuccessful_result(self):
+        if os.name == "nt":
+            # TerminateProcess takes an exit code. Windows supplies no signal
+            # identity to the parent for this kind of forced termination.
+            body = "import os\nos.kill(os.getpid(), 42)\n"
+            code, outcome, violation = 42, "violation: adapter failure", "adapter failure"
+        else:
+            body = "import os, signal\nos.kill(os.getpid(), signal.SIGKILL)\n"
+            code = 128 + signal.SIGKILL
+            outcome, violation = "interrupted: adapter stopped by SIGKILL", "adapter interrupted"
+        result, record = self.run_adapter(body, complete=False)
+        self.assertEqual(result.returncode, code, result.stdout + result.stderr)
+        self.assertEqual(record["outcome"], outcome)
+        self.assertIn(violation, record["violations"])
 
     def test_marker_left_after_its_result_was_recorded_is_consumed(self):
         # Codex P2 on #29: a stop between write_run_result() and the marker delete
@@ -195,10 +267,13 @@ class InterruptionTests(Records, unittest.TestCase):
         self.assertFalse(marker.exists())
 
     def test_killed_factory_leaves_a_marker_recorded_on_the_next_run(self):
-        proc, pid = self.start(self.SLOW)
+        proc, pid = self.start()
         proc.kill()
         proc.communicate(timeout=30)
-        os.kill(pid, signal.SIGKILL)
+        if os.name == "nt":
+            self.assert_adapter_gone(pid)  # releasing the factory's job stops its tree
+        else:
+            self.terminate_adapter(pid)
         self.assertEqual(self.records(), [])
         packets = list((self.repo / "docs/verification/factory-runs").glob("*-TASK-901.json"))
         self.assertEqual(len(packets), 1)
@@ -216,13 +291,13 @@ class InterruptionTests(Records, unittest.TestCase):
     def test_recovery_refuses_while_the_interrupted_adapter_still_runs(self):
         # Codex P2 on #29: a killed factory frees the lock, but its adapter lives on in
         # its own process group; recovery must not dispatch the task a second time.
-        proc, pid = self.start(self.SLOW)
+        proc, pid = self.start(without_windows_job=True)
         try:
             proc.kill()
             proc.communicate(timeout=30)
             [marker] = self.in_flight_markers()
             identity = json.loads(marker.read_text(encoding="utf-8"))["adapter_process"]
-            self.assertEqual(identity["pgid"], os.getpgid(pid))
+            self.assertEqual(identity["pgid"], None if os.name == "nt" else os.getpgid(pid))
             for adapter in ("shell", "assisted"):
                 with self.subTest(adapter=adapter):
                     later = self.factory(adapter)
@@ -231,7 +306,7 @@ class InterruptionTests(Records, unittest.TestCase):
                     self.assertEqual(self.records(), [])
                     self.assertEqual(self.in_flight_markers(), [marker])
         finally:
-            os.kill(pid, signal.SIGKILL)
+            self.terminate_adapter(pid)
         self.assert_adapter_gone(pid)
         # Once the adapter has exited, recovery records the interruption as before.
         later = self.factory("shell")
@@ -246,7 +321,7 @@ class InterruptionTests(Records, unittest.TestCase):
 
     def test_second_invocation_during_a_live_dispatch_is_refused(self):
         # Codex P2 on #29: a concurrent run read the live marker as a crash.
-        proc, pid = self.start(self.SLOW)
+        proc, pid = self.start()
         try:
             for adapter in ("shell", "assisted"):
                 with self.subTest(adapter=adapter):
@@ -259,7 +334,7 @@ class InterruptionTests(Records, unittest.TestCase):
             self.assertEqual(marker["owner"]["pid"], proc.pid)
             self.assertTrue(marker["owner"]["host"] and marker["owner"]["token"])
         finally:
-            proc.send_signal(signal.SIGINT)
+            self.send_stop(proc, signal.SIGINT)
             proc.communicate(timeout=30)
         self.assert_adapter_gone(pid)
         [record] = self.records()
