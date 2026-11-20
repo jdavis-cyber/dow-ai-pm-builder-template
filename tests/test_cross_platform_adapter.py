@@ -467,8 +467,11 @@ class StopHandlerTests(unittest.TestCase):
     def test_windows_also_stops_on_ctrl_break(self):
         with mock.patch.object(gf, "_on_windows", return_value=True), \
                 mock.patch.object(gf.signal, "SIGBREAK", 21, create=True), \
+                mock.patch.object(gf, "_kernel32") as kernel, \
                 mock.patch.object(gf.signal, "signal") as install:
             self.assertEqual(gf.install_stop_handlers(), [signal.SIGTERM, 21])
+        kernel.return_value.SetConsoleCtrlHandler.assert_called_once_with(None, False)
+        install.assert_any_call(signal.SIGINT, signal.default_int_handler)
         install.assert_any_call(21, gf._raise_interrupted)
 
     def test_windows_adapter_identity_has_no_process_group(self):

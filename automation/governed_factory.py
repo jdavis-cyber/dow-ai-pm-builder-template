@@ -758,6 +758,14 @@ def install_stop_handlers() -> list[int]:
     interrupted: SIGTERM everywhere, and Ctrl-Break (SIGBREAK) on Windows."""
     signums = [signal.SIGTERM]
     if _on_windows() and hasattr(signal, "SIGBREAK"):
+        # A console child can inherit "ignore Ctrl-C" from its launcher.
+        # Restore both console delivery and the ordinary Python Ctrl-C handler.
+        import ctypes
+        signal.signal(signal.SIGINT, signal.default_int_handler)
+        if not _kernel32().SetConsoleCtrlHandler(None, False):
+            error = ctypes.get_last_error()
+            if error != 6:  # ERROR_INVALID_HANDLE: a process with no console
+                raise ctypes.WinError(error)
         signums.append(signal.SIGBREAK)
     for signum in signums:
         signal.signal(signum, _raise_interrupted)
