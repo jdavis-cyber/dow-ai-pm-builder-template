@@ -7,6 +7,12 @@ follows SemVer aligned to the template's major revisions.
 ## [Unreleased]
 
 ### Fixed
+- Lock 0 checks both valid interpretations of an ambiguous Windows spec path.
+- Windows adapter waits now process console stops during a long dispatch. The
+  required Windows CI job exercises six interruption and recovery scenarios.
+- The golden-path smoke test runs inside the checkout and uses a disposable
+  operator store. Generated projects can run it without changing their live
+  authority or chain anchor. The documented Codex adapter reads from stdin.
 - Codex starts generated projects in a read-only sandbox until Sprint Zero sign-off
   or a signed Human Director implementation override (AI-1176 / DEF-017).
   Before authority, `approval_policy = "on-request"` lets the human approve each
