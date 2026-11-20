@@ -9,7 +9,7 @@ set -euo pipefail
 #
 # Examples:
 #   ./automation/factory.sh
-#   FACTORY_ADAPTER=shell FACTORY_ADAPTER_COMMAND='codex exec --stdin' ./automation/factory.sh
+#   FACTORY_ADAPTER=shell FACTORY_ADAPTER_COMMAND='codex exec -' ./automation/factory.sh
 #   FACTORY_ADAPTER=shell FACTORY_ADAPTER_COMMAND='claude -p' ./automation/factory.sh
 #   FACTORY_ADAPTER=shell FACTORY_ADAPTER_COMMAND='gemini -p' ./automation/factory.sh
 #

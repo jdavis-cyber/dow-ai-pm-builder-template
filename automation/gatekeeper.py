@@ -245,20 +245,17 @@ def approve_plan(task_id: str, plan_path: str) -> int:
     return 0
 
 
+def initial_state() -> dict:
+    return {
+        "approval_state": "draft",
+        "current_phase": "Sprint Zero / Phase 0",
+        **dict.fromkeys(AUTHORITY_FLAGS, False),
+    }
+
+
 def load_state() -> dict:
     if not GATE_STATE.exists():
-        return {
-            "approval_state": "draft",
-            "current_phase": "Sprint Zero / Phase 0",
-            "implementation_authorized": False,
-            "source_admission_authorized": False,
-            "external_tracker_writes_authorized": False,
-            "deployment_authorized": False,
-            "real_data_or_api_authorized": False,
-            "cdrl_submission_authorized": False,
-            "risk_acceptance_authorized": False,
-            "control_closure_authorized": False,
-        }
+        return initial_state()
     return json.loads(GATE_STATE.read_text(encoding="utf-8"))
 
 

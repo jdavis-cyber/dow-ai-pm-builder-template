@@ -1,4 +1,4 @@
-import json, pathlib, re, subprocess, sys, tempfile, shutil, unittest
+import json, os, pathlib, re, subprocess, sys, tempfile, shutil, unittest
 from urllib.parse import unquote, urlsplit
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 ACCOUNTABLE=["requirements-ba","user-story-ba","ui-ux-designer","architecture-se","database-engineer","backend-developer","frontend-developer","pipeline-devops","performance-devops","qa-engineer","automation-test-engineer","scrum-master","program-analyst","documentation-se","security-compliance-officer"]
@@ -38,7 +38,15 @@ class TemplateValidationTests(unittest.TestCase):
         self.assertIn('files, links', txt)
         self.assertIn('authority boundaries', txt)
     def test_golden_path_smoke(self):
-        r=run(sys.executable,'automation/smoke_test_template.py'); self.assertEqual(r.returncode,0,r.stdout+r.stderr)
+        with tempfile.TemporaryDirectory() as directory:
+            live_anchors = pathlib.Path(directory) / "operator-chains"
+            env = {**os.environ, "FACTORY_CHAIN_ANCHOR_DIR": str(live_anchors)}
+            result = subprocess.run(
+                [sys.executable, "automation/smoke_test_template.py"], cwd=ROOT,
+                env=env, capture_output=True, text=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertFalse(live_anchors.exists(), "smoke wrote to the operator's live chain store")
 
     def test_generated_maintenance_links_resolve(self):
         """Copied guidance must link to files delivered with the project."""
