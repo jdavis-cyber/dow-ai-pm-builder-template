@@ -19,7 +19,12 @@ def main():
             GIT_AUTHOR_NAME="Smoke fixture", GIT_COMMITTER_NAME="Smoke fixture",
             GIT_AUTHOR_EMAIL="smoke@example.invalid", GIT_COMMITTER_EMAIL="smoke@example.invalid",
         )
-        run([sys.executable,'automation/init_project.py','smoke-project',str(parent),'--smoke-fixture'], env=env)
+        init = [sys.executable, "automation/init_project.py", "smoke-project", str(parent)]
+        # A generated project can already hold signed decisions and evidence.
+        # A template checkout exercises the ordinary operator entry point.
+        if (ROOT / "TEMPLATE_PROVENANCE.md").is_file():
+            init.append("--smoke-fixture")
+        run(init, env=env)
         project=parent/'smoke-project'
         assert (project/'.git').exists(), 'git repo missing'
         assert run(['git','rev-parse','HEAD'], project, env=env), 'initial commit missing'
