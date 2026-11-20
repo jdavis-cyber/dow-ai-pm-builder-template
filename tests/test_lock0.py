@@ -178,6 +178,19 @@ class LockedLabelTests(unittest.TestCase):
         problems = governed_factory.lock0_problems(detect({"Verification Command or Method": windows}))
         self.assertEqual(problems, [])
 
+    def test_lock0_validates_both_existing_readings_of_a_path(self):
+        self._project_root("docs/extra.md", "docsextra.md")
+        command = r"python automation/validate_spec.py docs\extra.md"
+        paths = governed_factory.lock0_spec_paths({"Verification Command or Method": command})
+        self.assertEqual(paths, ["docs/extra.md", "docsextra.md", "orchestration/system_spec.md"])
+
+    def test_a_missing_argument_does_not_drop_other_lock0_candidates(self):
+        self._project_root("docs/extra.md", "docsextra.md")
+        command = r"python automation/validate_spec.py docs\extra.md missing.md"
+        paths = governed_factory.lock0_spec_paths({"Verification Command or Method": command})
+        self.assertEqual(paths, ["docs/extra.md", "docsextra.md", "missing.md", "orchestration/system_spec.md"])
+        self.assertIn("missing.md: spec missing or outside the project", governed_factory.lock0_problems(paths))
+
     def test_backslash_in_a_later_command_keeps_posix_escapes(self):
         # Codex P2 on #28 round 3 (4411206551): the \n in a later printf
         # switched the whole line to Windows mode and split docs/my\ spec.md.

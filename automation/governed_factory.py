@@ -457,9 +457,10 @@ def _validator_mode_and_paths(args: list[str]) -> tuple[str, list[str]]:
     return mode, named
 
 
-def _is_project_file(rel_path: str) -> bool:
+def _requires_lock0_check(rel_path: str) -> bool:
+    """An existing project file must be validated and an outside path refused."""
     path = (ROOT / rel_path).resolve()
-    return path.is_relative_to(ROOT.resolve()) and path.is_file()
+    return not path.is_relative_to(ROOT.resolve()) or path.is_file()
 
 
 def lock0_spec_paths(task: dict) -> list[str]:
@@ -470,24 +471,25 @@ def lock0_spec_paths(task: dict) -> list[str]:
     checked, whatever path the board names, so editing the command can't
     point the lock at an easier file.
 
-    Arguments are read the POSIX way. Only when a POSIX path is not a project
-    file and the arguments contain a backslash is the Windows reading tried
-    (backslashes kept, then "\\" -> "/"), and it is used only if every path
-    it names is a project file. Otherwise the POSIX reading stands, so a spec
-    missing under both readings is still reported missing.
+    When backslashes allow two readings, keep all arguments of each reading
+    that identifies any project file or out-of-project path. If both readings
+    name only missing files, keep the POSIX reading to report the missing spec.
     """
     paths: list[str] = []
     lock0 = "lock 0" in str(task.get("Title", "")).lower()
     for posix_args, windows_args in validator_invocations(str(task.get("Verification Command or Method", ""))):
-        mode, named = _validator_mode_and_paths(posix_args)
-        if windows_args is not None and not all(_is_project_file(p) for p in named):
+        posix = _validator_mode_and_paths(posix_args)
+        readings = [posix]
+        if windows_args is not None:
             windows_mode, windows_named = _validator_mode_and_paths(windows_args)
             windows_named = [p.replace("\\", "/") for p in windows_named]
-            if windows_named and all(_is_project_file(p) for p in windows_named):
-                mode, named = windows_mode, windows_named
-        if mode == "locked":
-            lock0 = True
-            paths.extend(named)
+            readings.append((windows_mode, windows_named))
+            readings = [(mode, named) for mode, named in readings
+                        if any(_requires_lock0_check(p) for p in named)] or [posix]
+        for mode, named in readings:
+            if mode == "locked":
+                lock0 = True
+                paths.extend(Path(p).as_posix() for p in named)
     if not lock0:
         return []
     return sorted({SPEC_REL, *paths})
@@ -1105,6 +1107,23 @@ def _discard_suspended(proc, job) -> None:
         pass
 
 
+def _communicate_adapter(proc, prompt: str, timeout: float):
+    if not _on_windows():
+        return proc.communicate(prompt, timeout=timeout)
+    # Windows communicate() joins its pipe-reader threads. Give Python's
+    # main thread a chance to deliver console signals during a long dispatch.
+    deadline = time.monotonic() + timeout
+    pending_input = prompt
+    while True:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise subprocess.TimeoutExpired(proc.args, timeout)
+        try:
+            return proc.communicate(pending_input, timeout=min(remaining, 0.25))
+        except subprocess.TimeoutExpired:
+            pending_input = None  # the first call already sent and closed stdin
+
+
 def _run_adapter(command: str, prompt: str, env: dict, timeout: float,
                  on_start=None) -> tuple[int, str, str, bool]:
     """Run the adapter in its own process group so a timeout or a stop ends all of it.
@@ -1115,7 +1134,7 @@ def _run_adapter(command: str, prompt: str, env: dict, timeout: float,
     try:
         if on_start:
             on_start(proc)
-        out, err = proc.communicate(prompt, timeout=timeout)
+        out, err = _communicate_adapter(proc, prompt, timeout)
         return proc.returncode, out, err, False
     except subprocess.TimeoutExpired:
         kill_adapter_tree(proc, job)

@@ -24,6 +24,21 @@ WINDOWS_NAMES = ("SYSTEMROOT", "COMSPEC", "PATHEXT", "WINDIR", "TEMP", "TMP",
 
 
 class ProcessGroupTests(unittest.TestCase):
+    def test_windows_returns_to_python_during_a_long_adapter_wait(self):
+        # On Windows the pipe-reader thread join can block signal handling
+        # for the entire adapter timeout. A short join gives control back.
+        proc = mock.Mock(returncode=0)
+        proc.communicate.side_effect = [subprocess.TimeoutExpired("adapter", 0.25), ("done", "")]
+        with mock.patch.object(gf, "_on_windows", return_value=True), \
+                mock.patch.object(gf, "_start_adapter", return_value=(proc, None)), \
+                mock.patch.object(gf, "kill_adapter_tree") as kill:
+            self.assertEqual(gf._run_adapter("cmd", "prompt", {}, 30), (0, "done", "", False))
+        first, second = proc.communicate.call_args_list
+        self.assertEqual(first.args, ("prompt",))
+        self.assertLessEqual(first.kwargs["timeout"], 1)
+        self.assertEqual(second.args, (None,))
+        kill.assert_not_called()
+
     def test_windows_starts_the_adapter_in_a_new_process_group(self):
         with mock.patch.object(gf, "_on_windows", return_value=True):
             kwargs = gf.adapter_popen_options()
