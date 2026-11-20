@@ -15,9 +15,10 @@ python3 -m unittest discover -s tests
 ```
 
 The smoke test creates a disposable Git project and a sibling operator chain
-store in a temporary directory inside the checkout. The test removes both during normal
-cleanup. A force-killed test can leave an ignored `.dow-template-smoke-*` directory. Real dispatches keep their lock, pending seals, and chain anchor
-in the operator's persistent store outside the adapter's writable workspace.
+store inside the checkout. Normal cleanup removes both. A forced stop can leave
+an untracked `.dow-template-smoke-*` directory visible for inspection before staging.
+Real dispatches keep the lock, pending seals, and chain anchor in a persistent
+operator store outside the project. The factory refuses an in-project store.
 Run the factory wrapper from the operator terminal. For a Codex task that
 writes evidence and runs smoke, use a session with the project’s authorized
 workspace-write configuration (see `CODEX.md`).

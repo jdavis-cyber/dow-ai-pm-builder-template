@@ -49,5 +49,10 @@ above.
   Reports that demonstrate a way to defeat those stops from inside the
   documented workflow are exactly the kind of report this policy is for.
 - Adapter commands (`FACTORY_ADAPTER_COMMAND`) execute whatever the operator
-  configures. Protecting the operator's own shell environment is out of scope;
-  the template never ships a default adapter.
+  configures. The operator selects the provider and reviews the inputs for that invocation.
+  The shell adapter runs as the operator. Its environment allowlist controls
+  inherited variables. Filesystem access follows the process identity, including
+  access to the operator's home. Use an independently isolated account or runtime
+  when the adapter must be unable to read or change the signing key and chain store.
+  The dispatch ceiling uses project declarations and task markings. Unmarked data
+  requires operator review before dispatch.

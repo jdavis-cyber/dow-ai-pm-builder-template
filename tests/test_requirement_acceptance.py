@@ -909,6 +909,14 @@ class RequirementAcceptanceTests(unittest.TestCase):
     def test_NSR01_real_model_runtime_qualification(self):
         pass
 
+    def test_live_dispatch_refuses_an_anchor_in_the_project(self):
+        self.board()
+        anchor_dir = self.repo / "docs/verification/local-anchors"
+        self.env["FACTORY_CHAIN_ANCHOR_DIR"] = str(anchor_dir)
+        self.expect(self.cli("governed_factory", "--adapter", "assisted"), 2,
+                    "operator chain store must be outside the project")
+        self.assertFalse(anchor_dir.exists())
+
     def test_NSR03_synthetic_evidence_chain_survives_local_clone(self):
         self.board(**{"Required Inputs": "`.governance/synthetic-decision.md`"})
         (self.repo / ".governance/synthetic-decision.md").write_text(

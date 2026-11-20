@@ -1492,7 +1492,7 @@ def evidence_fingerprints(task: dict) -> dict[str, str | None]:
 
 
 def chain_anchor_path() -> Path:
-    """Operator-side copy of the chain head, outside the agent's write set."""
+    """Location of the persistent operator-side copy of this project's chain head."""
     base = os.environ.get(CHAIN_ANCHOR_ENV, "").strip()
     root = Path(base).expanduser() if base else Path.home() / ".config" / "dow-factory" / "chains"
     return root / (hashlib.sha256(str(ROOT.resolve()).encode()).hexdigest()[:24] + ".json")
@@ -2127,6 +2127,12 @@ def check_assisted_completions(tasks: list[dict]) -> tuple[int, set[str]]:
 
 def once(adapter: str) -> int:
     """One factory step, holding the project's dispatch lock throughout."""
+    anchor = chain_anchor_path()
+    # The chain head and per-project lock/marker directory share this store.
+    if any(path.resolve().is_relative_to(ROOT.resolve())
+           for path in (anchor.parent, anchor, anchor.with_suffix(""))):
+        print("REFUSAL: operator chain store must be outside the project")
+        return 2
     lock = dispatch_lock()
     if not lock.acquire():
         print("STOP: dispatch in progress: another factory invocation for this project is still running; "

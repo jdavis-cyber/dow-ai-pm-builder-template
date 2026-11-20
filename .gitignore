@@ -27,7 +27,6 @@ yarn-error.log*
 Thumbs.db
 
 # Temporary files
-/.dow-template-smoke-*/
 *.tmp
 .tmp/
 temp/
